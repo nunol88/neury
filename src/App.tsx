@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
+import SetupUsers from "./pages/SetupUsers";
 import AdminAgendamentos from "./pages/AdminAgendamentos";
 import NeuryAgendamentos from "./pages/NeuryAgendamentos";
 import NotFound from "./pages/NotFound";
@@ -21,6 +22,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/setup" element={<SetupUsers />} />
             <Route 
               path="/admin/agendamentos" 
               element={
