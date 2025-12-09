@@ -9,7 +9,7 @@ import { Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,13 +34,13 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(email.trim(), password);
+      // Convert username to email format for Supabase auth
+      const email = `${username.toLowerCase().trim()}@local.app`;
+      const { error } = await signIn(email, password);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setError('Email ou palavra-passe incorretos.');
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Por favor, confirme o seu email antes de entrar.');
+          setError('Utilizador ou palavra-passe incorretos.');
         } else {
           setError('Erro ao iniciar sessão. Tente novamente.');
         }
@@ -88,16 +88,17 @@ const Login = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Utilizador</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="O seu nome de utilizador"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
                 className="h-11"
+                autoComplete="username"
               />
             </div>
             
@@ -112,6 +113,7 @@ const Login = () => {
                 required
                 disabled={isLoading}
                 className="h-11"
+                autoComplete="current-password"
               />
             </div>
             

@@ -16,6 +16,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title, subtitle }) => {
   };
 
   const roleLabel = role === 'admin' ? 'Administrador' : 'Neury';
+  
+  // Extract username from email (remove @local.app)
+  const username = user?.email?.replace('@local.app', '') || '';
+  const displayName = user?.user_metadata?.name || username;
 
   return (
     <header className="bg-card border-b sticky top-0 z-10">
@@ -36,7 +40,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title, subtitle }) => {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
-              <span>{user?.email}</span>
+              <span className="capitalize">{displayName}</span>
               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-medium">
                 {roleLabel}
               </span>
