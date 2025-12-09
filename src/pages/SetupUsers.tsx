@@ -26,7 +26,7 @@ const SetupUsers = () => {
       // Create admin user (Mayara)
       const { data: adminData, error: adminError } = await supabase.auth.signUp({
         email: 'mayara@local.app',
-        password: 'admin',
+        password: 'password',
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: { name: 'Mayara', username: 'mayara' }
@@ -48,7 +48,7 @@ const SetupUsers = () => {
       // Create neury user
       const { data: neuryData, error: neuryError } = await supabase.auth.signUp({
         email: 'neury@local.app',
-        password: 'neury',
+        password: 'password',
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: { name: 'Neury', username: 'neury' }
@@ -87,8 +87,8 @@ const SetupUsers = () => {
           {step === 'idle' && (
             <>
               <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
-                <p><strong>Admin:</strong> mayara / admin</p>
-                <p><strong>Neury:</strong> neury / neury</p>
+                <p><strong>Admin:</strong> mayara / password</p>
+                <p><strong>Neury:</strong> neury / password</p>
               </div>
               <Button onClick={createUsers} className="w-full" disabled={loading}>
                 Criar Utilizadores
