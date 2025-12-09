@@ -7,7 +7,6 @@ import { Loader2, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 
 interface SetupResult {
   user: string;
-  email: string;
   success: boolean;
   error?: string;
 }
@@ -26,39 +25,40 @@ const SetupUsers = () => {
     try {
       // Create admin user (Mayara)
       const { data: adminData, error: adminError } = await supabase.auth.signUp({
-        email: 'mayara@admin.com',
+        email: 'mayara@local.app',
         password: 'admin',
         options: {
           emailRedirectTo: `${window.location.origin}/`,
-          data: { name: 'Mayara' }
+          data: { name: 'Mayara', username: 'mayara' }
         }
       });
 
       if (adminError) {
-        newResults.push({ user: 'Mayara (admin)', email: 'mayara@admin.com', success: false, error: adminError.message });
+        newResults.push({ user: 'Mayara (admin)', success: false, error: adminError.message });
       } else if (adminData.user) {
-        // Assign admin role - using service role through RPC or direct insert won't work
-        // We need to insert via the logged in user context
-        newResults.push({ user: 'Mayara (admin)', email: 'mayara@admin.com', success: true });
+        newResults.push({ user: 'Mayara (admin)', success: true });
       }
 
       // Sign out before creating next user
       await supabase.auth.signOut();
 
+      // Wait a bit before next signup
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Create neury user
       const { data: neuryData, error: neuryError } = await supabase.auth.signUp({
-        email: 'neury@neury.com',
-        password: 'ainain',
+        email: 'neury@local.app',
+        password: 'neury',
         options: {
           emailRedirectTo: `${window.location.origin}/`,
-          data: { name: 'Neury' }
+          data: { name: 'Neury', username: 'neury' }
         }
       });
 
       if (neuryError) {
-        newResults.push({ user: 'Neury', email: 'neury@neury.com', success: false, error: neuryError.message });
+        newResults.push({ user: 'Neury', success: false, error: neuryError.message });
       } else if (neuryData.user) {
-        newResults.push({ user: 'Neury', email: 'neury@neury.com', success: true });
+        newResults.push({ user: 'Neury', success: true });
       }
 
       // Sign out
@@ -87,8 +87,8 @@ const SetupUsers = () => {
           {step === 'idle' && (
             <>
               <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
-                <p><strong>Admin:</strong> mayara@admin.com / admin</p>
-                <p><strong>Neury:</strong> neury@neury.com / ainain</p>
+                <p><strong>Admin:</strong> mayara / admin</p>
+                <p><strong>Neury:</strong> neury / neury</p>
               </div>
               <Button onClick={createUsers} className="w-full" disabled={loading}>
                 Criar Utilizadores
@@ -126,7 +126,6 @@ const SetupUsers = () => {
                     )}
                     <div>
                       <p className="font-medium">{result.user}</p>
-                      <p className="text-sm text-muted-foreground">{result.email}</p>
                       {result.error && (
                         <p className="text-sm text-destructive mt-1">{result.error}</p>
                       )}
@@ -138,7 +137,7 @@ const SetupUsers = () => {
               <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg text-sm">
                 <p className="font-medium text-warning">⚠️ Próximo passo:</p>
                 <p className="text-muted-foreground mt-1">
-                  Preciso de atribuir as roles aos utilizadores no backend.
+                  Avisa-me para eu atribuir as roles aos utilizadores.
                 </p>
               </div>
 
