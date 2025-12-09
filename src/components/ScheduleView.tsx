@@ -80,21 +80,50 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // Dados de exemplo para demonstração
+  const getSampleData = (): AllTasks => ({
+    december: [
+      { id: 1, date: '2025-12-09', client: 'Maria Silva', phone: '912 345 678', startTime: '08:00', endTime: '12:00', address: 'Rua das Flores, 123', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+      { id: 2, date: '2025-12-10', client: 'João Santos', phone: '923 456 789', startTime: '09:00', endTime: '13:00', address: 'Av. da Liberdade, 45', pricePerHour: '7', price: '28.00', notes: '', completed: true },
+      { id: 3, date: '2025-12-12', client: 'Ana Costa', phone: '934 567 890', startTime: '14:00', endTime: '17:00', address: 'Praça do Comércio, 7', pricePerHour: '7', price: '21.00', notes: '', completed: false },
+      { id: 4, date: '2025-12-15', client: 'Pedro Oliveira', phone: '945 678 901', startTime: '08:30', endTime: '11:30', address: 'Rua Augusta, 200', pricePerHour: '7', price: '21.00', notes: '', completed: false },
+      { id: 5, date: '2025-12-18', client: 'Sofia Pereira', phone: '956 789 012', startTime: '10:00', endTime: '14:00', address: 'Largo do Carmo, 15', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+      { id: 6, date: '2025-12-20', client: 'Maria Silva', phone: '912 345 678', startTime: '08:00', endTime: '12:00', address: 'Rua das Flores, 123', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+    ],
+    january: [
+      { id: 7, date: '2026-01-06', client: 'Carlos Rodrigues', phone: '967 890 123', startTime: '09:00', endTime: '12:00', address: 'Rua do Ouro, 88', pricePerHour: '7', price: '21.00', notes: '', completed: false },
+      { id: 8, date: '2026-01-08', client: 'Maria Silva', phone: '912 345 678', startTime: '08:00', endTime: '12:00', address: 'Rua das Flores, 123', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+      { id: 9, date: '2026-01-15', client: 'Ana Costa', phone: '934 567 890', startTime: '14:00', endTime: '17:00', address: 'Praça do Comércio, 7', pricePerHour: '7', price: '21.00', notes: '', completed: false },
+    ],
+    february: [
+      { id: 10, date: '2026-02-05', client: 'João Santos', phone: '923 456 789', startTime: '09:00', endTime: '13:00', address: 'Av. da Liberdade, 45', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+      { id: 11, date: '2026-02-12', client: 'Sofia Pereira', phone: '956 789 012', startTime: '10:00', endTime: '14:00', address: 'Largo do Carmo, 15', pricePerHour: '7', price: '28.00', notes: '', completed: false },
+    ]
+  });
+
   useEffect(() => {
     const loadedTasks: AllTasks = { december: [], january: [], february: [] };
+    let hasAnyData = false;
     
     Object.values(MONTHS_CONFIG).forEach(config => {
       try {
         const saved = localStorage.getItem(config.storageKey);
         if (saved) {
-          loadedTasks[config.id as keyof AllTasks] = JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          loadedTasks[config.id as keyof AllTasks] = parsed;
+          if (parsed.length > 0) hasAnyData = true;
         }
       } catch (error) {
         console.error(`Erro ao carregar ${config.id}`, error);
       }
     });
 
-    setAllTasks(loadedTasks);
+    // Se não há dados, carregar dados de exemplo
+    if (!hasAnyData) {
+      setAllTasks(getSampleData());
+    } else {
+      setAllTasks(loadedTasks);
+    }
   }, []);
 
   useEffect(() => {
