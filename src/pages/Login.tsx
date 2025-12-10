@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -67,8 +68,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg animate-fade-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Calendar className="h-8 w-8 text-primary" />
+          <div className="mx-auto w-24 h-24 rounded-full overflow-hidden shadow-lg border-4 border-primary/20">
+            <img src={logoMayslimpo} alt="MaysLimpo Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">Agenda Neury</CardTitle>
