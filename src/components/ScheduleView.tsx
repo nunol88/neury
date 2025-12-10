@@ -805,11 +805,26 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={newTask.client} onChange={(e) => { handleInputChange(setNewTask, newTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      required 
+                      placeholder="Nome do cliente" 
+                      value={newTask.client} 
+                      onChange={(e) => { handleInputChange(setNewTask, newTask, 'client', e.target.value); setSelectedClientId(''); }} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                    <input type="text" placeholder="Ex: 912 345 678" value={newTask.phone} onChange={(e) => handleInputChange(setNewTask, newTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 912 345 678" 
+                      value={newTask.phone} 
+                      onChange={(e) => handleInputChange(setNewTask, newTask, 'phone', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -832,8 +847,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                    <input type="text" placeholder="Rua..." value={newTask.address} onChange={(e) => handleInputChange(setNewTask, newTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <input 
+                      type="text" 
+                      placeholder="Rua..." 
+                      value={newTask.address} 
+                      onChange={(e) => handleInputChange(setNewTask, newTask, 'address', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
+                    {selectedClientId && (
+                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                    )}
                   </div>
 
                   {/* Save as client checkbox */}
@@ -894,11 +919,26 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={fixedTask.client} onChange={(e) => { handleInputChange(setFixedTask, fixedTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      required 
+                      placeholder="Nome do cliente" 
+                      value={fixedTask.client} 
+                      onChange={(e) => { handleInputChange(setFixedTask, fixedTask, 'client', e.target.value); setSelectedClientId(''); }} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                    <input type="text" placeholder="Ex: 912 345 678" value={fixedTask.phone} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 912 345 678" 
+                      value={fixedTask.phone} 
+                      onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'phone', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -921,8 +961,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                    <input type="text" placeholder="Rua..." value={fixedTask.address} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <input 
+                      type="text" 
+                      placeholder="Rua..." 
+                      value={fixedTask.address} 
+                      onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'address', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
+                    {selectedClientId && (
+                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                    )}
                   </div>
                   <button 
                     type="submit"
@@ -968,11 +1018,26 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={biWeeklyTask.client} onChange={(e) => { handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      required 
+                      placeholder="Nome do cliente" 
+                      value={biWeeklyTask.client} 
+                      onChange={(e) => { handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value); setSelectedClientId(''); }} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                    <input type="text" placeholder="Ex: 912 345 678" value={biWeeklyTask.phone} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input 
+                      type="text" 
+                      placeholder="Ex: 912 345 678" 
+                      value={biWeeklyTask.phone} 
+                      onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'phone', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -995,8 +1060,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                    <input type="text" placeholder="Rua..." value={biWeeklyTask.address} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <input 
+                      type="text" 
+                      placeholder="Rua..." 
+                      value={biWeeklyTask.address} 
+                      onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'address', e.target.value)} 
+                      disabled={!!selectedClientId}
+                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                    />
+                    {selectedClientId && (
+                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                    )}
                   </div>
                   <button 
                     type="submit"
