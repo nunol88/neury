@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
 const MONTHS_CONFIG = {
   december: {
@@ -428,17 +429,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       {/* User Info Bar */}
       <div className="bg-white border-b px-4 py-2 print:hidden">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <User size={16} />
-            <span className="capitalize font-medium">{username}</span>
-            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-              {roleLabel}
-            </span>
-            {!isAdmin && (
-              <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">
-                Apenas visualização
+          <div className="flex items-center gap-3">
+            <img 
+              src={logoMayslimpo} 
+              alt="MaysLimpo Logo" 
+              className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-200"
+            />
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="capitalize font-medium">{username}</span>
+              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                {roleLabel}
               </span>
-            )}
+              {!isAdmin && (
+                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">
+                  Apenas visualização
+                </span>
+              )}
+            </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleSignOut}>
             <LogOut size={16} className="mr-1" />
