@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
+import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2 
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -51,12 +52,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
+  const { clients, addClient } = useClients();
   
   const [activeMonth, setActiveMonth] = useState<'december' | 'january' | 'february'>('december');
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [saveAsClient, setSaveAsClient] = useState(false);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -165,6 +169,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     setter(updatedTask);
   };
 
+  const handleClientSelect = (clientId: string, setter: any, state: any) => {
+    setSelectedClientId(clientId);
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        setter({
+          ...state,
+          client: client.nome,
+          phone: client.telefone,
+          address: client.morada,
+          pricePerHour: client.preco_hora
+        });
+      }
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, task: Task) => {
     if (!isAdmin) return;
     e.dataTransfer.setData("taskId", task.id);
@@ -226,6 +246,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     setSaving(true);
 
     try {
+      // Save as client if checkbox is checked and it's a new client
+      if (saveAsClient && !selectedClientId && newTask.client) {
+        await addClient({
+          nome: newTask.client,
+          telefone: newTask.phone,
+          morada: newTask.address,
+          preco_hora: newTask.pricePerHour,
+          notas: ''
+        });
+      }
+
       if (editingId) {
         const success = await updateTask(editingId, newTask);
         if (success) {
@@ -250,6 +281,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
 
       setNewTask({ ...newTask, client: '', phone: '', notes: '', completed: false });
+      setSelectedClientId('');
+      setSaveAsClient(false);
       setShowModal(false);
     } finally {
       setSaving(false);
@@ -738,9 +771,29 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </select>
                     {editingId && <p className="text-xs text-gray-500 mt-1">Para mudar o dia, arraste o cartão na agenda.</p>}
                   </div>
+                  {/* Client selector */}
+                  {clients.length > 0 && !editingId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Users size={14} />
+                        Selecionar Cliente Existente
+                      </label>
+                      <select
+                        value={selectedClientId}
+                        onChange={(e) => handleClientSelect(e.target.value, setNewTask, newTask)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      >
+                        <option value="">-- Novo cliente --</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={newTask.client} onChange={(e) => handleInputChange(setNewTask, newTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input type="text" required placeholder="Nome do cliente" value={newTask.client} onChange={(e) => { handleInputChange(setNewTask, newTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
@@ -770,6 +823,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
                     <input type="text" placeholder="Rua..." value={newTask.address} onChange={(e) => handleInputChange(setNewTask, newTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
                   </div>
+
+                  {/* Save as client checkbox */}
+                  {!editingId && !selectedClientId && newTask.client && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={saveAsClient}
+                        onChange={(e) => setSaveAsClient(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <UserPlus size={14} />
+                      Guardar cliente para próximos agendamentos
+                    </label>
+                  )}
+
                   <button 
                     type="submit" 
                     disabled={saving}
@@ -793,9 +861,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       {weekDaysList.map(day => <option key={day} value={day}>{day}</option>)}
                     </select>
                   </div>
+                  {/* Client selector for fixed */}
+                  {clients.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Users size={14} />
+                        Selecionar Cliente Existente
+                      </label>
+                      <select
+                        value={selectedClientId}
+                        onChange={(e) => handleClientSelect(e.target.value, setFixedTask, fixedTask)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      >
+                        <option value="">-- Novo cliente --</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={fixedTask.client} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input type="text" required placeholder="Nome do cliente" value={fixedTask.client} onChange={(e) => { handleInputChange(setFixedTask, fixedTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
@@ -848,9 +935,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       {currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)}
                     </select>
                   </div>
+                  {/* Client selector for biweekly */}
+                  {clients.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        <Users size={14} />
+                        Selecionar Cliente Existente
+                      </label>
+                      <select
+                        value={selectedClientId}
+                        onChange={(e) => handleClientSelect(e.target.value, setBiWeeklyTask, biWeeklyTask)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      >
+                        <option value="">-- Novo cliente --</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
-                    <input type="text" required placeholder="Nome do cliente" value={biWeeklyTask.client} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    <input type="text" required placeholder="Nome do cliente" value={biWeeklyTask.client} onChange={(e) => { handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value); setSelectedClientId(''); }} className="w-full p-2 border border-gray-300 rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
