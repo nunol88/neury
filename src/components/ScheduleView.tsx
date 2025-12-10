@@ -488,20 +488,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               <span className="hidden sm:inline">Imprimir</span>
             </button>
 
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setActiveTab('single');
-                  setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
-                  setShowModal(true);
-                }}
-                className="bg-white text-gray-800 hover:bg-gray-100 px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md transition transform hover:scale-105"
-              >
-                <Plus size={20} />
-                Novo Agendamento
-              </button>
-            )}
+            {/* Botão de imprimir já está acima */}
           </div>
         </div>
       </header>
@@ -873,6 +860,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           main { position: absolute; left: 0; top: 0; }
         }
       `}</style>
+
+      {/* Botão Flutuante - Apenas Admin */}
+      {isAdmin && (
+        <button
+          onClick={() => {
+            setEditingId(null);
+            setActiveTab('single');
+            setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
+            setShowModal(true);
+          }}
+          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r ${getThemeColor()} text-white`}
+          title="Novo Agendamento"
+        >
+          <Plus size={28} />
+        </button>
+      )}
     </div>
   );
 };
