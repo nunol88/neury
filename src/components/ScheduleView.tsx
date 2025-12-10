@@ -680,9 +680,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         )}
 
                         {task.address && (
-                          <div className="text-xs text-gray-500 truncate flex items-center gap-1 mb-1">
-                            <MapPin size={10} />
-                            {task.address}
+                          <div className="text-xs text-gray-500 flex items-start gap-1 mb-1">
+                            <MapPin size={10} className="shrink-0 mt-0.5" />
+                            <span className="break-words">{task.address}</span>
                           </div>
                         )}
 
