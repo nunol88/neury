@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { 
-  Plus, Trash2, Check, Clock, MapPin, Calendar, Save, Printer, X, 
-  Phone, Repeat, CalendarRange, Pencil, Undo2, LogOut, User 
+  Plus, Trash2, Check, MapPin, Calendar, Save, Printer, X, 
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const MONTHS_CONFIG = {
   december: {
@@ -16,7 +18,6 @@ const MONTHS_CONFIG = {
     startDay: 8,
     endDay: 31,
     color: 'purple',
-    storageKey: 'neury_schedule_december_2025'
   },
   january: {
     id: 'january',
@@ -26,7 +27,6 @@ const MONTHS_CONFIG = {
     startDay: 1,
     endDay: 31,
     color: 'blue',
-    storageKey: 'neury_schedule_january_2026'
   },
   february: {
     id: 'february',
@@ -36,29 +36,8 @@ const MONTHS_CONFIG = {
     startDay: 1,
     endDay: 28,
     color: 'pink',
-    storageKey: 'neury_schedule_february_2026'
   }
 };
-
-interface Task {
-  id: number;
-  date: string;
-  client: string;
-  phone: string;
-  startTime: string;
-  endTime: string;
-  address: string;
-  pricePerHour: string;
-  price: string;
-  notes: string;
-  completed: boolean;
-}
-
-interface AllTasks {
-  december: Task[];
-  january: Task[];
-  february: Task[];
-}
 
 interface ScheduleViewProps {
   isAdmin: boolean;
@@ -67,61 +46,14 @@ interface ScheduleViewProps {
 const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
   
-  const [allTasks, setAllTasks] = useState<AllTasks>({
-    december: [],
-    january: [],
-    february: []
-  });
-
-  const [history, setHistory] = useState<AllTasks[]>([]);
   const [activeMonth, setActiveMonth] = useState<'december' | 'january' | 'february'>('december');
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
-  const [editingId, setEditingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    // Limpar dados de teste ao iniciar (uma única vez)
-    const cleaned = localStorage.getItem('neury_data_cleaned');
-    if (!cleaned) {
-      Object.values(MONTHS_CONFIG).forEach(config => {
-        localStorage.removeItem(config.storageKey);
-      });
-      localStorage.setItem('neury_data_cleaned', 'true');
-    }
-
-    const loadedTasks: AllTasks = { december: [], january: [], february: [] };
-    
-    Object.values(MONTHS_CONFIG).forEach(config => {
-      try {
-        const saved = localStorage.getItem(config.storageKey);
-        if (saved) {
-          loadedTasks[config.id as keyof AllTasks] = JSON.parse(saved);
-        }
-      } catch (error) {
-        console.error(`Erro ao carregar ${config.id}`, error);
-      }
-    });
-
-    setAllTasks(loadedTasks);
-  }, []);
-
-  useEffect(() => {
-    Object.values(MONTHS_CONFIG).forEach(config => {
-      localStorage.setItem(config.storageKey, JSON.stringify(allTasks[config.id as keyof AllTasks]));
-    });
-  }, [allTasks]);
-
-  const saveToHistory = () => {
-    setHistory(prev => [...prev.slice(-10), JSON.parse(JSON.stringify(allTasks))]);
-  };
-
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    const previousState = history[history.length - 1];
-    setAllTasks(previousState);
-    setHistory(prev => prev.slice(0, -1));
-  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -205,7 +137,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         setBiWeeklyTask(prev => ({ ...prev, startDate: firstDay }));
       }
     }
-  }, [activeMonth, currentMonthDays.length]);
+  }, [activeMonth, currentMonthDays.length, editingId]);
 
   const weekDaysList = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
 
@@ -230,10 +162,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     setter(updatedTask);
   };
 
-  const handleDragStart = (e: React.DragEvent, task: Task, sourceMonth: string) => {
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
     if (!isAdmin) return;
-    e.dataTransfer.setData("taskId", task.id.toString());
-    e.dataTransfer.setData("sourceMonth", sourceMonth);
+    e.dataTransfer.setData("taskId", task.id);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -243,48 +174,27 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetDateString: string) => {
+  const handleDrop = async (e: React.DragEvent, targetDateString: string) => {
     if (!isAdmin) return;
     e.preventDefault();
     const taskId = e.dataTransfer.getData("taskId");
-    const sourceMonth = e.dataTransfer.getData("sourceMonth") as keyof AllTasks;
 
-    const taskToMove = allTasks[sourceMonth].find(t => t.id.toString() === taskId.toString());
-    if (!taskToMove) return;
-    if (taskToMove.date === targetDateString) return;
-
-    saveToHistory();
-
-    const updatedTask = { ...taskToMove, date: targetDateString };
-    const tasksWithoutMoved = allTasks[sourceMonth].filter(t => t.id.toString() !== taskId.toString());
-    const targetMonth = getMonthKeyFromDate(targetDateString);
-
-    if (!targetMonth) return;
-
-    if (sourceMonth === targetMonth) {
-      setAllTasks(prev => ({
-        ...prev,
-        [sourceMonth]: [...tasksWithoutMoved, updatedTask]
-      }));
-    } else {
-      setAllTasks(prev => ({
-        ...prev,
-        [sourceMonth]: tasksWithoutMoved,
-        [targetMonth]: [...(prev[targetMonth] || []), updatedTask]
-      }));
+    // Find the task
+    let taskToMove: Task | null = null;
+    for (const monthKey of ['december', 'january', 'february'] as const) {
+      const found = allTasks[monthKey].find(t => t.id === taskId);
+      if (found) {
+        taskToMove = found;
+        break;
+      }
     }
-  };
 
-  const addTaskToCorrectMonth = (taskData: Task) => {
-    const targetMonth = getMonthKeyFromDate(taskData.date);
-    if (targetMonth && allTasks[targetMonth]) {
-      setAllTasks(prev => ({
-        ...prev,
-        [targetMonth]: [...prev[targetMonth], taskData]
-      }));
-      return true;
+    if (!taskToMove || taskToMove.date === targetDateString) return;
+
+    const success = await moveTask(taskId, targetDateString);
+    if (success) {
+      toast({ title: 'Agendamento movido com sucesso' });
     }
-    return false;
   };
 
   const openEditModal = (task: Task) => {
@@ -306,133 +216,114 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     setShowModal(true);
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.client) return;
 
-    saveToHistory();
+    setSaving(true);
 
-    if (editingId) {
-      let foundMonth: keyof AllTasks | null = null;
-
-      (Object.keys(allTasks) as Array<keyof AllTasks>).forEach(m => {
-        const t = allTasks[m].find(task => task.id === editingId);
-        if (t) {
-          foundMonth = m;
+    try {
+      if (editingId) {
+        const success = await updateTask(editingId, newTask);
+        if (success) {
+          toast({ title: 'Agendamento atualizado' });
         }
-      });
+        setEditingId(null);
+      } else {
+        const targetMonth = getMonthKeyFromDate(newTask.date);
+        if (!targetMonth) {
+          toast({ 
+            title: 'Data inválida', 
+            description: 'Data fora do período permitido (Dez/25 a Fev/26)',
+            variant: 'destructive'
+          });
+          return;
+        }
 
-      if (foundMonth) {
-        const tasksFiltered = allTasks[foundMonth].filter(t => t.id !== editingId);
-        const updatedTask: Task = { ...newTask, id: editingId } as Task;
-        const targetMonth = getMonthKeyFromDate(updatedTask.date);
-
-        if (targetMonth) {
-          if (foundMonth === targetMonth) {
-            setAllTasks(prev => ({ ...prev, [foundMonth!]: [...tasksFiltered, updatedTask] }));
-          } else {
-            setAllTasks(prev => ({
-              ...prev,
-              [foundMonth!]: tasksFiltered,
-              [targetMonth]: [...prev[targetMonth], updatedTask]
-            }));
-          }
+        const result = await addTask(newTask);
+        if (result) {
+          toast({ title: 'Agendamento criado' });
         }
       }
-      setEditingId(null);
-    } else {
-      const taskToAdd: Task = { ...newTask, id: Date.now() + Math.random() } as Task;
-      const success = addTaskToCorrectMonth(taskToAdd);
-      if (!success) {
-        alert('Data fora do período permitido (Dez/25 a Fev/26)');
-        return;
-      }
+
+      setNewTask({ ...newTask, client: '', phone: '', notes: '', completed: false });
+      setShowModal(false);
+    } finally {
+      setSaving(false);
     }
-
-    setNewTask({ ...newTask, client: '', phone: '', notes: '', completed: false });
-    setShowModal(false);
   };
 
-  const handleAddFixedTask = (e: React.FormEvent) => {
+  const handleAddFixedTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fixedTask.client) return;
-    saveToHistory();
+    
+    setSaving(true);
 
-    let count = 0;
+    try {
+      let count = 0;
 
-    currentMonthDays.forEach(day => {
-      if (day.dayName.toLowerCase().includes(fixedTask.weekDay.toLowerCase())) {
-        const task: Task = {
-          id: Date.now() + Math.random() + count,
-          date: day.dateString,
-          client: fixedTask.client,
-          phone: fixedTask.phone,
-          startTime: fixedTask.startTime,
-          endTime: fixedTask.endTime,
-          address: fixedTask.address,
-          pricePerHour: fixedTask.pricePerHour,
-          price: fixedTask.price,
-          notes: fixedTask.notes,
-          completed: fixedTask.completed
-        };
-        addTaskToCorrectMonth(task);
-        count++;
+      for (const day of currentMonthDays) {
+        if (day.dayName.toLowerCase().includes(fixedTask.weekDay.toLowerCase())) {
+          const taskData = {
+            date: day.dateString,
+            client: fixedTask.client,
+            phone: fixedTask.phone,
+            startTime: fixedTask.startTime,
+            endTime: fixedTask.endTime,
+            address: fixedTask.address,
+            pricePerHour: fixedTask.pricePerHour,
+            price: fixedTask.price,
+            notes: fixedTask.notes,
+            completed: fixedTask.completed
+          };
+          const result = await addTask(taskData);
+          if (result) count++;
+        }
       }
-    });
 
-    if (count === 0) {
-      alert("Nenhum dia encontrado neste mês para o dia da semana selecionado.");
-      return;
+      if (count === 0) {
+        toast({
+          title: 'Nenhum dia encontrado',
+          description: 'Nenhum dia encontrado neste mês para o dia da semana selecionado.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({ title: `${count} agendamentos criados em ${activeConfig.label}` });
+      setFixedTask({ ...fixedTask, client: '', phone: '', notes: '', completed: false });
+      setShowModal(false);
+    } finally {
+      setSaving(false);
     }
-
-    alert(`${count} agendamentos criados em ${activeConfig.label}.`);
-    setFixedTask({ ...fixedTask, client: '', phone: '', notes: '', completed: false });
-    setShowModal(false);
   };
 
-  const handleAddBiWeeklyTask = (e: React.FormEvent) => {
+  const handleAddBiWeeklyTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!biWeeklyTask.client) return;
-    saveToHistory();
+    
+    setSaving(true);
 
-    const allDaysContinuous = [
-      ...generateDaysForMonth('december'),
-      ...generateDaysForMonth('january'),
-      ...generateDaysForMonth('february')
-    ];
+    try {
+      const allDaysContinuous = [
+        ...generateDaysForMonth('december'),
+        ...generateDaysForMonth('january'),
+        ...generateDaysForMonth('february')
+      ];
 
-    const startIndex = allDaysContinuous.findIndex(d => d.dateString === biWeeklyTask.startDate);
+      const startIndex = allDaysContinuous.findIndex(d => d.dateString === biWeeklyTask.startDate);
 
-    if (startIndex === -1) {
-      alert("Data inválida.");
-      return;
-    }
+      if (startIndex === -1) {
+        toast({ title: 'Data inválida', variant: 'destructive' });
+        return;
+      }
 
-    let addedCount = 0;
+      let addedCount = 0;
 
-    const firstDate = allDaysContinuous[startIndex];
-    addTaskToCorrectMonth({
-      id: Date.now() + Math.random(),
-      date: firstDate.dateString,
-      client: biWeeklyTask.client,
-      phone: biWeeklyTask.phone,
-      startTime: biWeeklyTask.startTime,
-      endTime: biWeeklyTask.endTime,
-      address: biWeeklyTask.address,
-      pricePerHour: biWeeklyTask.pricePerHour,
-      price: biWeeklyTask.price,
-      notes: biWeeklyTask.notes,
-      completed: biWeeklyTask.completed
-    });
-    addedCount++;
-
-    const nextIndex = startIndex + 14;
-
-    if (nextIndex < allDaysContinuous.length) {
-      const nextDate = allDaysContinuous[nextIndex];
-      const added = addTaskToCorrectMonth({
-        id: Date.now() + Math.random() + 1,
-        date: nextDate.dateString,
+      // First appointment
+      const firstDate = allDaysContinuous[startIndex];
+      const firstResult = await addTask({
+        date: firstDate.dateString,
         client: biWeeklyTask.client,
         phone: biWeeklyTask.phone,
         startTime: biWeeklyTask.startTime,
@@ -443,33 +334,51 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         notes: biWeeklyTask.notes,
         completed: biWeeklyTask.completed
       });
-      if (added) addedCount++;
-    }
+      if (firstResult) addedCount++;
 
-    alert(`${addedCount} agendamentos criados. (Verifique as abas dos meses seguintes se necessário)`);
-    setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', notes: '', completed: false });
-    setShowModal(false);
+      // Second appointment (14 days later)
+      const nextIndex = startIndex + 14;
+      if (nextIndex < allDaysContinuous.length) {
+        const nextDate = allDaysContinuous[nextIndex];
+        const secondResult = await addTask({
+          date: nextDate.dateString,
+          client: biWeeklyTask.client,
+          phone: biWeeklyTask.phone,
+          startTime: biWeeklyTask.startTime,
+          endTime: biWeeklyTask.endTime,
+          address: biWeeklyTask.address,
+          pricePerHour: biWeeklyTask.pricePerHour,
+          price: biWeeklyTask.price,
+          notes: biWeeklyTask.notes,
+          completed: biWeeklyTask.completed
+        });
+        if (secondResult) addedCount++;
+      }
+
+      toast({ 
+        title: `${addedCount} agendamentos criados`,
+        description: 'Verifique as abas dos meses seguintes se necessário'
+      });
+      setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', notes: '', completed: false });
+      setShowModal(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!isAdmin) return;
     if (window.confirm('Tem certeza que deseja remover este agendamento?')) {
-      saveToHistory();
-      setAllTasks(prev => ({
-        ...prev,
-        [activeMonth]: prev[activeMonth].filter(t => t.id !== id)
-      }));
+      const success = await deleteTask(id);
+      if (success) {
+        toast({ title: 'Agendamento eliminado' });
+      }
     }
   };
 
-  const toggleStatus = (id: number) => {
+  const handleToggleStatus = async (id: string, currentlyCompleted: boolean) => {
     if (!isAdmin) return;
-    setAllTasks(prev => ({
-      ...prev,
-      [activeMonth]: prev[activeMonth].map(t =>
-        t.id === id ? { ...t, completed: !t.completed } : t
-      )
-    }));
+    await toggleTaskStatus(id, currentlyCompleted);
   };
 
   const calculateMonthTotal = () => {
@@ -501,6 +410,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = role === 'admin' ? 'Administrador' : 'Neury';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-gray-600">A carregar agendamentos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen font-sans text-gray-800 pb-10 print:bg-white ${getBgColor()}`}>
@@ -560,18 +480,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
 
           <div className="mt-4 md:mt-0 flex gap-3 flex-wrap">
-            {isAdmin && (
-              <button
-                onClick={handleUndo}
-                disabled={history.length === 0}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${history.length === 0 ? 'bg-white/10 text-white/50 cursor-not-allowed' : 'bg-white/20 hover:bg-white/30 text-white'}`}
-                title="Desfazer última alteração"
-              >
-                <Undo2 size={20} />
-                <span className="hidden sm:inline">Desfazer</span>
-              </button>
-            )}
-
             <button
               onClick={printSchedule}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
@@ -657,7 +565,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <div
                         key={task.id}
                         draggable={isAdmin}
-                        onDragStart={(e) => handleDragStart(e, task, activeMonth)}
+                        onDragStart={(e) => handleDragStart(e, task)}
                         className={`relative group p-2 rounded-lg border transition-all text-sm ${isAdmin ? 'cursor-move' : 'cursor-default'} ${task.completed
                           ? 'bg-green-50 border-green-200'
                           : 'bg-white border-gray-200 hover:border-gray-400 hover:shadow-md'
@@ -701,7 +609,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                                 <Pencil size={14} />
                               </button>
                               <button
-                                onClick={() => toggleStatus(task.id)}
+                                onClick={() => handleToggleStatus(task.id, task.completed)}
                                 className={`p-1 rounded hover:scale-110 transition ${task.completed ? 'text-green-600 bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
                                   }`}
                                 title={task.completed ? "Desmarcar" : "Concluir"}
@@ -825,73 +733,123 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
                     <input type="text" placeholder="Rua..." value={newTask.address} onChange={(e) => handleInputChange(setNewTask, newTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
                   </div>
-                  <button type="submit" className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()}`}>
-                    <Save size={18} />
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                  >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     {editingId ? 'Salvar Alterações' : `Salvar em ${activeConfig.label}`}
                   </button>
                 </form>
               )}
 
-              {activeTab === 'fixed' && !editingId && (
+              {activeTab === 'fixed' && (
                 <form onSubmit={handleAddFixedTask} className="space-y-4">
-                  <div className="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm mb-4 border border-blue-100">
-                    <p className="flex items-start gap-2">
-                      <Repeat size={16} className="mt-0.5 shrink-0" />
-                      Preenche <strong>todas as {fixedTask.weekDay}s</strong> deste mês ({activeConfig.label}).
-                    </p>
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Dia da Semana</label>
-                    <select value={fixedTask.weekDay} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'weekDay', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white capitalize">
-                      {weekDaysList.map(d => <option key={d} value={d}>{d}</option>)}
+                    <select
+                      value={fixedTask.weekDay}
+                      onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'weekDay', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
+                      {weekDaysList.map(day => <option key={day} value={day}>{day}</option>)}
                     </select>
                   </div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label><input type="text" required value={fixedTask.client} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label><input type="text" value={fixedTask.phone} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                    <input type="text" required placeholder="Nome do cliente" value={fixedTask.client} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <input type="text" placeholder="Ex: 912 345 678" value={fixedTask.phone} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Início</label><input type="time" required value={fixedTask.startTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Fim</label><input type="time" required value={fixedTask.endTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Início</label>
+                      <input type="time" required value={fixedTask.startTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fim</label>
+                      <input type="time" required value={fixedTask.endTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div><label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label><input type="number" readOnly disabled value={fixedTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100" /></div>
-                    <div><label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label><input type="number" step="0.01" value={fixedTask.price} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg font-bold text-green-800" /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label>
+                      <input type="number" readOnly disabled value={fixedTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
+                      <input type="number" step="0.01" value={fixedTask.price} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg text-green-800 font-bold" />
+                    </div>
                   </div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label><input type="text" value={fixedTask.address} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                  <button type="submit" className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()}`}>
-                    <Repeat size={18} />
-                    Criar Semanal
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                    <input type="text" placeholder="Rua..." value={fixedTask.address} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={saving}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                  >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Repeat size={18} />}
+                    Criar em todas as {fixedTask.weekDay}s de {activeConfig.label}
                   </button>
                 </form>
               )}
 
-              {activeTab === 'biweekly' && !editingId && (
+              {activeTab === 'biweekly' && (
                 <form onSubmit={handleAddBiWeeklyTask} className="space-y-4">
-                  <div className="bg-orange-50 text-orange-700 p-3 rounded-lg text-sm mb-4 border border-orange-100">
-                    <p className="flex items-start gap-2">
-                      <CalendarRange size={16} className="mt-0.5 shrink-0" />
-                      Escolha a <strong>1ª data</strong>. Se a próxima cair no mês seguinte (ex: Jan), o sistema cria lá automaticamente.
-                    </p>
-                  </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data da 1ª Limpeza</label>
-                    <select value={biWeeklyTask.startDate} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startDate', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Data de Início</label>
+                    <select
+                      value={biWeeklyTask.startDate}
+                      onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startDate', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
                       {currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)}
                     </select>
                   </div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label><input type="text" required value={biWeeklyTask.client} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label><input type="text" value={biWeeklyTask.phone} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                    <input type="text" required placeholder="Nome do cliente" value={biWeeklyTask.client} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <input type="text" placeholder="Ex: 912 345 678" value={biWeeklyTask.phone} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'phone', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Início</label><input type="time" required value={biWeeklyTask.startTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Fim</label><input type="time" required value={biWeeklyTask.endTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Início</label>
+                      <input type="time" required value={biWeeklyTask.startTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fim</label>
+                      <input type="time" required value={biWeeklyTask.endTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div><label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label><input type="number" readOnly disabled value={biWeeklyTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100" /></div>
-                    <div><label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label><input type="number" step="0.01" value={biWeeklyTask.price} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg font-bold text-green-800" /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label>
+                      <input type="number" readOnly disabled value={biWeeklyTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
+                      <input type="number" step="0.01" value={biWeeklyTask.price} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg text-green-800 font-bold" />
+                    </div>
                   </div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label><input type="text" value={biWeeklyTask.address} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
-                  <button type="submit" className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()}`}>
-                    <CalendarRange size={18} />
-                    Criar Quinzenal
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                    <input type="text" placeholder="Rua..." value={biWeeklyTask.address} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'address', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={saving}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                  >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <CalendarRange size={18} />}
+                    Criar Quinzenalmente
                   </button>
                 </form>
               )}
@@ -900,6 +858,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        @media print {
+          body * { visibility: hidden; }
+          main, main * { visibility: visible; }
+          main { position: absolute; left: 0; top: 0; }
+        }
+      `}</style>
     </div>
   );
 };
