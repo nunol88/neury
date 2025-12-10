@@ -41,9 +41,20 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
   const startDate = new Date(row.data_inicio);
   const endDate = new Date(row.data_fim);
   
-  const dateStr = startDate.toISOString().split('T')[0];
-  const startTime = startDate.toTimeString().slice(0, 5);
-  const endTime = endDate.toTimeString().slice(0, 5);
+  // Format date as YYYY-MM-DD using UTC to avoid timezone issues
+  const year = startDate.getUTCFullYear();
+  const month = String(startDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(startDate.getUTCDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
+  
+  // Format times using UTC
+  const startHours = String(startDate.getUTCHours()).padStart(2, '0');
+  const startMinutes = String(startDate.getUTCMinutes()).padStart(2, '0');
+  const startTime = `${startHours}:${startMinutes}`;
+  
+  const endHours = String(endDate.getUTCHours()).padStart(2, '0');
+  const endMinutes = String(endDate.getUTCMinutes()).padStart(2, '0');
+  const endTime = `${endHours}:${endMinutes}`;
   
   // Parse descricao JSON for additional fields
   let parsedData: any = {};
@@ -71,8 +82,9 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
 };
 
 const mapTaskToInsert = (task: Omit<Task, 'id'>): AgendamentoInsert => {
-  const startDateTime = new Date(`${task.date}T${task.startTime}:00`);
-  const endDateTime = new Date(`${task.date}T${task.endTime}:00`);
+  // Create UTC dates to avoid timezone issues
+  const startDateTime = new Date(`${task.date}T${task.startTime}:00Z`);
+  const endDateTime = new Date(`${task.date}T${task.endTime}:00Z`);
 
   return {
     cliente_nome: task.client,
