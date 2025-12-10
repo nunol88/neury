@@ -525,10 +525,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               )}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut size={16} className="mr-1" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/admin/clientes')}
+              >
+                <Users size={16} className="mr-1" />
+                Clientes
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut size={16} className="mr-1" />
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
 
