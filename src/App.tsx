@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import SetupUsers from "./pages/SetupUsers";
 import AdminAgendamentos from "./pages/AdminAgendamentos";
 import NeuryAgendamentos from "./pages/NeuryAgendamentos";
+import ClientesAdmin from "./pages/ClientesAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['neury']}>
                   <NeuryAgendamentos />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/clientes" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ClientesAdmin />
                 </ProtectedRoute>
               } 
             />
