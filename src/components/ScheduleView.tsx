@@ -174,14 +174,27 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     if (clientId) {
       const client = clients.find(c => c.id === clientId);
       if (client) {
+        const updatedPricePerHour = client.preco_hora || '7';
+        const newPrice = calculatePrice(state.startTime, state.endTime, updatedPricePerHour);
         setter({
           ...state,
           client: client.nome,
-          phone: client.telefone,
-          address: client.morada,
-          pricePerHour: client.preco_hora
+          phone: client.telefone || '',
+          address: client.morada || '',
+          pricePerHour: updatedPricePerHour,
+          price: newPrice || state.price
         });
       }
+    } else {
+      // Clear client fields when deselecting
+      setter({
+        ...state,
+        client: '',
+        phone: '',
+        address: '',
+        pricePerHour: '7',
+        price: calculatePrice(state.startTime, state.endTime, '7') || state.price
+      });
     }
   };
 
@@ -280,7 +293,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         }
       }
 
-      setNewTask({ ...newTask, client: '', phone: '', notes: '', completed: false });
+      setNewTask({ ...newTask, client: '', phone: '', address: '', notes: '', completed: false });
       setSelectedClientId('');
       setSaveAsClient(false);
       setShowModal(false);
@@ -327,7 +340,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
 
       toast({ title: `${count} agendamentos criados em ${activeConfig.label}` });
-      setFixedTask({ ...fixedTask, client: '', phone: '', notes: '', completed: false });
+      setFixedTask({ ...fixedTask, client: '', phone: '', address: '', notes: '', completed: false });
+      setSelectedClientId('');
       setShowModal(false);
     } finally {
       setSaving(false);
@@ -395,7 +409,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         title: `${addedCount} agendamentos criados`,
         description: 'Verifique as abas dos meses seguintes se necessário'
       });
-      setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', notes: '', completed: false });
+      setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', address: '', notes: '', completed: false });
+      setSelectedClientId('');
       setShowModal(false);
     } finally {
       setSaving(false);
