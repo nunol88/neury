@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          created_at: string
+          id: string
+          morada: string | null
+          nome: string
+          notas: string | null
+          preco_hora: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          morada?: string | null
+          nome: string
+          notas?: string | null
+          preco_hora?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          morada?: string | null
+          nome?: string
+          notas?: string | null
+          preco_hora?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
