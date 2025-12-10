@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { 
-  Plus, Trash2, Check, MapPin, Calendar, Save, Printer, X, 
+  Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const MONTHS_CONFIG = {
   december: {
@@ -386,8 +388,51 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     return allTasks[activeMonth].reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
   };
 
-  const printSchedule = () => {
-    window.print();
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const tasks = allTasks[activeMonth];
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Agenda da Neury - ${activeConfig.label}`, 14, 20);
+    
+    // Prepare table data
+    const tableData = tasks.map(task => {
+      const date = new Date(task.date);
+      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+      const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      
+      return [
+        `${formattedDate} (${dayName})`,
+        task.client,
+        task.phone || '-',
+        `${task.startTime} - ${task.endTime}`,
+        task.address || '-',
+        `€${task.price}`,
+        task.completed ? 'Concluído' : 'Pendente'
+      ];
+    });
+    
+    // Add table
+    autoTable(doc, {
+      head: [['Data', 'Cliente', 'Telefone', 'Horário', 'Morada', 'Preço', 'Estado']],
+      body: tableData,
+      startY: 30,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [100, 100, 100] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+    
+    // Total
+    const finalY = (doc as any).lastAutoTable.finalY || 30;
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total: €${calculateMonthTotal().toFixed(2)}`, 14, finalY + 10);
+    
+    // Save
+    doc.save(`agenda-${activeMonth}-${activeConfig.year}.pdf`);
+    toast({ title: 'PDF exportado com sucesso' });
   };
 
   const handleSignOut = async () => {
@@ -488,14 +533,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
           <div className="mt-4 md:mt-0 flex gap-3 flex-wrap">
             <button
-              onClick={printSchedule}
+              onClick={exportToPDF}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
-              <Printer size={20} />
-              <span className="hidden sm:inline">Imprimir</span>
+              <Download size={20} />
+              <span className="hidden sm:inline">Exportar PDF</span>
             </button>
-
-            {/* Botão de imprimir já está acima */}
           </div>
         </div>
       </header>
