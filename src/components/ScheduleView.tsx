@@ -162,7 +162,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const handleInputChange = (setter: any, state: any, field: string, value: string) => {
     const updatedTask = { ...state, [field]: value };
-    if (field === 'startTime' || field === 'endTime') {
+    if (field === 'startTime' || field === 'endTime' || field === 'pricePerHour') {
       const newPrice = calculatePrice(updatedTask.startTime, updatedTask.endTime, updatedTask.pricePerHour);
       if (newPrice) updatedTask.price = newPrice;
     }
@@ -853,8 +853,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label>
-                      <input type="number" readOnly disabled value={newTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={newTask.pricePerHour} onChange={(e) => handleInputChange(setNewTask, newTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
@@ -967,8 +967,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label>
-                      <input type="number" readOnly disabled value={fixedTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={fixedTask.pricePerHour} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
@@ -1066,8 +1066,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">€/h (Fixo)</label>
-                      <input type="number" readOnly disabled value={biWeeklyTask.pricePerHour} className="w-full p-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={biWeeklyTask.pricePerHour} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
