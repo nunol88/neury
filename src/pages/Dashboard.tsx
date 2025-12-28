@@ -57,6 +57,20 @@ const Dashboard = () => {
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clients, loading: loadingClients } = useClients();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
+  // Get available years from tasks
+  const availableYears = useMemo(() => {
+    const allTasksFlat: Task[] = Object.values(allTasks).flat();
+    const years = new Set<number>();
+    allTasksFlat.forEach(task => {
+      const year = parseISO(task.date).getFullYear();
+      years.add(year);
+    });
+    // Add current year if not present
+    years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [allTasks]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,13 +79,18 @@ const Dashboard = () => {
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
 
-  // Filter tasks by period
+  // Filter tasks by period and year
   const filteredTasks = useMemo(() => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
     const now = new Date();
+    const referenceDate = new Date(selectedYear, now.getMonth(), now.getDate());
 
     if (periodFilter === 'all') {
-      return allTasksFlat;
+      // Filter by year only when "all" is selected
+      return allTasksFlat.filter(task => {
+        const taskYear = parseISO(task.date).getFullYear();
+        return taskYear === selectedYear;
+      });
     }
 
     let start: Date;
@@ -79,32 +98,31 @@ const Dashboard = () => {
 
     switch (periodFilter) {
       case 'daily':
-        start = startOfDay(now);
-        end = endOfDay(now);
+        // For daily, use current date but in selected year
+        start = startOfDay(referenceDate);
+        end = endOfDay(referenceDate);
         break;
       case 'weekly':
-        start = startOfWeek(now, { weekStartsOn: 1 });
-        end = endOfWeek(now, { weekStartsOn: 1 });
+        start = startOfWeek(referenceDate, { weekStartsOn: 1 });
+        end = endOfWeek(referenceDate, { weekStartsOn: 1 });
         break;
       case 'monthly':
-        start = startOfMonth(now);
-        end = endOfMonth(now);
+        start = startOfMonth(referenceDate);
+        end = endOfMonth(referenceDate);
         break;
       case 'quarterly':
-        // Current quarter
-        const currentQuarter = Math.floor(now.getMonth() / 3);
-        start = new Date(now.getFullYear(), currentQuarter * 3, 1);
-        end = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0, 23, 59, 59, 999);
+        const currentQuarter = Math.floor(referenceDate.getMonth() / 3);
+        start = new Date(selectedYear, currentQuarter * 3, 1);
+        end = new Date(selectedYear, currentQuarter * 3 + 3, 0, 23, 59, 59, 999);
         break;
       case 'semester':
-        // Current semester
-        const currentSemester = now.getMonth() < 6 ? 0 : 1;
-        start = new Date(now.getFullYear(), currentSemester * 6, 1);
-        end = new Date(now.getFullYear(), currentSemester * 6 + 6, 0, 23, 59, 59, 999);
+        const currentSemester = referenceDate.getMonth() < 6 ? 0 : 1;
+        start = new Date(selectedYear, currentSemester * 6, 1);
+        end = new Date(selectedYear, currentSemester * 6 + 6, 0, 23, 59, 59, 999);
         break;
       case 'yearly':
-        start = startOfYear(now);
-        end = endOfYear(now);
+        start = new Date(selectedYear, 0, 1);
+        end = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
         break;
       default:
         return allTasksFlat;
@@ -114,7 +132,7 @@ const Dashboard = () => {
       const taskDate = parseISO(task.date);
       return isWithinInterval(taskDate, { start, end });
     });
-  }, [allTasks, periodFilter]);
+  }, [allTasks, periodFilter, selectedYear]);
 
   // Calculate statistics based on filtered tasks
   const stats = useMemo(() => {
@@ -218,25 +236,27 @@ const Dashboard = () => {
   // Get period display text
   const getPeriodDisplay = () => {
     const now = new Date();
+    const refMonth = now.getMonth();
     switch (periodFilter) {
       case 'daily':
-        return format(now, "EEEE, d 'de' MMMM", { locale: pt });
+        return format(new Date(selectedYear, refMonth, now.getDate()), "EEEE, d 'de' MMMM", { locale: pt });
       case 'weekly':
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const refDate = new Date(selectedYear, refMonth, now.getDate());
+        const weekStart = startOfWeek(refDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(refDate, { weekStartsOn: 1 });
         return `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
       case 'monthly':
-        return format(now, "MMMM 'de' yyyy", { locale: pt });
+        return format(new Date(selectedYear, refMonth, 1), "MMMM 'de' yyyy", { locale: pt });
       case 'quarterly':
-        const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
-        return `${currentQuarter}º Trimestre de ${now.getFullYear()}`;
+        const currentQuarter = Math.floor(refMonth / 3) + 1;
+        return `${currentQuarter}º Trimestre de ${selectedYear}`;
       case 'semester':
-        const currentSemester = now.getMonth() < 6 ? 1 : 2;
-        return `${currentSemester}º Semestre de ${now.getFullYear()}`;
+        const currentSemester = refMonth < 6 ? 1 : 2;
+        return `${currentSemester}º Semestre de ${selectedYear}`;
       case 'yearly':
-        return format(now, 'yyyy');
+        return `${selectedYear}`;
       case 'all':
-        return 'Todos os períodos';
+        return `Ano ${selectedYear}`;
     }
   };
 
@@ -294,13 +314,28 @@ const Dashboard = () => {
             </h1>
           </div>
           
+          {/* Year Selector */}
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          
           {/* Period Filter Buttons */}
           <div className="flex flex-wrap gap-2">
             {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map((period) => (
               <button
                 key={period}
                 onClick={() => setPeriodFilter(period)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                   periodFilter === period
                     ? 'bg-purple-600 text-white shadow-md'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
