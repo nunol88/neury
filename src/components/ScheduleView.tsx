@@ -1,21 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, Copy, Undo2,
-  ArrowUp, ArrowDown, BarChart3, CalendarDays, Menu, ChevronLeft, Sun, Moon
+  Phone, Repeat, CalendarRange, Pencil, Loader2, Users, UserPlus,
+  CalendarDays
 } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/hooks/useTheme';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import CalendarModal from '@/components/CalendarModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -23,128 +16,29 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const MONTHS_CONFIG = {
-  december: {
-    id: 'december',
-    label: 'Dezembro 2025',
-    year: 2025,
-    monthIndex: 11,
-    startDay: 8,
-    endDay: 31,
-    color: 'purple',
-  },
-  january: {
-    id: 'january',
-    label: 'Janeiro 2026',
-    year: 2026,
-    monthIndex: 0,
-    startDay: 1,
-    endDay: 31,
-    color: 'blue',
-  },
-  february: {
-    id: 'february',
-    label: 'Fevereiro 2026',
-    year: 2026,
-    monthIndex: 1,
-    startDay: 1,
-    endDay: 28,
-    color: 'pink',
-  },
-  march: {
-    id: 'march',
-    label: 'Março 2026',
-    year: 2026,
-    monthIndex: 2,
-    startDay: 1,
-    endDay: 31,
-    color: 'green',
-  },
-  april: {
-    id: 'april',
-    label: 'Abril 2026',
-    year: 2026,
-    monthIndex: 3,
-    startDay: 1,
-    endDay: 30,
-    color: 'yellow',
-  },
-  may: {
-    id: 'may',
-    label: 'Maio 2026',
-    year: 2026,
-    monthIndex: 4,
-    startDay: 1,
-    endDay: 31,
-    color: 'emerald',
-  },
-  june: {
-    id: 'june',
-    label: 'Junho 2026',
-    year: 2026,
-    monthIndex: 5,
-    startDay: 1,
-    endDay: 30,
-    color: 'cyan',
-  },
-  july: {
-    id: 'july',
-    label: 'Julho 2026',
-    year: 2026,
-    monthIndex: 6,
-    startDay: 1,
-    endDay: 31,
-    color: 'sky',
-  },
-  august: {
-    id: 'august',
-    label: 'Agosto 2026',
-    year: 2026,
-    monthIndex: 7,
-    startDay: 1,
-    endDay: 31,
-    color: 'orange',
-  },
-  september: {
-    id: 'september',
-    label: 'Setembro 2026',
-    year: 2026,
-    monthIndex: 8,
-    startDay: 1,
-    endDay: 30,
-    color: 'amber',
-  },
-  october: {
-    id: 'october',
-    label: 'Outubro 2026',
-    year: 2026,
-    monthIndex: 9,
-    startDay: 1,
-    endDay: 31,
-    color: 'red',
-  },
-  november: {
-    id: 'november',
-    label: 'Novembro 2026',
-    year: 2026,
-    monthIndex: 10,
-    startDay: 1,
-    endDay: 30,
-    color: 'rose',
-  },
-  december2026: {
-    id: 'december2026',
-    label: 'Dezembro 2026',
-    year: 2026,
-    monthIndex: 11,
-    startDay: 1,
-    endDay: 31,
-    color: 'violet',
-  }
-};
+// Import refactored components
+import {
+  DayCard,
+  ScheduleHeader,
+  MonthTabs,
+  UndoBar,
+  PositionDialog,
+  TypeSelectorModal,
+  SearchBar,
+} from '@/components/schedule';
 
-type MonthKey = keyof typeof MONTHS_CONFIG;
-const ALL_MONTH_KEYS: MonthKey[] = Object.keys(MONTHS_CONFIG) as MonthKey[];
+import {
+  generateMonthsConfig,
+  generateDaysForMonth,
+  getMonthKeyFromDate as getMonthKeyFromDateUtil,
+  getThemeGradient,
+  getBgColor,
+  calculatePrice,
+  validateTimeRange,
+  formatTime,
+  parseTime,
+  MonthConfig,
+} from '@/utils/monthConfig';
 
 interface ScheduleViewProps {
   isAdmin: boolean;
@@ -154,12 +48,29 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
-  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
+  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
   
-  const [activeMonth, setActiveMonth] = useState<MonthKey>('december');
+  // Generate dynamic month configuration (12 months from now)
+  const monthsConfig = useMemo(() => generateMonthsConfig(15), []);
+  const monthKeys = useMemo(() => Object.keys(monthsConfig), [monthsConfig]);
+  
+  // Get current month key
+  const getCurrentMonthKey = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    for (const [key, config] of Object.entries(monthsConfig)) {
+      if (config.year === year && config.monthIndex === month) {
+        return key;
+      }
+    }
+    return monthKeys[0];
+  };
+  
+  const [activeMonth, setActiveMonth] = useState<string>(getCurrentMonthKey());
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
@@ -170,6 +81,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [copiedTaskIds, setCopiedTaskIds] = useState<string[]>([]);
   const [showUndoBar, setShowUndoBar] = useState(false);
   const [copyingFromPrevious, setCopyingFromPrevious] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // State for undo move functionality
   const [lastMovedTask, setLastMovedTask] = useState<{
@@ -195,47 +107,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   // State for calendar modal
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
-  const generateDaysForMonth = (monthKey: string) => {
-    const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
-    const days = [];
-    for (let day = config.startDay; day <= config.endDay; day++) {
-      const date = new Date(config.year, config.monthIndex, day);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${d}`;
+  const activeConfig = monthsConfig[activeMonth];
+  const currentMonthDays = useMemo(() => 
+    activeConfig ? generateDaysForMonth(activeConfig) : [], 
+    [activeConfig]
+  );
 
-      days.push({
-        dateObject: date,
-        dateString: dateString,
-        dayName: date.toLocaleDateString('pt-BR', { weekday: 'long' }),
-        formatted: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        monthKey: monthKey
-      });
-    }
-    return days;
+  const getMonthKeyFromDate = (dateString: string): string | null => {
+    return getMonthKeyFromDateUtil(dateString, monthsConfig);
   };
 
-  const currentMonthDays = generateDaysForMonth(activeMonth);
-  const activeConfig = MONTHS_CONFIG[activeMonth];
-
-  const getMonthKeyFromDate = (dateString: string): keyof AllTasks | null => {
-    // Parse date string as YYYY-MM-DD to avoid timezone issues
-    const parts = dateString.split('-');
-    if (parts.length !== 3) return null;
+  // Filter tasks by search query
+  const getFilteredTasksForMonth = (monthKey: string): Task[] => {
+    const monthTasks = allTasks[monthKey as keyof AllTasks] || [];
+    if (!searchQuery.trim()) return monthTasks;
     
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // 0-indexed
-
-    if (year === 2025 && month === 11) return 'december';
-    if (year === 2026) {
-      const monthKeys: (keyof AllTasks)[] = [
-        'january', 'february', 'march', 'april', 'may', 'june',
-        'july', 'august', 'september', 'october', 'november', 'december2026'
-      ];
-      return monthKeys[month] || null;
-    }
-    return null;
+    const query = searchQuery.toLowerCase().trim();
+    return monthTasks.filter(task => 
+      task.client.toLowerCase().includes(query) ||
+      (task.address && task.address.toLowerCase().includes(query)) ||
+      (task.phone && task.phone.toLowerCase().includes(query)) ||
+      (task.notes && task.notes.toLowerCase().includes(query))
+    );
   };
 
   const [newTask, setNewTask] = useState({
@@ -289,18 +182,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const weekDaysList = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
 
-  const calculatePrice = (startStr: string, endStr: string, pricePerHour: string) => {
-    if (startStr && endStr && pricePerHour) {
-      const start = new Date(`1970-01-01T${startStr}`);
-      const end = new Date(`1970-01-01T${endStr}`);
-      let diffMs = end.getTime() - start.getTime();
-      if (diffMs <= 0) return null;
-      const diffHours = diffMs / (1000 * 60 * 60);
-      return (diffHours * parseFloat(pricePerHour)).toFixed(2);
-    }
-    return null;
-  };
-
   const handleInputChange = (setter: any, state: any, field: string, value: string) => {
     const updatedTask = { ...state, [field]: value };
     if (field === 'startTime' || field === 'endTime' || field === 'pricePerHour') {
@@ -327,7 +208,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         });
       }
     } else {
-      // Clear client fields when deselecting
       setter({
         ...state,
         client: '',
@@ -351,78 +231,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     e.dataTransfer.dropEffect = "move";
   };
 
-  // Calculate new times based on drop position relative to existing tasks
-  const calculateNewTimes = (
-    taskToMove: Task, 
-    targetDateString: string, 
-    dropY: number, 
-    containerRect: DOMRect
-  ): { newStartTime: string; newEndTime: string } => {
-    const targetMonthKey = getMonthKeyFromDate(targetDateString);
-    if (!targetMonthKey) {
-      return { newStartTime: taskToMove.startTime, newEndTime: taskToMove.endTime };
-    }
-
-    const existingTasks = allTasks[targetMonthKey]
-      .filter(t => t.date === targetDateString && t.id !== taskToMove.id)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-    if (existingTasks.length === 0) {
-      // No existing tasks, keep original times
-      return { newStartTime: taskToMove.startTime, newEndTime: taskToMove.endTime };
-    }
-
-    // Calculate task duration in minutes
-    const originalStart = new Date(`1970-01-01T${taskToMove.startTime}`);
-    const originalEnd = new Date(`1970-01-01T${taskToMove.endTime}`);
-    const durationMs = originalEnd.getTime() - originalStart.getTime();
-    const durationMinutes = durationMs / (1000 * 60);
-
-    // Helper to format time
-    const formatTime = (date: Date): string => {
-      const h = String(date.getHours()).padStart(2, '0');
-      const m = String(date.getMinutes()).padStart(2, '0');
-      return `${h}:${m}`;
-    };
-
-    // Helper to parse time string to Date
-    const parseTime = (timeStr: string): Date => {
-      return new Date(`1970-01-01T${timeStr}`);
-    };
-
-    // Calculate relative position in the container (0 = top, 1 = bottom)
-    const relativeY = (dropY - containerRect.top) / containerRect.height;
-    
-    // Determine if dropped in upper or lower half
-    if (relativeY < 0.5) {
-      // Dropped in upper half - place BEFORE the first task (1h gap)
-      const firstTask = existingTasks[0];
-      const firstTaskStart = parseTime(firstTask.startTime);
-      
-      // New task ends 1 hour before first task starts
-      const newEndTime = new Date(firstTaskStart.getTime() - (60 * 60 * 1000)); // 1 hour gap
-      const newStartTime = new Date(newEndTime.getTime() - durationMs);
-      
-      return {
-        newStartTime: formatTime(newStartTime),
-        newEndTime: formatTime(newEndTime)
-      };
-    } else {
-      // Dropped in lower half - place AFTER the last task (1h gap)
-      const lastTask = existingTasks[existingTasks.length - 1];
-      const lastTaskEnd = parseTime(lastTask.endTime);
-      
-      // New task starts 1 hour after last task ends
-      const newStartTime = new Date(lastTaskEnd.getTime() + (60 * 60 * 1000)); // 1 hour gap
-      const newEndTime = new Date(newStartTime.getTime() + durationMs);
-      
-      return {
-        newStartTime: formatTime(newStartTime),
-        newEndTime: formatTime(newEndTime)
-      };
-    }
-  };
-
   const handleDrop = async (e: React.DragEvent, targetDateString: string) => {
     if (!isAdmin) return;
     e.preventDefault();
@@ -430,8 +238,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     // Find the task
     let taskToMove: Task | null = null;
-    for (const monthKey of ALL_MONTH_KEYS) {
-      const found = allTasks[monthKey].find(t => t.id === taskId);
+    for (const monthKey of monthKeys) {
+      const monthTasks = allTasks[monthKey as keyof AllTasks] || [];
+      const found = monthTasks.find(t => t.id === taskId);
       if (found) {
         taskToMove = found;
         break;
@@ -444,7 +253,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     const targetMonthKey = getMonthKeyFromDate(targetDateString);
     if (!targetMonthKey) return;
 
-    const existingTasks = allTasks[targetMonthKey]
+    const targetTasks = allTasks[targetMonthKey as keyof AllTasks] || [];
+    const existingTasks = targetTasks
       .filter(t => t.date === targetDateString && t.id !== taskToMove!.id)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
@@ -469,7 +279,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     newStartTime: string, 
     newEndTime: string
   ) => {
-    // Store original state for undo
     const originalState = {
       id: taskToMove.id,
       originalDate: taskToMove.date,
@@ -478,7 +287,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       clientName: taskToMove.client
     };
 
-    // If same date but times changed, update the task
     if (taskToMove.date === targetDateString) {
       if (newStartTime !== taskToMove.startTime || newEndTime !== taskToMove.endTime) {
         const success = await updateTask(taskToMove.id, {
@@ -508,7 +316,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       return;
     }
 
-    // Different date - move with new times
     const success = await updateTask(taskToMove.id, {
       ...taskToMove,
       date: targetDateString,
@@ -541,39 +348,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     const { taskToMove, targetDateString, existingTasks } = pendingDrop;
     
-    // Calculate task duration in minutes
-    const originalStart = new Date(`1970-01-01T${taskToMove.startTime}`);
-    const originalEnd = new Date(`1970-01-01T${taskToMove.endTime}`);
+    const originalStart = parseTime(taskToMove.startTime);
+    const originalEnd = parseTime(taskToMove.endTime);
     const durationMs = originalEnd.getTime() - originalStart.getTime();
-
-    // Helper to format time
-    const formatTime = (date: Date): string => {
-      const h = String(date.getHours()).padStart(2, '0');
-      const m = String(date.getMinutes()).padStart(2, '0');
-      return `${h}:${m}`;
-    };
-
-    // Helper to parse time string to Date
-    const parseTime = (timeStr: string): Date => {
-      return new Date(`1970-01-01T${timeStr}`);
-    };
 
     let newStartTime: string;
     let newEndTime: string;
 
     if (position === 'above') {
-      // Place BEFORE the first task (1h gap)
       const firstTask = existingTasks[0];
       const firstTaskStart = parseTime(firstTask.startTime);
-      const newEndDate = new Date(firstTaskStart.getTime() - (60 * 60 * 1000)); // 1 hour gap
+      const newEndDate = new Date(firstTaskStart.getTime() - (60 * 60 * 1000));
       const newStartDate = new Date(newEndDate.getTime() - durationMs);
       newStartTime = formatTime(newStartDate);
       newEndTime = formatTime(newEndDate);
     } else {
-      // Place AFTER the last task (1h gap)
       const lastTask = existingTasks[existingTasks.length - 1];
       const lastTaskEnd = parseTime(lastTask.endTime);
-      const newStartDate = new Date(lastTaskEnd.getTime() + (60 * 60 * 1000)); // 1 hour gap
+      const newStartDate = new Date(lastTaskEnd.getTime() + (60 * 60 * 1000));
       const newEndDate = new Date(newStartDate.getTime() + durationMs);
       newStartTime = formatTime(newStartDate);
       newEndTime = formatTime(newEndDate);
@@ -590,10 +382,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     setSaving(true);
     try {
-      // Find the task
       let taskToRestore: Task | null = null;
-      for (const monthKey of ALL_MONTH_KEYS) {
-        const found = allTasks[monthKey].find(t => t.id === lastMovedTask.id);
+      for (const monthKey of monthKeys) {
+        const monthTasks = allTasks[monthKey as keyof AllTasks] || [];
+        const found = monthTasks.find(t => t.id === lastMovedTask.id);
         if (found) {
           taskToRestore = found;
           break;
@@ -609,7 +401,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         return;
       }
 
-      // Restore to original state
       const success = await updateTask(lastMovedTask.id, {
         ...taskToRestore,
         date: lastMovedTask.originalDate,
@@ -661,10 +452,20 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     e.preventDefault();
     if (!newTask.client) return;
 
+    // Validate time range
+    const timeValidation = validateTimeRange(newTask.startTime, newTask.endTime);
+    if (!timeValidation.valid) {
+      toast({
+        title: 'Horário inválido',
+        description: timeValidation.message,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSaving(true);
 
     try {
-      // Save as client if checkbox is checked and it's a new client
       if (saveAsClient && !selectedClientId && newTask.client) {
         await addClient({
           nome: newTask.client,
@@ -686,7 +487,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         if (!targetMonth) {
           toast({ 
             title: 'Data inválida', 
-            description: 'Data fora do período permitido (Dez/25 a Fev/26)',
+            description: 'Data fora do período permitido',
             variant: 'destructive'
           });
           return;
@@ -710,18 +511,26 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const handleAddFixedTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fixedTask.client) return;
+
+    // Validate time range
+    const timeValidation = validateTimeRange(fixedTask.startTime, fixedTask.endTime);
+    if (!timeValidation.valid) {
+      toast({
+        title: 'Horário inválido',
+        description: timeValidation.message,
+        variant: 'destructive'
+      });
+      return;
+    }
     
     setSaving(true);
 
     try {
       let count = 0;
       const normalizedWeekDay = fixedTask.weekDay.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      
-      console.log('Creating fixed tasks:', { weekDay: fixedTask.weekDay, normalized: normalizedWeekDay, activeMonth, daysCount: currentMonthDays.length });
 
       for (const day of currentMonthDays) {
         const normalizedDayName = day.dayName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        console.log('Checking day:', { dayName: day.dayName, normalized: normalizedDayName, date: day.dateString });
         
         if (normalizedDayName.includes(normalizedWeekDay)) {
           const taskData = {
@@ -736,7 +545,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             notes: fixedTask.notes,
             completed: fixedTask.completed
           };
-          console.log('Adding task for:', day.dateString);
           const result = await addTask(taskData);
           if (result) count++;
         }
@@ -763,11 +571,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const handleAddBiWeeklyTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!biWeeklyTask.client) return;
+
+    // Validate time range
+    const timeValidation = validateTimeRange(biWeeklyTask.startTime, biWeeklyTask.endTime);
+    if (!timeValidation.valid) {
+      toast({
+        title: 'Horário inválido',
+        description: timeValidation.message,
+        variant: 'destructive'
+      });
+      return;
+    }
     
     setSaving(true);
 
     try {
-      const allDaysContinuous = ALL_MONTH_KEYS.flatMap(key => generateDaysForMonth(key));
+      const allDaysContinuous = monthKeys.flatMap(key => 
+        generateDaysForMonth(monthsConfig[key])
+      );
 
       const startIndex = allDaysContinuous.findIndex(d => d.dateString === biWeeklyTask.startDate);
 
@@ -778,7 +599,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       let addedCount = 0;
 
-      // First appointment
       const firstDate = allDaysContinuous[startIndex];
       const firstResult = await addTask({
         date: firstDate.dateString,
@@ -794,7 +614,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       });
       if (firstResult) addedCount++;
 
-      // Second appointment (14 days later)
       const nextIndex = startIndex + 14;
       if (nextIndex < allDaysContinuous.length) {
         const nextDate = allDaysContinuous[nextIndex];
@@ -841,17 +660,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   };
 
   const calculateMonthTotal = () => {
-    return allTasks[activeMonth].reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+    const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+    return monthTasks.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
   };
 
-  const getPreviousMonth = (): keyof AllTasks | null => {
-    const monthOrder: MonthKey[] = [
-      'december', 'january', 'february', 'march', 'april', 'may',
-      'june', 'july', 'august', 'september', 'october', 'november', 'december2026'
-    ];
-    const currentIndex = monthOrder.indexOf(activeMonth);
-    if (currentIndex <= 0) return null; // December 2025 has no previous month
-    return monthOrder[currentIndex - 1];
+  const getPreviousMonth = (): string | null => {
+    const currentIndex = monthKeys.indexOf(activeMonth);
+    if (currentIndex <= 0) return null;
+    return monthKeys[currentIndex - 1];
   };
 
   const handleCopyFromPreviousMonth = async () => {
@@ -859,23 +675,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     if (!previousMonth) {
       toast({
         title: 'Não é possível copiar',
-        description: 'Dezembro não tem mês anterior neste período.',
+        description: 'Este é o primeiro mês disponível.',
         variant: 'destructive'
       });
       return;
     }
 
-    const previousTasks = allTasks[previousMonth];
+    const previousTasks = allTasks[previousMonth as keyof AllTasks] || [];
     if (previousTasks.length === 0) {
       toast({
         title: 'Mês anterior vazio',
-        description: `Não há agendamentos em ${MONTHS_CONFIG[previousMonth].label} para copiar.`,
+        description: `Não há agendamentos em ${monthsConfig[previousMonth]?.label || previousMonth} para copiar.`,
         variant: 'destructive'
       });
       return;
     }
 
-    // Filter tasks by clients that exist in our clients list
     const clientNames = clients.map(c => c.nome.toLowerCase());
     const tasksToClone = previousTasks.filter(t => 
       clientNames.includes(t.client.toLowerCase())
@@ -895,30 +710,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     
     try {
       const newTaskIds: string[] = [];
-      const currentConfig = MONTHS_CONFIG[activeMonth];
-      const previousConfig = MONTHS_CONFIG[previousMonth];
 
       for (const task of tasksToClone) {
-        // Calculate the equivalent date in current month
         const oldDate = new Date(task.date);
         const dayOfMonth = oldDate.getUTCDate();
-        
-        // Try to find the same day of week in the current month
-        let newDateStr = '';
         const oldDayOfWeek = oldDate.getUTCDay();
         
-        // Find all days in current month with same weekday
         const matchingDays = currentMonthDays.filter(d => 
           d.dateObject.getDay() === oldDayOfWeek
         );
         
+        let newDateStr = '';
         if (matchingDays.length > 0) {
-          // Find which week of month the old date was in
           const weekOfMonth = Math.ceil(dayOfMonth / 7);
           const targetDay = matchingDays[Math.min(weekOfMonth - 1, matchingDays.length - 1)];
           newDateStr = targetDay.dateString;
         } else {
-          // Fallback: use first day of month
           newDateStr = currentMonthDays[0]?.dateString || '';
         }
 
@@ -947,10 +754,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         setShowUndoBar(true);
         toast({
           title: `${newTaskIds.length} agendamentos copiados`,
-          description: `Dados de ${MONTHS_CONFIG[previousMonth].label} copiados para ${currentConfig.label}`,
+          description: `Dados de ${monthsConfig[previousMonth]?.label || previousMonth} copiados para ${activeConfig.label}`,
         });
         
-        // Auto-hide undo bar after 15 seconds
         setTimeout(() => {
           setShowUndoBar(false);
           setCopiedTaskIds([]);
@@ -1008,11 +814,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const tasks = allTasks[activeMonth];
+    const tasks = allTasks[activeMonth as keyof AllTasks] || [];
     const completedTasks = tasks.filter(t => t.completed);
     const pendingTasks = tasks.filter(t => !t.completed);
     
-    // Header with logo placeholder
     doc.setFillColor(139, 92, 246);
     doc.rect(0, 0, 220, 35, 'F');
     doc.setFontSize(22);
@@ -1021,7 +826,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     doc.setFontSize(12);
     doc.text(`Agenda - ${activeConfig.label}`, 14, 28);
     
-    // Summary section
     doc.setFontSize(11);
     doc.setTextColor(80, 80, 80);
     const totalConcluido = completedTasks.reduce((s, t) => s + parseFloat(t.price || '0'), 0);
@@ -1035,7 +839,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     doc.text(`Total Agendamentos: ${tasks.length}  |  Concluídos: ${completedTasks.length}  |  Pendentes: ${pendingTasks.length}`, 14, 45);
     doc.text(`Horas: ${totalHoras.toFixed(1)}h  |  Faturado: €${totalConcluido.toFixed(2)}  |  Pendente: €${totalPendente.toFixed(2)}`, 14, 52);
     
-    // Prepare table data
     const tableData = tasks.map(task => {
       const date = new Date(task.date);
       const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
@@ -1052,7 +855,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       ];
     });
     
-    // Add table
     autoTable(doc, {
       head: [['Data', 'Cliente', 'Telefone', 'Horário', 'Morada', 'Preço', '']],
       body: tableData,
@@ -1075,7 +877,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
     });
     
-    // Footer
     const finalY = (doc as any).lastAutoTable.finalY || 58;
     doc.setDrawColor(139, 92, 246);
     doc.setLineWidth(0.5);
@@ -1089,7 +890,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     doc.setFontSize(8);
     doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 14, finalY + 24);
     
-    // Save
     doc.save(`agenda-${activeMonth}-${activeConfig.year}.pdf`);
     toast({ title: 'PDF exportado com sucesso' });
   };
@@ -1099,43 +899,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     navigate('/');
   };
 
-  const getThemeColor = () => {
-    const colorMap: Record<MonthKey, string> = {
-      december: 'from-purple-600 to-purple-800',
-      january: 'from-blue-600 to-blue-800',
-      february: 'from-pink-500 to-pink-700',
-      march: 'from-green-500 to-green-700',
-      april: 'from-yellow-500 to-yellow-700',
-      may: 'from-emerald-500 to-emerald-700',
-      june: 'from-cyan-500 to-cyan-700',
-      july: 'from-sky-500 to-sky-700',
-      august: 'from-orange-500 to-orange-700',
-      september: 'from-amber-500 to-amber-700',
-      october: 'from-red-500 to-red-700',
-      november: 'from-rose-500 to-rose-700',
-      december2026: 'from-violet-500 to-violet-700'
-    };
-    return colorMap[activeMonth] || 'from-purple-600 to-purple-800';
-  };
-
-  const getBgColor = () => {
-    const bgMap: Record<MonthKey, string> = {
-      december: 'bg-purple-50',
-      january: 'bg-blue-50',
-      february: 'bg-pink-50',
-      march: 'bg-green-50',
-      april: 'bg-yellow-50',
-      may: 'bg-emerald-50',
-      june: 'bg-cyan-50',
-      july: 'bg-sky-50',
-      august: 'bg-orange-50',
-      september: 'bg-amber-50',
-      october: 'bg-red-50',
-      november: 'bg-rose-50',
-      december2026: 'bg-violet-50'
-    };
-    return bgMap[activeMonth] || 'bg-purple-50';
-  };
+  const themeGradient = activeConfig ? getThemeGradient(activeConfig.color) : 'from-purple-600 to-purple-800';
+  const bgColor = activeConfig ? getBgColor(activeConfig.color) : 'bg-purple-50';
+  const headerBg = theme === 'dark' ? 'bg-secondary' : bgColor;
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = role === 'admin' ? 'Administrador' : 'Neury';
@@ -1151,161 +917,49 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     );
   }
 
+  const previousMonth = getPreviousMonth();
+  const previousMonthLabel = previousMonth ? monthsConfig[previousMonth]?.label : null;
+
   return (
-    <div className={`min-h-screen font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : getBgColor()}`}>
-
+    <div className={`min-h-screen font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
       {/* User Info Bar */}
-      <div className="bg-card border-b border-border px-4 py-2 print:hidden">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img 
-              src={logoMayslimpo} 
-              alt="MaysLimpo Logo" 
-              className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
-            />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="capitalize font-medium">{username}</span>
-              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                {roleLabel}
-              </span>
-              {!isAdmin && (
-                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">
-                  Apenas visualização
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleTheme}
-              className="p-2"
-              title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-            {isMobile ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Menu size={20} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover z-50">
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
-                        <BarChart3 size={16} className="mr-2" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/clientes')}>
-                        <Users size={16} className="mr-2" />
-                        Clientes
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut size={16} className="mr-2" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                {isAdmin && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate('/admin/dashboard')}
-                    >
-                      <BarChart3 size={16} className="mr-1" />
-                      Dashboard
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate('/admin/clientes')}
-                    >
-                      <Users size={16} className="mr-1" />
-                      Clientes
-                    </Button>
-                  </>
-                )}
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
-                  <LogOut size={16} className="mr-1" />
-                  Sair
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <ScheduleHeader
+        username={username}
+        roleLabel={roleLabel}
+        isAdmin={isAdmin}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onSignOut={handleSignOut}
+      />
 
-      {/* Navegação de Meses (Abas) */}
-      <div className="bg-card shadow-sm pt-2 px-2 sticky top-0 z-20 print:hidden overflow-x-auto">
-        <div className="max-w-7xl mx-auto flex gap-2 items-end">
-          {/* 2025 */}
-          <div className="flex items-end gap-1">
-            <span className="text-xs font-bold text-muted-foreground px-2 pb-3">2025</span>
-            {Object.values(MONTHS_CONFIG)
-              .filter(m => m.year === 2025)
-              .map((month) => (
-                <button
-                  key={month.id}
-                  onClick={() => setActiveMonth(month.id as MonthKey)}
-                  className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
-                    ${activeMonth === month.id
-                      ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
-                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                    }`}
-                >
-                  <Calendar size={14} />
-                  {month.label.split(' ')[0]}
-                </button>
-              ))}
-          </div>
-          
-          {/* Separator */}
-          <div className="h-8 w-px bg-border mx-1"></div>
-          
-          {/* 2026 */}
-          <div className="flex items-end gap-1">
-            <span className="text-xs font-bold text-muted-foreground px-2 pb-3">2026</span>
-            {Object.values(MONTHS_CONFIG)
-              .filter(m => m.year === 2026)
-              .map((month) => (
-                <button
-                  key={month.id}
-                  onClick={() => setActiveMonth(month.id as MonthKey)}
-                  className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
-                    ${activeMonth === month.id
-                      ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
-                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                    }`}
-                >
-                  <Calendar size={14} />
-                  {month.label.split(' ')[0]}
-                </button>
-              ))}
-          </div>
-        </div>
-      </div>
+      {/* Month Navigation Tabs */}
+      <MonthTabs
+        monthsConfig={monthsConfig}
+        activeMonth={activeMonth}
+        onMonthChange={setActiveMonth}
+      />
 
       {/* Header */}
-      <header className={`bg-gradient-to-r ${getThemeColor()} text-white p-6 shadow-lg print:hidden relative z-10 rounded-b-lg mx-2`}>
+      <header className={`bg-gradient-to-r ${themeGradient} text-white p-6 shadow-lg print:hidden relative z-10 rounded-b-lg mx-2`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               Agenda da Neury
             </h1>
             <p className="opacity-90 mt-1 flex items-center gap-2 text-lg font-medium">
-              Visualizando: {activeConfig.label}
+              Visualizando: {activeConfig?.label}
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0 flex gap-3 flex-wrap">
+          <div className="mt-4 md:mt-0 flex gap-3 flex-wrap items-center">
+            {/* Search Bar */}
+            <div className="w-64">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Pesquisar..."
+              />
+            </div>
             <button
               onClick={exportToPDF}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
@@ -1317,173 +971,107 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </header>
 
-      {/* Resumo Financeiro */}
+      {/* Financial Summary */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
         <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex justify-between items-center">
-          <span className="text-muted-foreground font-medium">Total previsto ({activeConfig.label}):</span>
+          <span className="text-muted-foreground font-medium">Total previsto ({activeConfig?.label}):</span>
           <span className="text-3xl font-bold flex items-center gap-1 text-primary">
             € {calculateMonthTotal().toFixed(2)}
           </span>
         </div>
       </div>
 
-      {/* Grid de Dias */}
+      {/* Search Results Indicator */}
+      {searchQuery && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <div className="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-between">
+            <span className="text-sm font-medium">
+              A pesquisar por: "{searchQuery}" - {filteredTasks[activeMonth as keyof AllTasks]?.length || 0} resultados neste mês
+            </span>
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="text-primary hover:text-primary/80"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Days Grid */}
       <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
         {currentMonthDays.map((dayObj) => {
-          const dayTasks = allTasks[activeMonth]
+          const dayTasks = (filteredTasks[activeMonth as keyof AllTasks] || [])
             .filter(t => t.date === dayObj.dateString)
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-          const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
-          const isSunday = dayObj.dateObject.getDay() === 0;
-
-          const borderClass = 'border-border';
-          const headerBg = theme === 'dark' ? 'bg-secondary' : (activeMonth === 'january' ? 'bg-blue-50' : activeMonth === 'february' ? 'bg-pink-50' : 'bg-purple-50');
-          const textHeader = 'text-card-foreground';
-
           return (
-            <div
+            <DayCard
               key={dayObj.dateString}
+              dayObj={dayObj}
+              tasks={dayTasks}
+              isAdmin={isAdmin}
+              isDarkMode={theme === 'dark'}
+              headerBg={headerBg}
               onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, dayObj.dateString)}
-              className={`rounded-xl shadow-sm overflow-hidden border flex flex-col print:mb-4 print:break-inside-avoid h-full transition-colors duration-200
-                ${isWeekend ? 'bg-muted border-border' : `bg-card ${borderClass}`}
-                ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
-              `}
-            >
-              <div className={`p-3 border-b border-border flex justify-between items-center ${isWeekend ? 'bg-muted' : headerBg}`}>
-                <div>
-                  <h2 className={`font-bold capitalize ${isSunday ? 'text-destructive' : textHeader}`}>
-                    {dayObj.dayName}
-                  </h2>
-                  <span className="text-xs text-muted-foreground font-semibold">{dayObj.formatted}</span>
-                </div>
-                {dayTasks.length > 0 && (
-                  <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full shadow-sm">
-                    {dayTasks.length}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-2 flex-1 min-h-[100px]">
-                {dayTasks.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-muted-foreground/50 text-xs italic">
-                    {isSunday ? 'Domingo' : 'Livre'}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {dayTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        draggable={isAdmin}
-                        onDragStart={(e) => handleDragStart(e, task)}
-                        className={`relative group p-2 rounded-lg border transition-all text-sm ${isAdmin ? 'cursor-move' : 'cursor-default'} ${task.completed
-                          ? 'bg-success/10 border-success/30'
-                          : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
-                          }`}
-                      >
-                        <div className="flex justify-between items-start mb-1">
-                          <span className={`font-bold truncate ${task.completed ? 'text-success line-through' : 'text-card-foreground'}`}>
-                            {task.client}
-                          </span>
-                          <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground whitespace-nowrap">
-                            {task.startTime} - {task.endTime}
-                          </span>
-                        </div>
-
-                        {task.phone && (
-                          <div className="text-xs text-primary truncate flex items-center gap-1 mb-1 font-medium">
-                            <Phone size={10} />
-                            {task.phone}
-                          </div>
-                        )}
-
-                        {task.address && (
-                          <div className="text-xs text-muted-foreground flex items-start gap-1 mb-1">
-                            <MapPin size={10} className="shrink-0 mt-0.5" />
-                            <span className="break-words">{task.address}</span>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-center border-t pt-1.5 border-dashed border-border mt-1">
-                          <div className="text-success font-bold text-xs flex items-center gap-0.5">
-                            € {task.price || '0'}
-                          </div>
-
-                          {isAdmin && (
-                            <div className="flex gap-1 print:hidden opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => openEditModal(task)}
-                                className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
-                                title="Editar"
-                              >
-                                <Pencil size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleToggleStatus(task.id, task.completed)}
-                                className={`p-1 rounded hover:scale-110 transition ${task.completed ? 'text-success bg-success/20' : 'text-muted-foreground hover:text-success hover:bg-success/10'
-                                  }`}
-                                title={task.completed ? "Desmarcar" : "Concluir"}
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(task.id)}
-                                className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:scale-110 transition"
-                                title="Apagar"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+              onDrop={handleDrop}
+              onDragStart={handleDragStart}
+              onEditTask={openEditModal}
+              onDeleteTask={handleDelete}
+              onToggleStatus={handleToggleStatus}
+            />
           );
         })}
       </main>
 
-      {/* Modal de Adicionar/Editar Tarefa */}
-      {showModal && isAdmin && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowModal(false)}
-          ></div>
-
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in">
-          <div className={`p-4 text-white flex justify-between items-center bg-gradient-to-r ${getThemeColor()}`}>
-              <div className="flex items-center gap-2">
-                {!editingId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setShowTypeSelector(true);
-                    }}
-                    className="hover:bg-white/20 p-2 rounded-full transition-colors"
-                    title="Voltar"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                )}
-                <h2 className="text-xl font-bold">{editingId ? 'Editar Agendamento' : 'Agendar Limpeza'}</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
+      {/* Task Form Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden overflow-y-auto animate-fade-in">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-8">
+            <div className={`bg-gradient-to-r ${themeGradient} text-white p-5 flex items-center justify-between sticky top-0`}>
+              <h3 className="font-bold text-lg">
+                {editingId ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </h3>
+              <button 
+                onClick={() => { setShowModal(false); setEditingId(null); }}
                 className="hover:bg-white/20 p-2 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 max-h-[70vh] overflow-y-auto">
+              {/* Tab selector */}
+              {!editingId && (
+                <div className="flex gap-2 mb-5 border-b border-border pb-4">
+                  <button
+                    onClick={() => setActiveTab('single')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1 ${
+                      activeTab === 'single' ? `bg-gradient-to-r ${themeGradient} text-white` : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    <Calendar size={14} /> Único
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('fixed')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1 ${
+                      activeTab === 'fixed' ? `bg-gradient-to-r ${themeGradient} text-white` : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    <Repeat size={14} /> Semanal
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('biweekly')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1 ${
+                      activeTab === 'biweekly' ? `bg-gradient-to-r ${themeGradient} text-white` : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    <CalendarRange size={14} /> Quinzenal
+                  </button>
+                </div>
+              )}
 
+              {/* Single Task Form */}
               {activeTab === 'single' && (
                 <form onSubmit={handleAddTask} className="space-y-4">
                   <div>
@@ -1491,23 +1079,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     <select
                       value={newTask.date}
                       onChange={(e) => handleInputChange(setNewTask, newTask, 'date', e.target.value)}
-                      className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       disabled={!!editingId}
+                      className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground disabled:bg-muted disabled:cursor-not-allowed"
                     >
-                      {editingId ? (
-                        <option value={newTask.date}>{new Date(newTask.date).toLocaleDateString('pt-BR')}</option>
-                      ) : (
-                        currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)
-                      )}
+                      {currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)}
                     </select>
-                    {editingId && <p className="text-xs text-muted-foreground mt-1">Para mudar o dia, arraste o cartão na agenda.</p>}
                   </div>
-                  {/* Client selector */}
+                  
                   {clients.length > 0 && !editingId && (
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
-                        <Users size={14} />
-                        Selecionar Cliente Existente
+                        <Users size={14} /> Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
@@ -1515,9 +1097,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>{c.nome}</option>
-                        ))}
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
                     </div>
                   )}
@@ -1534,6 +1114,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
@@ -1545,6 +1126,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
@@ -1555,6 +1137,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="time" required value={newTask.endTime} onChange={(e) => handleInputChange(setNewTask, newTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
@@ -1565,6 +1148,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="number" step="0.01" value={newTask.price} onChange={(e) => handleInputChange(setNewTask, newTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
@@ -1575,12 +1159,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       disabled={!!selectedClientId}
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
-                    {selectedClientId && (
-                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
-                    )}
                   </div>
 
-                  {/* Save as client checkbox */}
                   {!editingId && !selectedClientId && newTask.client && (
                     <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
                       <input
@@ -1597,14 +1177,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   <button 
                     type="submit" 
                     disabled={saving}
-                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${themeGradient} disabled:opacity-50`}
                   >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                    {editingId ? 'Salvar Alterações' : `Salvar em ${activeConfig.label}`}
+                    {editingId ? 'Salvar Alterações' : `Salvar em ${activeConfig?.label}`}
                   </button>
                 </form>
               )}
 
+              {/* Fixed Task Form */}
               {activeTab === 'fixed' && (
                 <form onSubmit={handleAddFixedTask} className="space-y-4">
                   <div>
@@ -1617,12 +1198,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       {weekDaysList.map(day => <option key={day} value={day}>{day}</option>)}
                     </select>
                   </div>
-                  {/* Client selector for fixed */}
+                  
                   {clients.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
-                        <Users size={14} />
-                        Selecionar Cliente Existente
+                        <Users size={14} /> Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
@@ -1630,12 +1210,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>{c.nome}</option>
-                        ))}
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
                     </div>
                   )}
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Cliente <span className="text-destructive">*</span></label>
                     <input 
@@ -1648,6 +1227,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
@@ -1659,6 +1239,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
@@ -1669,6 +1250,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="time" required value={fixedTask.endTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
@@ -1679,6 +1261,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="number" step="0.01" value={fixedTask.price} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
@@ -1689,21 +1272,20 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       disabled={!!selectedClientId}
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
-                    {selectedClientId && (
-                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
-                    )}
                   </div>
+                  
                   <button 
                     type="submit"
                     disabled={saving}
-                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${themeGradient} disabled:opacity-50`}
                   >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <Repeat size={18} />}
-                    Criar em todas as {fixedTask.weekDay}s de {activeConfig.label}
+                    Criar em todas as {fixedTask.weekDay}s de {activeConfig?.label}
                   </button>
                 </form>
               )}
 
+              {/* BiWeekly Task Form */}
               {activeTab === 'biweekly' && (
                 <form onSubmit={handleAddBiWeeklyTask} className="space-y-4">
                   <div>
@@ -1716,12 +1298,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       {currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)}
                     </select>
                   </div>
-                  {/* Client selector for biweekly */}
+                  
                   {clients.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
-                        <Users size={14} />
-                        Selecionar Cliente Existente
+                        <Users size={14} /> Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
@@ -1729,12 +1310,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>{c.nome}</option>
-                        ))}
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
                     </div>
                   )}
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Cliente <span className="text-destructive">*</span></label>
                     <input 
@@ -1747,6 +1327,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
@@ -1758,6 +1339,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
@@ -1768,6 +1350,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="time" required value={biWeeklyTask.endTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
                       <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
@@ -1778,6 +1361,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       <input type="number" step="0.01" value={biWeeklyTask.price} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
@@ -1788,24 +1372,122 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       disabled={!!selectedClientId}
                       className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
-                    {selectedClientId && (
-                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
-                    )}
                   </div>
+                  
                   <button 
                     type="submit"
                     disabled={saving}
-                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${getThemeColor()} disabled:opacity-50`}
+                    className={`w-full text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mt-4 bg-gradient-to-r ${themeGradient} disabled:opacity-50`}
                   >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <CalendarRange size={18} />}
                     Criar Quinzenalmente
                   </button>
                 </form>
               )}
-
             </div>
           </div>
         </div>
+      )}
+
+      {/* Type Selector Modal */}
+      {showTypeSelector && activeConfig && (
+        <TypeSelectorModal
+          activeConfig={activeConfig}
+          previousMonthLabel={previousMonthLabel}
+          canCopyFromPrevious={!!previousMonth}
+          copyingFromPrevious={copyingFromPrevious}
+          onSelectSingle={() => {
+            setActiveTab('single');
+            setShowTypeSelector(false);
+            setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
+            setShowModal(true);
+          }}
+          onSelectFixed={() => {
+            setActiveTab('fixed');
+            setShowTypeSelector(false);
+            setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
+            setShowModal(true);
+          }}
+          onSelectBiWeekly={() => {
+            setActiveTab('biweekly');
+            setShowTypeSelector(false);
+            setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
+            setShowModal(true);
+          }}
+          onCopyFromPrevious={handleCopyFromPreviousMonth}
+          onClose={() => setShowTypeSelector(false)}
+        />
+      )}
+
+      {/* Position Dialog */}
+      {showPositionDialog && pendingDrop && (
+        <PositionDialog
+          taskToMove={pendingDrop.taskToMove}
+          existingTasks={pendingDrop.existingTasks}
+          onPositionChoice={handlePositionChoice}
+          onCancel={() => {
+            setShowPositionDialog(false);
+            setPendingDrop(null);
+          }}
+        />
+      )}
+
+      {/* Undo Bars */}
+      {showUndoBar && copiedTaskIds.length > 0 && (
+        <UndoBar
+          message={`${copiedTaskIds.length} agendamentos copiados`}
+          onUndo={handleUndoCopy}
+          onDismiss={() => {
+            setShowUndoBar(false);
+            setCopiedTaskIds([]);
+          }}
+          saving={saving}
+        />
+      )}
+
+      {showMoveUndoBar && lastMovedTask && (
+        <UndoBar
+          message={`${lastMovedTask.clientName} movido`}
+          onUndo={handleUndoMove}
+          onDismiss={() => {
+            setShowMoveUndoBar(false);
+            setLastMovedTask(null);
+          }}
+          saving={saving}
+          variant="move"
+        />
+      )}
+
+      {/* Calendar Modal */}
+      <CalendarModal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        allTasks={allTasks}
+        isLoading={loading}
+      />
+
+      {/* Floating Calendar Button */}
+      <button
+        onClick={() => setShowCalendarModal(true)}
+        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r from-red-500 to-red-600 text-white"
+        title="Ver Calendário"
+      >
+        <CalendarDays size={26} />
+      </button>
+
+      {/* Floating New Button - Admin Only */}
+      {isAdmin && (
+        <button
+          onClick={() => {
+            setEditingId(null);
+            setSelectedClientId('');
+            setShowTypeSelector(true);
+          }}
+          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r ${themeGradient} text-white`}
+          title="Novo Agendamento"
+        >
+          <Plus size={28} />
+        </button>
       )}
 
       <style>{`
@@ -1822,284 +1504,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           main { position: absolute; left: 0; top: 0; }
         }
       `}</style>
-
-      {/* Popup de Seleção de Tipo */}
-      {showTypeSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
-            <div className={`bg-gradient-to-r ${getThemeColor()} text-white p-5 flex items-center justify-between`}>
-              <h3 className="font-bold text-lg">Tipo de Agendamento</h3>
-              <button 
-                onClick={() => setShowTypeSelector(false)}
-                className="hover:bg-white/20 p-2 rounded-full transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6 space-y-3">
-              <button
-                onClick={() => {
-                  setActiveTab('single');
-                  setShowTypeSelector(false);
-                  setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
-                  setShowModal(true);
-                }}
-                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar size={24} className="text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-card-foreground">Único</p>
-                  <p className="text-sm text-muted-foreground">Agendamento para um dia específico</p>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setActiveTab('fixed');
-                  setShowTypeSelector(false);
-                  setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
-                  setShowModal(true);
-                }}
-                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Repeat size={24} className="text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-card-foreground">Semanal</p>
-                  <p className="text-sm text-muted-foreground">Repetir todas as semanas no mesmo dia</p>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setActiveTab('biweekly');
-                  setShowTypeSelector(false);
-                  setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
-                  setShowModal(true);
-                }}
-                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <CalendarRange size={24} className="text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-card-foreground">Quinzenal</p>
-                  <p className="text-sm text-muted-foreground">Repetir a cada 2 semanas</p>
-                </div>
-              </button>
-
-              {/* Separator */}
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 border-t border-border"></div>
-                <span className="text-xs text-muted-foreground font-medium">OU</span>
-                <div className="flex-1 border-t border-border"></div>
-              </div>
-
-              {/* Copy from Previous Month Button */}
-              <button
-                onClick={handleCopyFromPreviousMonth}
-                disabled={copyingFromPrevious || activeMonth === 'december'}
-                className={`w-full p-4 border-2 rounded-xl transition-all flex items-center gap-4 ${
-                  activeMonth === 'december' 
-                    ? 'border-border bg-muted cursor-not-allowed opacity-50' 
-                    : 'border-border hover:border-success hover:bg-success/5'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  activeMonth === 'december' ? 'bg-muted' : 'bg-success/10'
-                }`}>
-                  {copyingFromPrevious ? (
-                    <Loader2 size={24} className="text-success animate-spin" />
-                  ) : (
-                    <Copy size={24} className={activeMonth === 'december' ? 'text-muted-foreground' : 'text-success'} />
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className={`font-bold ${activeMonth === 'december' ? 'text-muted-foreground' : 'text-card-foreground'}`}>
-                    Copiar do Mês Anterior
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {activeMonth === 'december' 
-                      ? 'Não disponível para Dezembro' 
-                      : `Copiar clientes cadastrados de ${MONTHS_CONFIG[getPreviousMonth()!]?.label || ''}`
-                    }
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Escolha de Posição */}
-      {showPositionDialog && pendingDrop && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden animate-fade-in">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-border bg-gradient-to-r from-primary to-primary/80 text-white">
-              <h2 className="text-xl font-bold">Escolher Posição</h2>
-              <p className="text-white/80 text-sm mt-1">
-                Onde quer colocar <strong>{pendingDrop.taskToMove.client}</strong>?
-              </p>
-            </div>
-            
-            <div className="p-6 space-y-3">
-              <p className="text-sm text-muted-foreground mb-4">
-                Este dia já tem {pendingDrop.existingTasks.length} agendamento(s). 
-                Escolha se quer colocar antes ou depois:
-              </p>
-              
-              {/* Existing tasks preview */}
-              <div className="bg-secondary rounded-lg p-3 mb-4">
-                <p className="text-xs text-muted-foreground mb-2 font-medium">Agendamentos existentes:</p>
-                {pendingDrop.existingTasks.map((task, idx) => (
-                  <div key={idx} className="text-sm text-card-foreground flex justify-between">
-                    <span>{task.client}</span>
-                    <span className="text-muted-foreground">{task.startTime} - {task.endTime}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Position buttons */}
-              <button
-                onClick={() => handlePositionChoice('above')}
-                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ArrowUp size={24} className="text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-card-foreground">Colocar Antes</p>
-                  <p className="text-sm text-muted-foreground">1 hora antes do primeiro agendamento</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handlePositionChoice('below')}
-                className="w-full p-4 border-2 border-border rounded-xl hover:border-success hover:bg-success/5 transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-                  <ArrowDown size={24} className="text-success" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-card-foreground">Colocar Depois</p>
-                  <p className="text-sm text-muted-foreground">1 hora depois do último agendamento</p>
-                </div>
-              </button>
-            </div>
-
-            <div className="p-4 border-t border-border bg-secondary">
-              <button
-                onClick={() => {
-                  setShowPositionDialog(false);
-                  setPendingDrop(null);
-                }}
-                className="w-full py-2 text-muted-foreground hover:text-foreground font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Barra de Desfazer - Cópia */}
-      {showUndoBar && copiedTaskIds.length > 0 && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 print:hidden animate-fade-in">
-          <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4">
-            <span className="text-sm">
-              {copiedTaskIds.length} agendamentos copiados
-            </span>
-            <button
-              onClick={handleUndoCopy}
-              disabled={saving}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors text-sm font-medium"
-            >
-              {saving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Undo2 size={16} />
-              )}
-              Desfazer
-            </button>
-            <button
-              onClick={() => {
-                setShowUndoBar(false);
-                setCopiedTaskIds([]);
-              }}
-              className="hover:bg-white/20 p-1 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Barra de Desfazer - Movimento */}
-      {showMoveUndoBar && lastMovedTask && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 print:hidden animate-fade-in">
-          <div className="bg-orange-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4">
-            <span className="text-sm">
-              <strong>{lastMovedTask.clientName}</strong> movido
-            </span>
-            <button
-              onClick={handleUndoMove}
-              disabled={saving}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors text-sm font-medium"
-            >
-              {saving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Undo2 size={16} />
-              )}
-              Desfazer
-            </button>
-            <button
-              onClick={() => {
-                setShowMoveUndoBar(false);
-                setLastMovedTask(null);
-              }}
-              className="hover:bg-white/20 p-1 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Modal */}
-      <CalendarModal
-        isOpen={showCalendarModal}
-        onClose={() => setShowCalendarModal(false)}
-        allTasks={allTasks}
-        isLoading={loading}
-      />
-
-      {/* Botão Flutuante Calendário - Canto inferior esquerdo */}
-      <button
-        onClick={() => setShowCalendarModal(true)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r from-red-500 to-red-600 text-white"
-        title="Ver Calendário"
-      >
-        <CalendarDays size={26} />
-      </button>
-
-      {/* Botão Flutuante Novo - Apenas Admin - Canto inferior direito */}
-      {isAdmin && (
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setSelectedClientId('');
-            setShowTypeSelector(true);
-          }}
-          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r ${getThemeColor()} text-white`}
-          title="Novo Agendamento"
-        >
-          <Plus size={28} />
-        </button>
-      )}
     </div>
   );
 };
