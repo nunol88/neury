@@ -31,12 +31,19 @@ function getLastDayOfMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
-// Generate month key that handles year suffix for duplicate months
-function generateMonthKey(monthIndex: number, year: number, baseYear: number): string {
+// Generate month key - use simple names without year suffix for 2026 months (except december2026)
+// This maintains compatibility with the existing useAgendamentos hook
+function generateMonthKey(monthIndex: number, year: number): string {
   const baseKey = MONTH_KEYS[monthIndex];
-  if (year > baseYear) {
-    return `${baseKey}${year}`;
+  // Special case: December 2026 needs suffix to distinguish from December 2025
+  if (monthIndex === 11 && year === 2026) {
+    return 'december2026';
   }
+  // December 2025 is just 'december'
+  if (monthIndex === 11 && year === 2025) {
+    return 'december';
+  }
+  // All other months in 2026 use simple names
   return baseKey;
 }
 
@@ -52,7 +59,7 @@ export function generateMonthsConfig(monthsAhead: number = 12): Record<string, M
     const date = new Date(currentYear, currentMonth + i, 1);
     const year = date.getFullYear();
     const monthIndex = date.getMonth();
-    const key = generateMonthKey(monthIndex, year, currentYear);
+    const key = generateMonthKey(monthIndex, year);
     
     config[key] = {
       id: key,
