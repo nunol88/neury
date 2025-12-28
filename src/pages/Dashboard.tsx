@@ -5,7 +5,8 @@ import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
 import { CountUp } from '@/hooks/useCountUp';
-import { 
+import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
+import {
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
   CalendarDays, CalendarRange, Sun, Moon, Download
@@ -255,6 +256,30 @@ const Dashboard = () => {
       ? (totalRevenue + pendingRevenue) / displayData.length 
       : 0;
 
+    // Sparkline data (last 7 data points for mini charts)
+    const sparklineData = chartData.slice(-7).map(d => ({
+      value: d.receita + d.pendente,
+      receita: d.receita,
+      pendente: d.pendente,
+      count: d.count,
+    }));
+
+    // Calculate trends (comparing first half to second half)
+    const midPoint = Math.floor(sparklineData.length / 2);
+    const firstHalf = sparklineData.slice(0, midPoint);
+    const secondHalf = sparklineData.slice(midPoint);
+    
+    const avgFirstHalf = firstHalf.length > 0 
+      ? firstHalf.reduce((sum, d) => sum + d.value, 0) / firstHalf.length 
+      : 0;
+    const avgSecondHalf = secondHalf.length > 0 
+      ? secondHalf.reduce((sum, d) => sum + d.value, 0) / secondHalf.length 
+      : 0;
+    
+    const trendPercent = avgFirstHalf > 0 
+      ? Math.round(((avgSecondHalf - avgFirstHalf) / avgFirstHalf) * 100) 
+      : 0;
+
     return {
       chartData: displayData,
       topClients,
@@ -269,6 +294,8 @@ const Dashboard = () => {
       completionRate,
       statusData,
       avgPerDay,
+      sparklineData,
+      trendPercent,
     };
   }, [filteredTasks, clients, periodFilter]);
 
@@ -478,24 +505,40 @@ const Dashboard = () => {
           {/* Revenue Card with Gradient */}
           <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
-                <Euro size={20} className="opacity-80" />
-                <span className="text-sm opacity-80">Receita Concluída</span>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Euro size={20} className="opacity-80" />
+                  <span className="text-sm opacity-80">Receita Concluída</span>
+                </div>
+                {stats.trendPercent !== 0 && (
+                  <TrendIndicator 
+                    value={stats.trendPercent} 
+                    className={stats.trendPercent >= 0 ? 'text-emerald-200' : 'text-red-200'} 
+                  />
+                )}
               </div>
               <p className="text-3xl font-bold">
                 <CountUp end={stats.totalRevenue} decimals={2} prefix="€" duration={1800} />
               </p>
-              <div className="mt-2 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-70">
                 <CountUp end={stats.concluidos} duration={1500} /> serviços concluídos
               </div>
+            </div>
+            {/* Sparkline */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+              <Sparkline 
+                data={stats.sparklineData.map(d => ({ value: d.receita }))} 
+                color="#ffffff" 
+                height={48}
+              />
             </div>
           </div>
           
           {/* Pending Revenue Card */}
           <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-100 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
+            <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Receita Pendente</span>
@@ -503,16 +546,24 @@ const Dashboard = () => {
               <p className="text-3xl font-bold">
                 <CountUp end={stats.pendingRevenue} decimals={2} prefix="€" duration={1800} />
               </p>
-              <div className="mt-2 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-70">
                 <CountUp end={stats.pendentes} duration={1500} /> por concluir
               </div>
+            </div>
+            {/* Sparkline */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+              <Sparkline 
+                data={stats.sparklineData.map(d => ({ value: d.pendente }))} 
+                color="#ffffff" 
+                height={48}
+              />
             </div>
           </div>
           
           {/* Appointments Card */}
           <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-200 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
+            <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Agendamentos</span>
@@ -520,16 +571,24 @@ const Dashboard = () => {
               <p className="text-3xl font-bold">
                 <CountUp end={stats.totalAgendamentos} duration={1500} />
               </p>
-              <div className="mt-2 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-70">
                 <CountUp end={stats.totalHours} decimals={1} duration={1600} />h trabalhadas
               </div>
+            </div>
+            {/* Sparkline */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+              <Sparkline 
+                data={stats.sparklineData.map(d => ({ value: d.count }))} 
+                color="#ffffff" 
+                height={48}
+              />
             </div>
           </div>
           
           {/* Clients Card */}
           <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-300 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
+            <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <Users size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Clientes</span>
@@ -537,9 +596,17 @@ const Dashboard = () => {
               <p className="text-3xl font-bold">
                 <CountUp end={stats.uniqueClients} duration={1500} />
               </p>
-              <div className="mt-2 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-70">
                 de <CountUp end={stats.totalClients} duration={1400} /> total
               </div>
+            </div>
+            {/* Sparkline */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+              <Sparkline 
+                data={stats.sparklineData.map(d => ({ value: d.value }))} 
+                color="#ffffff" 
+                height={48}
+              />
             </div>
           </div>
         </div>
