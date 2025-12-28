@@ -475,7 +475,7 @@ const Dashboard = () => {
         {/* Hero Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Revenue Card with Gradient */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-lg p-5 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
@@ -490,7 +490,7 @@ const Dashboard = () => {
           </div>
           
           {/* Pending Revenue Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg p-5 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-100 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
@@ -505,7 +505,7 @@ const Dashboard = () => {
           </div>
           
           {/* Appointments Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl shadow-lg p-5 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-200 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
@@ -520,7 +520,7 @@ const Dashboard = () => {
           </div>
           
           {/* Clients Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg p-5 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-300 hover-lift">
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
@@ -538,7 +538,7 @@ const Dashboard = () => {
         {/* Completion Rate & Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Completion Rate Gauge */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-scale-in animation-delay-400 hover-lift">
             <h3 className="font-bold text-foreground mb-4 text-center">Taxa de Conclusão</h3>
             <div className="relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height={180}>
@@ -566,7 +566,7 @@ const Dashboard = () => {
           </div>
 
           {/* Status Distribution Pie */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-scale-in animation-delay-500 hover-lift">
             <h3 className="font-bold text-foreground mb-4 text-center">Distribuição de Status</h3>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -597,7 +597,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col justify-between">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col justify-between animate-scale-in animation-delay-600 hover-lift">
             <h3 className="font-bold text-foreground mb-4">Resumo Rápido</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-success/10 rounded-xl">
@@ -628,7 +628,7 @@ const Dashboard = () => {
         {/* Main Charts */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Revenue Area Chart */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-fade-in-up animation-delay-500 hover-lift">
             <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <BarChart3 size={18} className="text-primary" />
               Evolução da Receita {periodFilter === 'yearly' ? '(Mensal)' : '(Diária)'}
@@ -690,7 +690,7 @@ const Dashboard = () => {
           </div>
 
           {/* Top Clients Pie Chart */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-fade-in-up animation-delay-600 hover-lift">
             <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <Users size={18} className="text-primary" />
               Top Clientes por Receita
@@ -740,7 +740,7 @@ const Dashboard = () => {
         </div>
 
         {/* Bar Chart Comparison */}
-        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border mb-8">
+        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border mb-8 animate-fade-in-up animation-delay-700 hover-lift">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
             Comparativo de Receitas
@@ -787,7 +787,7 @@ const Dashboard = () => {
         </div>
 
         {/* Top Clients Table */}
-        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-fade-in-up animation-delay-800 hover-lift">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
             Ranking de Clientes - {PERIOD_LABELS[periodFilter]}
