@@ -24,7 +24,22 @@ export interface AllTasks {
   december: Task[];
   january: Task[];
   february: Task[];
+  march: Task[];
+  april: Task[];
+  may: Task[];
+  june: Task[];
+  july: Task[];
+  august: Task[];
+  september: Task[];
+  october: Task[];
+  november: Task[];
+  december2026: Task[];
 }
+
+const ALL_MONTH_KEYS: (keyof AllTasks)[] = [
+  'december', 'january', 'february', 'march', 'april', 'may',
+  'june', 'july', 'august', 'september', 'october', 'november', 'december2026'
+];
 
 const getMonthKeyFromDate = (dateString: string): keyof AllTasks | null => {
   // Parse date string as YYYY-MM-DD to get correct month/year
@@ -34,9 +49,14 @@ const getMonthKeyFromDate = (dateString: string): keyof AllTasks | null => {
   const year = parseInt(parts[0], 10);
   const month = parseInt(parts[1], 10) - 1; // 0-indexed
 
-  if (month === 11 && year === 2025) return 'december';
-  if (month === 0 && year === 2026) return 'january';
-  if (month === 1 && year === 2026) return 'february';
+  if (year === 2025 && month === 11) return 'december';
+  if (year === 2026) {
+    const monthKeys: (keyof AllTasks)[] = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december2026'
+    ];
+    return monthKeys[month] || null;
+  }
   return null;
 };
 
@@ -108,7 +128,17 @@ export const useAgendamentos = () => {
   const [allTasks, setAllTasks] = useState<AllTasks>({
     december: [],
     january: [],
-    february: []
+    february: [],
+    march: [],
+    april: [],
+    may: [],
+    june: [],
+    july: [],
+    august: [],
+    september: [],
+    october: [],
+    november: [],
+    december2026: []
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -122,7 +152,11 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      const tasks: AllTasks = { december: [], january: [], february: [] };
+      const tasks: AllTasks = { 
+        december: [], january: [], february: [], march: [], april: [], 
+        may: [], june: [], july: [], august: [], september: [], 
+        october: [], november: [], december2026: [] 
+      };
       
       (data || []).forEach((row) => {
         const task = mapRowToTask(row);
@@ -189,7 +223,7 @@ export const useAgendamentos = () => {
       
       // Optimistically update local state immediately for better UX
       const updatedTask: Task = { id, ...taskData };
-      const oldMonthKey = (['december', 'january', 'february'] as const).find(
+      const oldMonthKey = ALL_MONTH_KEYS.find(
         monthKey => allTasks[monthKey].some(t => t.id === id)
       );
       const newMonthKey = getMonthKeyFromDate(taskData.date);
@@ -244,11 +278,13 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      setAllTasks(prev => ({
-        december: prev.december.filter(t => t.id !== id),
-        january: prev.january.filter(t => t.id !== id),
-        february: prev.february.filter(t => t.id !== id)
-      }));
+      setAllTasks(prev => {
+        const newState = { ...prev };
+        (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
+          newState[key] = prev[key].filter(t => t.id !== id);
+        });
+        return newState;
+      });
 
       return true;
     } catch (error: any) {
@@ -273,11 +309,13 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      setAllTasks(prev => ({
-        december: prev.december.map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t),
-        january: prev.january.map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t),
-        february: prev.february.map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t)
-      }));
+      setAllTasks(prev => {
+        const newState = { ...prev };
+        (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
+          newState[key] = prev[key].map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t);
+        });
+        return newState;
+      });
 
       return true;
     } catch (error: any) {
@@ -295,7 +333,7 @@ export const useAgendamentos = () => {
     // Find the task in any month
     let taskToMove: Task | null = null;
     
-    for (const monthKey of ['december', 'january', 'february'] as const) {
+    for (const monthKey of ALL_MONTH_KEYS) {
       const found = allTasks[monthKey].find(t => t.id === id);
       if (found) {
         taskToMove = found;
