@@ -12,6 +12,12 @@ import {
   isToday,
 } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CalendarModalProps {
   isOpen: boolean;
@@ -29,6 +35,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   // Flatten all tasks
   const allTasksFlat = useMemo(() => {
@@ -109,6 +116,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   if (!isOpen) return null;
 
   return (
+    <TooltipProvider delayDuration={0}>
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
@@ -198,23 +206,58 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                         </span>
                       </div>
                       
-                      {/* Client names - show up to 3 */}
+                      {/* Client names - show up to 3 with tooltips */}
                       <div className="space-y-0.5">
-                        {tasks.slice(0, 3).map((task, taskIdx) => (
-                          <div
-                            key={taskIdx}
-                            className={`
-                              text-[8px] leading-tight px-1 py-0.5 rounded truncate
-                              ${task.completed 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-yellow-100 text-yellow-700'
-                              }
-                            `}
-                            title={`${task.client} - ${task.startTime}`}
-                          >
-                            {task.client.split(' ')[0]}
-                          </div>
-                        ))}
+                        {tasks.slice(0, 3).map((task, taskIdx) => {
+                          const tooltipId = `${format(day, 'yyyy-MM-dd')}-${taskIdx}`;
+                          return (
+                            <Tooltip 
+                              key={taskIdx} 
+                              open={activeTooltip === tooltipId}
+                              onOpenChange={(open) => setActiveTooltip(open ? tooltipId : null)}
+                            >
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`
+                                    text-[8px] leading-tight px-1 py-0.5 rounded truncate cursor-default
+                                    ${task.completed 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : 'bg-yellow-100 text-yellow-700'
+                                    }
+                                    active:scale-95 transition-transform
+                                  `}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTooltip(activeTooltip === tooltipId ? null : tooltipId);
+                                  }}
+                                  onTouchStart={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTooltip(activeTooltip === tooltipId ? null : tooltipId);
+                                  }}
+                                >
+                                  {task.client.split(' ')[0]}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                className="bg-gray-900 text-white border-0 shadow-lg max-w-[200px]"
+                                sideOffset={4}
+                              >
+                                <div className="text-xs space-y-1 p-0.5">
+                                  <p className="font-semibold">{task.client}</p>
+                                  <div className="flex items-center gap-1 text-gray-300">
+                                    <Clock size={10} />
+                                    <span>{task.startTime} - {task.endTime}</span>
+                                  </div>
+                                  <p className="text-green-400 font-bold">€{task.price}</p>
+                                  {task.completed && (
+                                    <span className="text-green-400 text-[10px]">✓ Concluído</span>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })}
                         {tasks.length > 3 && (
                           <div className="text-[8px] text-gray-400 text-center">
                             +{tasks.length - 3}
@@ -379,6 +422,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
