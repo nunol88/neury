@@ -65,6 +65,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [copiedTaskIds, setCopiedTaskIds] = useState<string[]>([]);
   const [showUndoBar, setShowUndoBar] = useState(false);
   const [copyingFromPrevious, setCopyingFromPrevious] = useState(false);
+  
+  // State for undo move functionality
+  const [lastMovedTask, setLastMovedTask] = useState<{
+    id: string;
+    originalDate: string;
+    originalStartTime: string;
+    originalEndTime: string;
+    newDate: string;
+    newStartTime: string;
+    newEndTime: string;
+    clientName: string;
+  } | null>(null);
+  const [showMoveUndoBar, setShowMoveUndoBar] = useState(false);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -306,6 +319,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     if (!taskToMove) return;
 
+    // Store original state for undo
+    const originalState = {
+      id: taskToMove.id,
+      originalDate: taskToMove.date,
+      originalStartTime: taskToMove.startTime,
+      originalEndTime: taskToMove.endTime,
+      clientName: taskToMove.client
+    };
+
     // Get drop position relative to the container
     const container = e.currentTarget as HTMLElement;
     const containerRect = container.getBoundingClientRect();
@@ -328,6 +350,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           endTime: newEndTime
         });
         if (success) {
+          // Store for undo
+          setLastMovedTask({
+            ...originalState,
+            newDate: targetDateString,
+            newStartTime,
+            newEndTime
+          });
+          setShowMoveUndoBar(true);
+          
+          // Auto-hide after 15 seconds
+          setTimeout(() => {
+            setShowMoveUndoBar(false);
+            setLastMovedTask(null);
+          }, 15000);
+          
           toast({ 
             title: 'Horário ajustado',
             description: `${newStartTime} - ${newEndTime}`
@@ -346,10 +383,78 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     });
     
     if (success) {
+      // Store for undo
+      setLastMovedTask({
+        ...originalState,
+        newDate: targetDateString,
+        newStartTime,
+        newEndTime
+      });
+      setShowMoveUndoBar(true);
+      
+      // Auto-hide after 15 seconds
+      setTimeout(() => {
+        setShowMoveUndoBar(false);
+        setLastMovedTask(null);
+      }, 15000);
+      
       toast({ 
         title: 'Agendamento movido',
         description: `Novo horário: ${newStartTime} - ${newEndTime}`
       });
+    }
+  };
+
+  const handleUndoMove = async () => {
+    if (!lastMovedTask) return;
+
+    setSaving(true);
+    try {
+      // Find the task
+      let taskToRestore: Task | null = null;
+      for (const monthKey of ['december', 'january', 'february'] as const) {
+        const found = allTasks[monthKey].find(t => t.id === lastMovedTask.id);
+        if (found) {
+          taskToRestore = found;
+          break;
+        }
+      }
+
+      if (!taskToRestore) {
+        toast({
+          title: 'Erro ao desfazer',
+          description: 'Agendamento não encontrado.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Restore to original state
+      const success = await updateTask(lastMovedTask.id, {
+        ...taskToRestore,
+        date: lastMovedTask.originalDate,
+        startTime: lastMovedTask.originalStartTime,
+        endTime: lastMovedTask.originalEndTime
+      });
+
+      if (success) {
+        toast({
+          title: 'Movimento desfeito',
+          description: `${lastMovedTask.clientName} restaurado para ${lastMovedTask.originalStartTime} - ${lastMovedTask.originalEndTime}`
+        });
+      }
+
+      setLastMovedTask(null);
+      setShowMoveUndoBar(false);
+    } catch (error: any) {
+      console.error('Error undoing move:', error);
+      toast({
+        title: 'Erro ao desfazer',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1505,7 +1610,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       )}
 
-      {/* Barra de Desfazer */}
+      {/* Barra de Desfazer - Cópia */}
       {showUndoBar && copiedTaskIds.length > 0 && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 print:hidden animate-fade-in">
           <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4">
@@ -1528,6 +1633,38 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onClick={() => {
                 setShowUndoBar(false);
                 setCopiedTaskIds([]);
+              }}
+              className="hover:bg-white/20 p-1 rounded-full transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de Desfazer - Movimento */}
+      {showMoveUndoBar && lastMovedTask && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 print:hidden animate-fade-in">
+          <div className="bg-orange-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4">
+            <span className="text-sm">
+              <strong>{lastMovedTask.clientName}</strong> movido
+            </span>
+            <button
+              onClick={handleUndoMove}
+              disabled={saving}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors text-sm font-medium"
+            >
+              {saving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Undo2 size={16} />
+              )}
+              Desfazer
+            </button>
+            <button
+              onClick={() => {
+                setShowMoveUndoBar(false);
+                setLastMovedTask(null);
               }}
               className="hover:bg-white/20 p-1 rounded-full transition-colors"
             >
