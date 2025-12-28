@@ -1166,6 +1166,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/')}
+            >
+              <ChevronLeft size={16} className="mr-1" />
+              Menu
+            </Button>
             {isAdmin && (
               <>
                 <Button 
@@ -2031,6 +2039,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             openEditModal(task);
           }
         }}
+        onAddTask={isAdmin ? (date) => {
+          setShowCalendarModal(false);
+          setEditingId(null);
+          setSelectedClientId('');
+          setNewTask(prev => ({ ...prev, date }));
+          setActiveTab('single');
+          setShowModal(true);
+        } : undefined}
       />
 
       {/* Botão Flutuante Calendário - Canto inferior esquerdo */}
