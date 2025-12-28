@@ -116,12 +116,12 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
         onClick={handleClose}
       />
       
-      {/* Modal - Compact size */}
-      <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[75vh]">
+      {/* Modal - Wider to show client names */}
+      <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[85vh]">
         
         {viewMode === 'calendar' ? (
           <>
-            {/* Header - Compact */}
+            {/* Header */}
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-3">
               <div className="flex items-center justify-between">
                 <button
@@ -160,62 +160,81 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
 
             {/* Week days header */}
             <div className="grid grid-cols-7 bg-gray-50 border-b">
-              {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => (
-                <div key={i} className="py-2 text-center text-xs font-semibold text-gray-500">
+              {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day, i) => (
+                <div key={i} className="py-2 text-center text-[10px] font-semibold text-gray-500">
                   {day}
                 </div>
               ))}
             </div>
 
-            {/* Calendar grid - Compact */}
-            <div className="grid grid-cols-7">
-              {calendarDays.map((day, idx) => {
-                const { count, hasCompleted, hasPending } = hasTasksOnDate(day);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isTodayDate = isToday(day);
-                
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleDayClick(day)}
-                    className={`
-                      relative h-10 flex flex-col items-center justify-center border-b border-r border-gray-100
-                      transition-all duration-150 active:bg-gray-100
-                      ${!isCurrentMonth ? 'text-gray-300 bg-gray-50/50' : 'text-gray-800 hover:bg-red-50'}
-                      ${isTodayDate ? 'bg-red-50' : ''}
-                    `}
-                  >
-                    <span className={`
-                      text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full
-                      ${isTodayDate ? 'bg-red-500 text-white font-bold' : ''}
-                    `}>
-                      {format(day, 'd')}
-                    </span>
-                    
-                    {/* Task indicators */}
-                    {count > 0 && (
-                      <div className="flex gap-0.5 absolute bottom-0.5">
-                        {hasPending && (
-                          <div className="w-1 h-1 rounded-full bg-yellow-500" />
-                        )}
-                        {hasCompleted && (
-                          <div className="w-1 h-1 rounded-full bg-green-500" />
+            {/* Calendar grid - Shows client names */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="grid grid-cols-7">
+                {calendarDays.map((day, idx) => {
+                  const tasks = getTasksForDate(day);
+                  const isCurrentMonth = isSameMonth(day, currentMonth);
+                  const isTodayDate = isToday(day);
+                  
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => tasks.length > 0 && handleDayClick(day)}
+                      className={`
+                        relative min-h-[70px] p-1 border-b border-r border-gray-100
+                        transition-all duration-150
+                        ${!isCurrentMonth ? 'bg-gray-50/50' : 'bg-white'}
+                        ${isTodayDate ? 'bg-red-50/50' : ''}
+                        ${tasks.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}
+                      `}
+                    >
+                      {/* Day number */}
+                      <div className="flex justify-end mb-0.5">
+                        <span className={`
+                          text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full
+                          ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
+                          ${isTodayDate ? 'bg-red-500 text-white font-bold' : ''}
+                        `}>
+                          {format(day, 'd')}
+                        </span>
+                      </div>
+                      
+                      {/* Client names - show up to 3 */}
+                      <div className="space-y-0.5">
+                        {tasks.slice(0, 3).map((task, taskIdx) => (
+                          <div
+                            key={taskIdx}
+                            className={`
+                              text-[8px] leading-tight px-1 py-0.5 rounded truncate
+                              ${task.completed 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-yellow-100 text-yellow-700'
+                              }
+                            `}
+                            title={`${task.client} - ${task.startTime}`}
+                          >
+                            {task.client.split(' ')[0]}
+                          </div>
+                        ))}
+                        {tasks.length > 3 && (
+                          <div className="text-[8px] text-gray-400 text-center">
+                            +{tasks.length - 3}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </button>
-                );
-              })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Legend - Compact */}
+            {/* Legend */}
             <div className="px-3 py-2 bg-white border-t flex items-center justify-center gap-4 text-xs text-gray-500">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <div className="w-3 h-2 rounded bg-yellow-100 border border-yellow-300" />
                 <span>Pendente</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="w-3 h-2 rounded bg-green-100 border border-green-300" />
                 <span>Concluído</span>
               </div>
             </div>
