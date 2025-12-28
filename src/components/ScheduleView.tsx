@@ -2033,6 +2033,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         isOpen={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}
         allTasks={allTasks}
+        isLoading={loading}
       />
 
       {/* Botão Flutuante Calendário - Canto inferior esquerdo */}
