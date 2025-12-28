@@ -184,6 +184,19 @@ export const useAgendamentos = () => {
   }, [fetchAgendamentos]);
 
   const addTask = async (taskData: Omit<Task, 'id'>): Promise<Task | null> => {
+    // Create optimistic task with temp ID
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTask: Task = { id: tempId, ...taskData };
+    const monthKey = getMonthKeyFromDate(taskData.date);
+
+    // Optimistically add to state
+    if (monthKey) {
+      setAllTasks(prev => ({
+        ...prev,
+        [monthKey]: [...prev[monthKey], optimisticTask]
+      }));
+    }
+
     try {
       const insertData = mapTaskToInsert(taskData);
       
@@ -196,18 +209,25 @@ export const useAgendamentos = () => {
       if (error) throw error;
 
       const newTask = mapRowToTask(data);
-      const monthKey = getMonthKeyFromDate(newTask.date);
       
+      // Replace temp task with real task
       if (monthKey) {
         setAllTasks(prev => ({
           ...prev,
-          [monthKey]: [...prev[monthKey], newTask]
+          [monthKey]: prev[monthKey].map(t => t.id === tempId ? newTask : t)
         }));
       }
 
       return newTask;
     } catch (error: any) {
       console.error('Error adding agendamento:', error);
+      // Revert optimistic update
+      if (monthKey) {
+        setAllTasks(prev => ({
+          ...prev,
+          [monthKey]: prev[monthKey].filter(t => t.id !== tempId)
+        }));
+      }
       toast({
         title: 'Erro ao criar agendamento',
         description: error.message,
@@ -270,6 +290,18 @@ export const useAgendamentos = () => {
   };
 
   const deleteTask = async (id: string): Promise<boolean> => {
+    // Store original state for potential rollback
+    const originalTasks = { ...allTasks };
+    
+    // Optimistically remove from state
+    setAllTasks(prev => {
+      const newState = { ...prev };
+      (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
+        newState[key] = prev[key].filter(t => t.id !== id);
+      });
+      return newState;
+    });
+
     try {
       const { error } = await supabase
         .from('agendamentos')
@@ -278,17 +310,11 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      setAllTasks(prev => {
-        const newState = { ...prev };
-        (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
-          newState[key] = prev[key].filter(t => t.id !== id);
-        });
-        return newState;
-      });
-
       return true;
     } catch (error: any) {
       console.error('Error deleting agendamento:', error);
+      // Revert optimistic update
+      setAllTasks(originalTasks);
       toast({
         title: 'Erro ao eliminar agendamento',
         description: error.message,
@@ -299,6 +325,18 @@ export const useAgendamentos = () => {
   };
 
   const toggleTaskStatus = async (id: string, currentlyCompleted: boolean): Promise<boolean> => {
+    // Store original state for potential rollback
+    const originalTasks = { ...allTasks };
+    
+    // Optimistically update state
+    setAllTasks(prev => {
+      const newState = { ...prev };
+      (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
+        newState[key] = prev[key].map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t);
+      });
+      return newState;
+    });
+
     try {
       const newStatus = currentlyCompleted ? 'agendado' : 'concluido';
       
@@ -309,17 +347,11 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      setAllTasks(prev => {
-        const newState = { ...prev };
-        (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
-          newState[key] = prev[key].map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t);
-        });
-        return newState;
-      });
-
       return true;
     } catch (error: any) {
       console.error('Error toggling status:', error);
+      // Revert optimistic update
+      setAllTasks(originalTasks);
       toast({
         title: 'Erro ao alterar status',
         description: error.message,

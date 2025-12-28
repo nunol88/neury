@@ -6,6 +6,11 @@
     <title>Agenda Neury - Sistema de Agendamentos</title>
     <meta name="description" content="Sistema de gestão de agendamentos para limpezas. Agende, organize e acompanhe todos os seus compromissos." />
     <meta name="author" content="Lovable" />
+    <meta name="theme-color" content="#8B5CF6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/favicon.ico" />
 
     <meta property="og:title" content="Agenda Neury" />
     <meta property="og:description" content="Sistema de gestão de agendamentos para limpezas" />
@@ -18,5 +23,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('SW registered'))
+            .catch(() => console.log('SW registration failed'));
+        });
+      }
+    </script>
   </body>
 </html>
