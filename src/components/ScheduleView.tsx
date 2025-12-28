@@ -5,7 +5,8 @@ import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2,
+  ArrowUp, ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +79,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     clientName: string;
   } | null>(null);
   const [showMoveUndoBar, setShowMoveUndoBar] = useState(false);
+  
+  // State for position choice dialog
+  const [showPositionDialog, setShowPositionDialog] = useState(false);
+  const [pendingDrop, setPendingDrop] = useState<{
+    taskToMove: Task;
+    targetDateString: string;
+    existingTasks: Task[];
+  } | null>(null);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -319,6 +328,35 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     if (!taskToMove) return;
 
+    // Check if target day has existing tasks
+    const targetMonthKey = getMonthKeyFromDate(targetDateString);
+    if (!targetMonthKey) return;
+
+    const existingTasks = allTasks[targetMonthKey]
+      .filter(t => t.date === targetDateString && t.id !== taskToMove!.id)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    // If there are existing tasks, show position dialog
+    if (existingTasks.length > 0) {
+      setPendingDrop({
+        taskToMove,
+        targetDateString,
+        existingTasks
+      });
+      setShowPositionDialog(true);
+      return;
+    }
+
+    // No existing tasks - move with original times
+    await executeMoveTask(taskToMove, targetDateString, taskToMove.startTime, taskToMove.endTime);
+  };
+
+  const executeMoveTask = async (
+    taskToMove: Task, 
+    targetDateString: string, 
+    newStartTime: string, 
+    newEndTime: string
+  ) => {
     // Store original state for undo
     const originalState = {
       id: taskToMove.id,
@@ -327,19 +365,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       originalEndTime: taskToMove.endTime,
       clientName: taskToMove.client
     };
-
-    // Get drop position relative to the container
-    const container = e.currentTarget as HTMLElement;
-    const containerRect = container.getBoundingClientRect();
-    const dropY = e.clientY;
-
-    // Calculate new times based on position
-    const { newStartTime, newEndTime } = calculateNewTimes(
-      taskToMove, 
-      targetDateString, 
-      dropY, 
-      containerRect
-    );
 
     // If same date but times changed, update the task
     if (taskToMove.date === targetDateString) {
@@ -350,7 +375,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           endTime: newEndTime
         });
         if (success) {
-          // Store for undo
           setLastMovedTask({
             ...originalState,
             newDate: targetDateString,
@@ -358,8 +382,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             newEndTime
           });
           setShowMoveUndoBar(true);
-          
-          // Auto-hide after 15 seconds
           setTimeout(() => {
             setShowMoveUndoBar(false);
             setLastMovedTask(null);
@@ -383,7 +405,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     });
     
     if (success) {
-      // Store for undo
       setLastMovedTask({
         ...originalState,
         newDate: targetDateString,
@@ -391,8 +412,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         newEndTime
       });
       setShowMoveUndoBar(true);
-      
-      // Auto-hide after 15 seconds
       setTimeout(() => {
         setShowMoveUndoBar(false);
         setLastMovedTask(null);
@@ -403,6 +422,55 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         description: `Novo horário: ${newStartTime} - ${newEndTime}`
       });
     }
+  };
+
+  const handlePositionChoice = async (position: 'above' | 'below') => {
+    if (!pendingDrop) return;
+
+    const { taskToMove, targetDateString, existingTasks } = pendingDrop;
+    
+    // Calculate task duration in minutes
+    const originalStart = new Date(`1970-01-01T${taskToMove.startTime}`);
+    const originalEnd = new Date(`1970-01-01T${taskToMove.endTime}`);
+    const durationMs = originalEnd.getTime() - originalStart.getTime();
+
+    // Helper to format time
+    const formatTime = (date: Date): string => {
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    };
+
+    // Helper to parse time string to Date
+    const parseTime = (timeStr: string): Date => {
+      return new Date(`1970-01-01T${timeStr}`);
+    };
+
+    let newStartTime: string;
+    let newEndTime: string;
+
+    if (position === 'above') {
+      // Place BEFORE the first task (1h gap)
+      const firstTask = existingTasks[0];
+      const firstTaskStart = parseTime(firstTask.startTime);
+      const newEndDate = new Date(firstTaskStart.getTime() - (60 * 60 * 1000)); // 1 hour gap
+      const newStartDate = new Date(newEndDate.getTime() - durationMs);
+      newStartTime = formatTime(newStartDate);
+      newEndTime = formatTime(newEndDate);
+    } else {
+      // Place AFTER the last task (1h gap)
+      const lastTask = existingTasks[existingTasks.length - 1];
+      const lastTaskEnd = parseTime(lastTask.endTime);
+      const newStartDate = new Date(lastTaskEnd.getTime() + (60 * 60 * 1000)); // 1 hour gap
+      const newEndDate = new Date(newStartDate.getTime() + durationMs);
+      newStartTime = formatTime(newStartDate);
+      newEndTime = formatTime(newEndDate);
+    }
+
+    setShowPositionDialog(false);
+    setPendingDrop(null);
+    
+    await executeMoveTask(taskToMove, targetDateString, newStartTime, newEndTime);
   };
 
   const handleUndoMove = async () => {
@@ -1604,6 +1672,77 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     }
                   </p>
                 </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Escolha de Posição */}
+      {showPositionDialog && pendingDrop && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <h2 className="text-xl font-bold">Escolher Posição</h2>
+              <p className="text-white/80 text-sm mt-1">
+                Onde quer colocar <strong>{pendingDrop.taskToMove.client}</strong>?
+              </p>
+            </div>
+            
+            <div className="p-6 space-y-3">
+              <p className="text-sm text-gray-600 mb-4">
+                Este dia já tem {pendingDrop.existingTasks.length} agendamento(s). 
+                Escolha se quer colocar antes ou depois:
+              </p>
+              
+              {/* Existing tasks preview */}
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <p className="text-xs text-gray-500 mb-2 font-medium">Agendamentos existentes:</p>
+                {pendingDrop.existingTasks.map((task, idx) => (
+                  <div key={idx} className="text-sm text-gray-700 flex justify-between">
+                    <span>{task.client}</span>
+                    <span className="text-gray-500">{task.startTime} - {task.endTime}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Position buttons */}
+              <button
+                onClick={() => handlePositionChoice('above')}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <ArrowUp size={24} className="text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">Colocar Antes</p>
+                  <p className="text-sm text-gray-500">1 hora antes do primeiro agendamento</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handlePositionChoice('below')}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <ArrowDown size={24} className="text-green-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">Colocar Depois</p>
+                  <p className="text-sm text-gray-500">1 hora depois do último agendamento</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowPositionDialog(false);
+                  setPendingDrop(null);
+                }}
+                className="w-full py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+              >
+                Cancelar
               </button>
             </div>
           </div>

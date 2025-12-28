@@ -187,15 +187,42 @@ export const useAgendamentos = () => {
     try {
       const updateData = mapTaskToInsert(taskData);
       
+      // Optimistically update local state immediately for better UX
+      const updatedTask: Task = { id, ...taskData };
+      const oldMonthKey = (['december', 'january', 'february'] as const).find(
+        monthKey => allTasks[monthKey].some(t => t.id === id)
+      );
+      const newMonthKey = getMonthKeyFromDate(taskData.date);
+      
+      if (oldMonthKey && newMonthKey) {
+        setAllTasks(prev => {
+          const newState = { ...prev };
+          
+          // Remove from old month
+          newState[oldMonthKey] = prev[oldMonthKey].filter(t => t.id !== id);
+          
+          // Add to new month (or update in same month)
+          if (oldMonthKey === newMonthKey) {
+            newState[newMonthKey] = [...newState[newMonthKey], updatedTask];
+          } else {
+            newState[newMonthKey] = [...prev[newMonthKey], updatedTask];
+          }
+          
+          return newState;
+        });
+      }
+      
       const { error } = await supabase
         .from('agendamentos')
         .update(updateData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        // Revert on error
+        await fetchAgendamentos();
+        throw error;
+      }
 
-      // Refresh data to ensure consistency
-      await fetchAgendamentos();
       return true;
     } catch (error: any) {
       console.error('Error updating agendamento:', error);
