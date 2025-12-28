@@ -217,6 +217,78 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     e.dataTransfer.dropEffect = "move";
   };
 
+  // Calculate new times based on drop position relative to existing tasks
+  const calculateNewTimes = (
+    taskToMove: Task, 
+    targetDateString: string, 
+    dropY: number, 
+    containerRect: DOMRect
+  ): { newStartTime: string; newEndTime: string } => {
+    const targetMonthKey = getMonthKeyFromDate(targetDateString);
+    if (!targetMonthKey) {
+      return { newStartTime: taskToMove.startTime, newEndTime: taskToMove.endTime };
+    }
+
+    const existingTasks = allTasks[targetMonthKey]
+      .filter(t => t.date === targetDateString && t.id !== taskToMove.id)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    if (existingTasks.length === 0) {
+      // No existing tasks, keep original times
+      return { newStartTime: taskToMove.startTime, newEndTime: taskToMove.endTime };
+    }
+
+    // Calculate task duration in minutes
+    const originalStart = new Date(`1970-01-01T${taskToMove.startTime}`);
+    const originalEnd = new Date(`1970-01-01T${taskToMove.endTime}`);
+    const durationMs = originalEnd.getTime() - originalStart.getTime();
+    const durationMinutes = durationMs / (1000 * 60);
+
+    // Helper to format time
+    const formatTime = (date: Date): string => {
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    };
+
+    // Helper to parse time string to Date
+    const parseTime = (timeStr: string): Date => {
+      return new Date(`1970-01-01T${timeStr}`);
+    };
+
+    // Calculate relative position in the container (0 = top, 1 = bottom)
+    const relativeY = (dropY - containerRect.top) / containerRect.height;
+    
+    // Determine if dropped in upper or lower half
+    if (relativeY < 0.5) {
+      // Dropped in upper half - place BEFORE the first task (1h gap)
+      const firstTask = existingTasks[0];
+      const firstTaskStart = parseTime(firstTask.startTime);
+      
+      // New task ends 1 hour before first task starts
+      const newEndTime = new Date(firstTaskStart.getTime() - (60 * 60 * 1000)); // 1 hour gap
+      const newStartTime = new Date(newEndTime.getTime() - durationMs);
+      
+      return {
+        newStartTime: formatTime(newStartTime),
+        newEndTime: formatTime(newEndTime)
+      };
+    } else {
+      // Dropped in lower half - place AFTER the last task (1h gap)
+      const lastTask = existingTasks[existingTasks.length - 1];
+      const lastTaskEnd = parseTime(lastTask.endTime);
+      
+      // New task starts 1 hour after last task ends
+      const newStartTime = new Date(lastTaskEnd.getTime() + (60 * 60 * 1000)); // 1 hour gap
+      const newEndTime = new Date(newStartTime.getTime() + durationMs);
+      
+      return {
+        newStartTime: formatTime(newStartTime),
+        newEndTime: formatTime(newEndTime)
+      };
+    }
+  };
+
   const handleDrop = async (e: React.DragEvent, targetDateString: string) => {
     if (!isAdmin) return;
     e.preventDefault();
@@ -232,11 +304,52 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
     }
 
-    if (!taskToMove || taskToMove.date === targetDateString) return;
+    if (!taskToMove) return;
 
-    const success = await moveTask(taskId, targetDateString);
+    // Get drop position relative to the container
+    const container = e.currentTarget as HTMLElement;
+    const containerRect = container.getBoundingClientRect();
+    const dropY = e.clientY;
+
+    // Calculate new times based on position
+    const { newStartTime, newEndTime } = calculateNewTimes(
+      taskToMove, 
+      targetDateString, 
+      dropY, 
+      containerRect
+    );
+
+    // If same date but times changed, update the task
+    if (taskToMove.date === targetDateString) {
+      if (newStartTime !== taskToMove.startTime || newEndTime !== taskToMove.endTime) {
+        const success = await updateTask(taskToMove.id, {
+          ...taskToMove,
+          startTime: newStartTime,
+          endTime: newEndTime
+        });
+        if (success) {
+          toast({ 
+            title: 'Horário ajustado',
+            description: `${newStartTime} - ${newEndTime}`
+          });
+        }
+      }
+      return;
+    }
+
+    // Different date - move with new times
+    const success = await updateTask(taskToMove.id, {
+      ...taskToMove,
+      date: targetDateString,
+      startTime: newStartTime,
+      endTime: newEndTime
+    });
+    
     if (success) {
-      toast({ title: 'Agendamento movido com sucesso' });
+      toast({ 
+        title: 'Agendamento movido',
+        description: `Novo horário: ${newStartTime} - ${newEndTime}`
+      });
     }
   };
 
