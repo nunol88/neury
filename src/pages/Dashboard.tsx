@@ -37,13 +37,15 @@ import {
 } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
-type PeriodFilter = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all';
+type PeriodFilter = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'semester' | 'yearly' | 'all';
 
 const PERIOD_LABELS: Record<PeriodFilter, string> = {
   daily: 'Hoje',
-  weekly: 'Esta Semana',
-  monthly: 'Este Mês',
-  yearly: 'Este Ano',
+  weekly: 'Semana',
+  monthly: 'Mês',
+  quarterly: 'Trimestre',
+  semester: 'Semestre',
+  yearly: 'Ano',
   all: 'Tudo',
 };
 
@@ -87,6 +89,18 @@ const Dashboard = () => {
       case 'monthly':
         start = startOfMonth(now);
         end = endOfMonth(now);
+        break;
+      case 'quarterly':
+        // Current quarter
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        start = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        end = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0, 23, 59, 59, 999);
+        break;
+      case 'semester':
+        // Current semester
+        const currentSemester = now.getMonth() < 6 ? 0 : 1;
+        start = new Date(now.getFullYear(), currentSemester * 6, 1);
+        end = new Date(now.getFullYear(), currentSemester * 6 + 6, 0, 23, 59, 59, 999);
         break;
       case 'yearly':
         start = startOfYear(now);
@@ -213,6 +227,12 @@ const Dashboard = () => {
         return `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
       case 'monthly':
         return format(now, "MMMM 'de' yyyy", { locale: pt });
+      case 'quarterly':
+        const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+        return `${currentQuarter}º Trimestre de ${now.getFullYear()}`;
+      case 'semester':
+        const currentSemester = now.getMonth() < 6 ? 1 : 2;
+        return `${currentSemester}º Semestre de ${now.getFullYear()}`;
       case 'yearly':
         return format(now, 'yyyy');
       case 'all':
