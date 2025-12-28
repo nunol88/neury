@@ -53,19 +53,6 @@ const DayCard: React.FC<DayCardProps> = ({
   // Check if date is in the past
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
 
-  // Scroll to today on mount
-  useEffect(() => {
-    if (isToday && cardRef.current) {
-      setTimeout(() => {
-        cardRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
-        });
-      }, 300);
-    }
-  }, [isToday]);
-
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
     e.preventDefault();
@@ -100,6 +87,7 @@ const DayCard: React.FC<DayCardProps> = ({
   return (
     <div
       ref={cardRef}
+      data-is-today={isToday}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

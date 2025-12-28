@@ -162,6 +162,27 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     completed: false
   });
 
+  // Handle month change - scroll to top or to today
+  useEffect(() => {
+    const currentMonthKey = getCurrentMonthKey();
+    
+    if (activeMonth === currentMonthKey) {
+      // If viewing current month, scroll to today after a delay
+      setTimeout(() => {
+        const todayCard = document.querySelector('[data-is-today="true"]');
+        if (todayCard) {
+          todayCard.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 400);
+    } else {
+      // If viewing a different month, scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeMonth]);
+
   useEffect(() => {
     if (currentMonthDays.length > 0) {
       const firstDay = currentMonthDays[0].dateString;
