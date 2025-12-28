@@ -34,7 +34,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 print:hidden group animate-scale-in"
+      className="fixed bottom-6 right-6 z-50 print:hidden group animate-scale-in"
     >
       <div className="glass-strong rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3 border border-primary/20">
         {/* Total value display */}
