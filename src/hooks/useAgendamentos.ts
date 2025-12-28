@@ -8,12 +8,13 @@ type AgendamentoRow = Database['public']['Tables']['agendamentos']['Row'];
 type AgendamentoInsert = Database['public']['Tables']['agendamentos']['Insert'];
 
 // Zod schema for validated JSON parsing from descricao field
+// Using .strict() to reject unknown fields and prevent data injection
 const DescricaoSchema = z.object({
-  address: z.string().optional().default(''),
-  pricePerHour: z.string().optional().default('7'),
-  price: z.string().optional().default('0'),
-  notes: z.string().optional().default('')
-}).passthrough();
+  address: z.string().max(500).optional().default(''),
+  pricePerHour: z.string().regex(/^\d+(\.\d{1,2})?$/, { message: 'Invalid price format' }).optional().default('7'),
+  price: z.string().regex(/^\d+(\.\d{1,2})?$/, { message: 'Invalid price format' }).optional().default('0'),
+  notes: z.string().max(2000).optional().default('')
+}).strict();
 
 export interface Task {
   id: string;
@@ -89,25 +90,44 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
   const endTime = `${endHours}:${endMinutes}`;
   
   // Parse and validate descricao JSON for additional fields
+  // Using strict schema validation to prevent unknown field injection
   let parsedData = { address: '', pricePerHour: '7', price: '0', notes: '' };
   if (row.descricao) {
     try {
       const rawData = JSON.parse(row.descricao);
-      const validated = DescricaoSchema.safeParse(rawData);
-      if (validated.success) {
-        parsedData = {
-          address: validated.data.address ?? '',
-          pricePerHour: validated.data.pricePerHour ?? '7',
-          price: validated.data.price ?? '0',
-          notes: validated.data.notes ?? ''
-        };
+      // Only accept objects, reject arrays or primitives
+      if (typeof rawData !== 'object' || rawData === null || Array.isArray(rawData)) {
+        console.warn('Descricao validation: Expected object, got primitive or array');
+        parsedData = { address: '', pricePerHour: '7', price: '0', notes: String(row.descricao) };
       } else {
-        // If validation fails, treat as plain text notes
-        parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao };
+        // Extract only expected fields, ignore unknown ones
+        const safeData = {
+          address: typeof rawData.address === 'string' ? rawData.address.slice(0, 500) : '',
+          pricePerHour: typeof rawData.pricePerHour === 'string' && /^\d+(\.\d{1,2})?$/.test(rawData.pricePerHour) 
+            ? rawData.pricePerHour : '7',
+          price: typeof rawData.price === 'string' && /^\d+(\.\d{1,2})?$/.test(rawData.price) 
+            ? rawData.price : '0',
+          notes: typeof rawData.notes === 'string' ? rawData.notes.slice(0, 2000) : ''
+        };
+        
+        const validated = DescricaoSchema.safeParse(safeData);
+        if (validated.success) {
+          parsedData = {
+            address: validated.data.address ?? '',
+            pricePerHour: validated.data.pricePerHour ?? '7',
+            price: validated.data.price ?? '0',
+            notes: validated.data.notes ?? ''
+          };
+        } else {
+          // Log validation failure for security monitoring
+          console.warn('Descricao validation failed:', validated.error.flatten());
+          parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao.slice(0, 2000) };
+        }
       }
     } catch {
-      // If JSON parsing fails, treat as plain text notes
-      parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao };
+      // If JSON parsing fails, treat as plain text notes (truncated for safety)
+      console.warn('Descricao JSON parsing failed, treating as plain text');
+      parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao.slice(0, 2000) };
     }
   }
 

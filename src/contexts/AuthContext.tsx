@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,9 +12,13 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  verifyRole: () => Promise<AppRole>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Valid roles that can be returned from the database
+const VALID_ROLES: readonly string[] = ['admin', 'neury'] as const;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -22,8 +26,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async (userId: string) => {
+  // Secure role fetching with validation
+  const fetchUserRole = useCallback(async (userId: string): Promise<AppRole> => {
     try {
+      // Validate userId format to prevent injection
+      if (!userId || typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) {
+        console.error('Invalid user ID format');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -31,16 +42,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching role:', error);
+        console.error('Error fetching role:', error.message);
         return null;
       }
 
-      return data?.role as AppRole || null;
+      // Validate the returned role against allowed values
+      const roleValue = data?.role;
+      if (roleValue && VALID_ROLES.includes(roleValue)) {
+        return roleValue as AppRole;
+      }
+
+      return null;
     } catch (error) {
       console.error('Error fetching role:', error);
       return null;
     }
-  };
+  }, []);
+
+  // Function to verify role on-demand (for sensitive operations)
+  const verifyRole = useCallback(async (): Promise<AppRole> => {
+    if (!user?.id) return null;
+    const verifiedRole = await fetchUserRole(user.id);
+    setRole(verifiedRole);
+    return verifiedRole;
+  }, [user?.id, fetchUserRole]);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -108,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut, verifyRole }}>
       {children}
     </AuthContext.Provider>
   );
