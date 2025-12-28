@@ -6,8 +6,9 @@ import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2,
-  ArrowUp, ArrowDown, BarChart3
+  ArrowUp, ArrowDown, BarChart3, CalendarDays
 } from 'lucide-react';
+import CalendarModal from '@/components/CalendarModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
@@ -180,6 +181,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     targetDateString: string;
     existingTasks: Task[];
   } | null>(null);
+  
+  // State for calendar modal
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -2016,7 +2020,29 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       )}
 
-      {/* Botão Flutuante - Apenas Admin */}
+      {/* Calendar Modal */}
+      <CalendarModal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        allTasks={allTasks}
+        onSelectTask={(task) => {
+          setShowCalendarModal(false);
+          if (isAdmin) {
+            openEditModal(task);
+          }
+        }}
+      />
+
+      {/* Botão Flutuante Calendário - Canto inferior esquerdo */}
+      <button
+        onClick={() => setShowCalendarModal(true)}
+        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r from-red-500 to-red-600 text-white"
+        title="Ver Calendário"
+      >
+        <CalendarDays size={26} />
+      </button>
+
+      {/* Botão Flutuante Novo - Apenas Admin - Canto inferior direito */}
       {isAdmin && (
         <button
           onClick={() => {
