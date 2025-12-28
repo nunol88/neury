@@ -7,9 +7,12 @@ import { useTheme } from '@/hooks/useTheme';
 import { 
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
-  CalendarDays, CalendarRange, Sun, Moon
+  CalendarDays, CalendarRange, Sun, Moon, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import {
   BarChart,
@@ -56,6 +59,7 @@ const Dashboard = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clients, loading: loadingClients } = useClients();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
@@ -262,6 +266,69 @@ const Dashboard = () => {
     }
   };
 
+  // Export dashboard to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const periodText = getPeriodDisplay();
+    
+    // Header
+    doc.setFillColor(139, 92, 246);
+    doc.rect(0, 0, 220, 35, 'F');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text('MaysLimpo - Dashboard', 14, 18);
+    doc.setFontSize(12);
+    doc.text(`Período: ${periodText}`, 14, 28);
+    
+    // Summary section
+    doc.setFontSize(14);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Resumo Financeiro', 14, 50);
+    
+    doc.setFontSize(11);
+    doc.text(`Receita Concluída: €${stats.totalRevenue.toFixed(2)}`, 14, 60);
+    doc.text(`Receita Pendente: €${stats.pendingRevenue.toFixed(2)}`, 14, 68);
+    doc.text(`Total Agendamentos: ${stats.totalAgendamentos}`, 14, 76);
+    doc.text(`Concluídos: ${stats.concluidos} | Pendentes: ${stats.pendentes}`, 14, 84);
+    doc.text(`Horas Trabalhadas: ${stats.totalHours.toFixed(1)}h`, 14, 92);
+    doc.text(`Clientes no Período: ${stats.uniqueClients}`, 14, 100);
+    
+    // Top clients table
+    if (stats.topClients.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Ranking de Clientes', 14, 120);
+      
+      const tableData = stats.topClients.map((client, index) => [
+        `${index + 1}º`,
+        client.name,
+        client.count.toString(),
+        `€${client.total.toFixed(2)}`
+      ]);
+      
+      autoTable(doc, {
+        head: [['#', 'Cliente', 'Agendamentos', 'Total Faturado']],
+        body: tableData,
+        startY: 125,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [139, 92, 246], textColor: 255 },
+        alternateRowStyles: { fillColor: [248, 245, 255] },
+      });
+    }
+    
+    // Footer
+    const finalY = stats.topClients.length > 0 ? (doc as any).lastAutoTable.finalY + 15 : 120;
+    doc.setDrawColor(139, 92, 246);
+    doc.setLineWidth(0.5);
+    doc.line(14, finalY, 196, finalY);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 14, finalY + 8);
+    
+    // Save
+    doc.save(`dashboard-${periodFilter}-${selectedYear}.pdf`);
+    toast({ title: 'PDF exportado com sucesso' });
+  };
+
   if (loadingAgendamentos || loadingClients) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -319,6 +386,14 @@ const Dashboard = () => {
               <BarChart3 size={24} />
               Dashboard
             </h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToPDF}
+            >
+              <Download size={16} className="mr-1" />
+              Exportar PDF
+            </Button>
           </div>
           
           {/* Year Selector */}
