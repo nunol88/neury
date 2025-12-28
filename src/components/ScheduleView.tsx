@@ -1455,7 +1455,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               setSelectedClientId('');
               setShowTypeSelector(true);
             }}
-            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white`}
+            style={{ animationDelay: '100ms' }}
+            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white animate-slide-up-bounce`}
             title="Novo Agendamento"
           >
             <Plus size={28} />
@@ -1465,7 +1466,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         {/* Floating Calendar Button (below) */}
         <button
           onClick={() => setShowCalendarModal(true)}
-          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r from-red-500 to-red-600 text-white"
+          style={{ animationDelay: '200ms' }}
+          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r from-red-500 to-red-600 text-white animate-slide-up-bounce"
           title="Ver Calendário"
         >
           <CalendarDays size={26} />
