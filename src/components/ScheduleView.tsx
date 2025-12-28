@@ -87,9 +87,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const activeConfig = MONTHS_CONFIG[activeMonth];
 
   const getMonthKeyFromDate = (dateString: string): keyof AllTasks | null => {
-    const date = new Date(dateString);
-    const month = date.getMonth();
-    const year = date.getFullYear();
+    // Parse date string as YYYY-MM-DD to avoid timezone issues
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return null;
+    
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // 0-indexed
 
     if (month === 11 && year === 2025) return 'december';
     if (month === 0 && year === 2026) return 'january';
