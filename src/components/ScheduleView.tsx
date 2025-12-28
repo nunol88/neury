@@ -2033,20 +2033,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         isOpen={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}
         allTasks={allTasks}
-        onSelectTask={(task) => {
-          setShowCalendarModal(false);
-          if (isAdmin) {
-            openEditModal(task);
-          }
-        }}
-        onAddTask={isAdmin ? (date) => {
-          setShowCalendarModal(false);
-          setEditingId(null);
-          setSelectedClientId('');
-          setNewTask(prev => ({ ...prev, date }));
-          setActiveTab('single');
-          setShowModal(true);
-        } : undefined}
       />
 
       {/* Botão Flutuante Calendário - Canto inferior esquerdo */}
