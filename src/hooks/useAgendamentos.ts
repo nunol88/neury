@@ -2,9 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+import { z } from 'zod';
 
 type AgendamentoRow = Database['public']['Tables']['agendamentos']['Row'];
 type AgendamentoInsert = Database['public']['Tables']['agendamentos']['Insert'];
+
+// Zod schema for validated JSON parsing from descricao field
+const DescricaoSchema = z.object({
+  address: z.string().optional().default(''),
+  pricePerHour: z.string().optional().default('7'),
+  price: z.string().optional().default('0'),
+  notes: z.string().optional().default('')
+}).passthrough();
 
 export interface Task {
   id: string;
@@ -79,13 +88,26 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
   const endMinutes = String(endDate.getUTCMinutes()).padStart(2, '0');
   const endTime = `${endHours}:${endMinutes}`;
   
-  // Parse descricao JSON for additional fields
-  let parsedData: any = {};
+  // Parse and validate descricao JSON for additional fields
+  let parsedData = { address: '', pricePerHour: '7', price: '0', notes: '' };
   if (row.descricao) {
     try {
-      parsedData = JSON.parse(row.descricao);
+      const rawData = JSON.parse(row.descricao);
+      const validated = DescricaoSchema.safeParse(rawData);
+      if (validated.success) {
+        parsedData = {
+          address: validated.data.address ?? '',
+          pricePerHour: validated.data.pricePerHour ?? '7',
+          price: validated.data.price ?? '0',
+          notes: validated.data.notes ?? ''
+        };
+      } else {
+        // If validation fails, treat as plain text notes
+        parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao };
+      }
     } catch {
-      parsedData = { notes: row.descricao };
+      // If JSON parsing fails, treat as plain text notes
+      parsedData = { address: '', pricePerHour: '7', price: '0', notes: row.descricao };
     }
   }
 
