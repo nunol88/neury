@@ -79,6 +79,16 @@ const Dashboard = () => {
   const { clients, loading: loadingClients } = useClients();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll for sticky header
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Get available years from tasks
   const availableYears = useMemo(() => {
@@ -399,16 +409,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const [isScrolled, setIsScrolled] = React.useState(false);
-
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
