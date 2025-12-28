@@ -986,7 +986,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         <div className="max-w-7xl mx-auto px-4 mt-4">
           <div className="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-between">
             <span className="text-sm font-medium">
-              A pesquisar por: "{searchQuery}" - {filteredTasks[activeMonth as keyof AllTasks]?.length || 0} resultados neste mês
+              A pesquisar por: "{searchQuery}" - {getFilteredTasksForMonth(activeMonth).length} resultados neste mês
             </span>
             <button 
               onClick={() => setSearchQuery('')}
@@ -1001,7 +1001,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       {/* Days Grid */}
       <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
         {currentMonthDays.map((dayObj) => {
-          const dayTasks = (filteredTasks[activeMonth as keyof AllTasks] || [])
+          const dayTasks = getFilteredTasksForMonth(activeMonth)
             .filter(t => t.date === dayObj.dateString)
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
