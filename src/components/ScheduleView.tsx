@@ -5,7 +5,7 @@ import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -62,6 +62,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [saving, setSaving] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [saveAsClient, setSaveAsClient] = useState(false);
+  const [copiedTaskIds, setCopiedTaskIds] = useState<string[]>([]);
+  const [showUndoBar, setShowUndoBar] = useState(false);
+  const [copyingFromPrevious, setCopyingFromPrevious] = useState(false);
 
   const generateDaysForMonth = (monthKey: string) => {
     const config = MONTHS_CONFIG[monthKey as keyof typeof MONTHS_CONFIG];
@@ -445,6 +448,164 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const calculateMonthTotal = () => {
     return allTasks[activeMonth].reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+  };
+
+  const getPreviousMonth = (): keyof AllTasks | null => {
+    if (activeMonth === 'january') return 'december';
+    if (activeMonth === 'february') return 'january';
+    return null; // December has no previous month in our range
+  };
+
+  const handleCopyFromPreviousMonth = async () => {
+    const previousMonth = getPreviousMonth();
+    if (!previousMonth) {
+      toast({
+        title: 'Não é possível copiar',
+        description: 'Dezembro não tem mês anterior neste período.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const previousTasks = allTasks[previousMonth];
+    if (previousTasks.length === 0) {
+      toast({
+        title: 'Mês anterior vazio',
+        description: `Não há agendamentos em ${MONTHS_CONFIG[previousMonth].label} para copiar.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Filter tasks by clients that exist in our clients list
+    const clientNames = clients.map(c => c.nome.toLowerCase());
+    const tasksToClone = previousTasks.filter(t => 
+      clientNames.includes(t.client.toLowerCase())
+    );
+
+    if (tasksToClone.length === 0) {
+      toast({
+        title: 'Nenhum cliente cadastrado',
+        description: 'Nenhum agendamento do mês anterior corresponde a clientes cadastrados.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setCopyingFromPrevious(true);
+    setShowTypeSelector(false);
+    
+    try {
+      const newTaskIds: string[] = [];
+      const currentConfig = MONTHS_CONFIG[activeMonth];
+      const previousConfig = MONTHS_CONFIG[previousMonth];
+
+      for (const task of tasksToClone) {
+        // Calculate the equivalent date in current month
+        const oldDate = new Date(task.date);
+        const dayOfMonth = oldDate.getUTCDate();
+        
+        // Try to find the same day of week in the current month
+        let newDateStr = '';
+        const oldDayOfWeek = oldDate.getUTCDay();
+        
+        // Find all days in current month with same weekday
+        const matchingDays = currentMonthDays.filter(d => 
+          d.dateObject.getDay() === oldDayOfWeek
+        );
+        
+        if (matchingDays.length > 0) {
+          // Find which week of month the old date was in
+          const weekOfMonth = Math.ceil(dayOfMonth / 7);
+          const targetDay = matchingDays[Math.min(weekOfMonth - 1, matchingDays.length - 1)];
+          newDateStr = targetDay.dateString;
+        } else {
+          // Fallback: use first day of month
+          newDateStr = currentMonthDays[0]?.dateString || '';
+        }
+
+        if (!newDateStr) continue;
+
+        const result = await addTask({
+          date: newDateStr,
+          client: task.client,
+          phone: task.phone,
+          startTime: task.startTime,
+          endTime: task.endTime,
+          address: task.address,
+          pricePerHour: task.pricePerHour,
+          price: task.price,
+          notes: task.notes,
+          completed: false
+        });
+
+        if (result) {
+          newTaskIds.push(result.id);
+        }
+      }
+
+      if (newTaskIds.length > 0) {
+        setCopiedTaskIds(newTaskIds);
+        setShowUndoBar(true);
+        toast({
+          title: `${newTaskIds.length} agendamentos copiados`,
+          description: `Dados de ${MONTHS_CONFIG[previousMonth].label} copiados para ${currentConfig.label}`,
+        });
+        
+        // Auto-hide undo bar after 15 seconds
+        setTimeout(() => {
+          setShowUndoBar(false);
+          setCopiedTaskIds([]);
+        }, 15000);
+      } else {
+        toast({
+          title: 'Nenhum agendamento copiado',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error copying tasks:', error);
+      toast({
+        title: 'Erro ao copiar',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setCopyingFromPrevious(false);
+    }
+  };
+
+  const handleUndoCopy = async () => {
+    if (copiedTaskIds.length === 0) return;
+
+    const confirmed = window.confirm(`Tem certeza que deseja desfazer? ${copiedTaskIds.length} agendamentos serão eliminados.`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    try {
+      let deletedCount = 0;
+      for (const id of copiedTaskIds) {
+        const success = await deleteTask(id);
+        if (success) deletedCount++;
+      }
+
+      toast({
+        title: `${deletedCount} agendamentos eliminados`,
+        description: 'Cópia desfeita com sucesso.'
+      });
+      
+      setCopiedTaskIds([]);
+      setShowUndoBar(false);
+    } catch (error: any) {
+      console.error('Error undoing copy:', error);
+      toast({
+        title: 'Erro ao desfazer',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const exportToPDF = () => {
@@ -1187,7 +1348,78 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   <p className="text-sm text-gray-500">Repetir a cada 2 semanas</p>
                 </div>
               </button>
+
+              {/* Separator */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 border-t border-gray-200"></div>
+                <span className="text-xs text-gray-400 font-medium">OU</span>
+                <div className="flex-1 border-t border-gray-200"></div>
+              </div>
+
+              {/* Copy from Previous Month Button */}
+              <button
+                onClick={handleCopyFromPreviousMonth}
+                disabled={copyingFromPrevious || activeMonth === 'december'}
+                className={`w-full p-4 border-2 rounded-xl transition-all flex items-center gap-4 ${
+                  activeMonth === 'december' 
+                    ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50' 
+                    : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  activeMonth === 'december' ? 'bg-gray-100' : 'bg-green-100'
+                }`}>
+                  {copyingFromPrevious ? (
+                    <Loader2 size={24} className="text-green-600 animate-spin" />
+                  ) : (
+                    <Copy size={24} className={activeMonth === 'december' ? 'text-gray-400' : 'text-green-600'} />
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className={`font-bold ${activeMonth === 'december' ? 'text-gray-400' : 'text-gray-800'}`}>
+                    Copiar do Mês Anterior
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {activeMonth === 'december' 
+                      ? 'Não disponível para Dezembro' 
+                      : `Copiar clientes cadastrados de ${MONTHS_CONFIG[getPreviousMonth()!]?.label || ''}`
+                    }
+                  </p>
+                </div>
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de Desfazer */}
+      {showUndoBar && copiedTaskIds.length > 0 && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 print:hidden animate-fade-in">
+          <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-4">
+            <span className="text-sm">
+              {copiedTaskIds.length} agendamentos copiados
+            </span>
+            <button
+              onClick={handleUndoCopy}
+              disabled={saving}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors text-sm font-medium"
+            >
+              {saving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Undo2 size={16} />
+              )}
+              Desfazer
+            </button>
+            <button
+              onClick={() => {
+                setShowUndoBar(false);
+                setCopiedTaskIds([]);
+              }}
+              className="hover:bg-white/20 p-1 rounded-full transition-colors"
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
       )}
