@@ -5,4 +5,3 @@ export { default as MonthTabs } from './MonthTabs';
 export { default as UndoBar } from './UndoBar';
 export { default as PositionDialog } from './PositionDialog';
 export { default as TypeSelectorModal } from './TypeSelectorModal';
-export { default as SearchBar } from './SearchBar';
