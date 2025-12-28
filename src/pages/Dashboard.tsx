@@ -464,16 +464,16 @@ const Dashboard = () => {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-gray-400">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 Sem dados para o período selecionado
               </div>
             )}
           </div>
 
           {/* Top Clients Pie Chart */}
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Users size={18} className="text-purple-600" />
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+              <Users size={18} className="text-primary" />
               Top Clientes por Receita
             </h3>
             {stats.topClients.length > 0 ? (
@@ -497,7 +497,7 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-gray-400">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 Sem dados para o período selecionado
               </div>
             )}
@@ -505,45 +505,45 @@ const Dashboard = () => {
         </div>
 
         {/* Top Clients Table */}
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-purple-600" />
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <TrendingUp size={18} className="text-primary" />
             Ranking de Clientes - {PERIOD_LABELS[periodFilter]}
           </h3>
           {stats.topClients.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-3 font-medium text-gray-600">#</th>
-                    <th className="text-left py-2 px-3 font-medium text-gray-600">Cliente</th>
-                    <th className="text-right py-2 px-3 font-medium text-gray-600">Agendamentos</th>
-                    <th className="text-right py-2 px-3 font-medium text-gray-600">Total Faturado</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">#</th>
+                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Agendamentos</th>
+                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Faturado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.topClients.map((client, index) => (
-                    <tr key={client.name} className="border-b last:border-0 hover:bg-gray-50">
+                    <tr key={client.name} className="border-b border-border last:border-0 hover:bg-secondary">
                       <td className="py-3 px-3">
                         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                          index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                          index === 1 ? 'bg-gray-100 text-gray-600' :
-                          index === 2 ? 'bg-orange-100 text-orange-700' :
-                          'bg-gray-50 text-gray-500'
+                          index === 0 ? 'bg-warning/20 text-warning' :
+                          index === 1 ? 'bg-muted text-muted-foreground' :
+                          index === 2 ? 'bg-warning/10 text-warning' :
+                          'bg-secondary text-muted-foreground'
                         }`}>
                           {index + 1}
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-medium text-gray-800">{client.name}</td>
-                      <td className="py-3 px-3 text-right text-gray-600">{client.count}</td>
-                      <td className="py-3 px-3 text-right font-bold text-green-600">€{client.total.toFixed(2)}</td>
+                      <td className="py-3 px-3 font-medium text-card-foreground">{client.name}</td>
+                      <td className="py-3 px-3 text-right text-muted-foreground">{client.count}</td>
+                      <td className="py-3 px-3 text-right font-bold text-success">€{client.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="py-8 text-center text-gray-400">
+            <div className="py-8 text-center text-muted-foreground">
               Sem dados para o período selecionado
             </div>
           )}
