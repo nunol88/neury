@@ -1142,10 +1142,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-gray-600">A carregar agendamentos...</p>
+          <p className="text-muted-foreground">A carregar agendamentos...</p>
         </div>
       </div>
     );
@@ -1319,9 +1319,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       {/* Resumo Financeiro */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-          <span className="text-gray-600 font-medium">Total previsto ({activeConfig.label}):</span>
-          <span className={`text-3xl font-bold flex items-center gap-1 ${activeMonth === 'january' ? 'text-blue-600' : activeMonth === 'february' ? 'text-pink-600' : 'text-purple-600'}`}>
+        <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex justify-between items-center">
+          <span className="text-muted-foreground font-medium">Total previsto ({activeConfig.label}):</span>
+          <span className="text-3xl font-bold flex items-center gap-1 text-primary">
             € {calculateMonthTotal().toFixed(2)}
           </span>
         </div>
@@ -1337,9 +1337,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
           const isSunday = dayObj.dateObject.getDay() === 0;
 
-          const borderClass = activeMonth === 'january' ? 'border-blue-100' : activeMonth === 'february' ? 'border-pink-100' : 'border-purple-100';
-          const headerBg = activeMonth === 'january' ? 'bg-blue-50' : activeMonth === 'february' ? 'bg-pink-50' : 'bg-purple-50';
-          const textHeader = activeMonth === 'january' ? 'text-blue-900' : activeMonth === 'february' ? 'text-pink-900' : 'text-purple-900';
+          const borderClass = 'border-border';
+          const headerBg = theme === 'dark' ? 'bg-secondary' : (activeMonth === 'january' ? 'bg-blue-50' : activeMonth === 'february' ? 'bg-pink-50' : 'bg-purple-50');
+          const textHeader = 'text-card-foreground';
 
           return (
             <div
@@ -1347,19 +1347,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, dayObj.dateString)}
               className={`rounded-xl shadow-sm overflow-hidden border flex flex-col print:mb-4 print:break-inside-avoid h-full transition-colors duration-200
-                ${isWeekend ? 'bg-gray-50 border-gray-200' : `bg-white ${borderClass}`}
-                ${isSunday ? 'border-l-4 border-l-red-300' : ''}
+                ${isWeekend ? 'bg-muted border-border' : `bg-card ${borderClass}`}
+                ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
               `}
             >
-              <div className={`p-3 border-b flex justify-between items-center ${isWeekend ? 'bg-gray-100' : `${headerBg} ${borderClass}`}`}>
+              <div className={`p-3 border-b border-border flex justify-between items-center ${isWeekend ? 'bg-muted' : headerBg}`}>
                 <div>
-                  <h2 className={`font-bold capitalize ${isSunday ? 'text-red-500' : textHeader}`}>
+                  <h2 className={`font-bold capitalize ${isSunday ? 'text-destructive' : textHeader}`}>
                     {dayObj.dayName}
                   </h2>
-                  <span className="text-xs text-gray-500 font-semibold">{dayObj.formatted}</span>
+                  <span className="text-xs text-muted-foreground font-semibold">{dayObj.formatted}</span>
                 </div>
                 {dayTasks.length > 0 && (
-                  <span className={`text-xs bg-white border px-2 py-1 rounded-full shadow-sm ${textHeader} ${borderClass}`}>
+                  <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full shadow-sm">
                     {dayTasks.length}
                   </span>
                 )}
@@ -1367,7 +1367,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
               <div className="p-2 flex-1 min-h-[100px]">
                 {dayTasks.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-300 text-xs italic">
+                  <div className="h-full flex items-center justify-center text-muted-foreground/50 text-xs italic">
                     {isSunday ? 'Domingo' : 'Livre'}
                   </div>
                 ) : (
@@ -1378,35 +1378,35 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         draggable={isAdmin}
                         onDragStart={(e) => handleDragStart(e, task)}
                         className={`relative group p-2 rounded-lg border transition-all text-sm ${isAdmin ? 'cursor-move' : 'cursor-default'} ${task.completed
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-white border-gray-200 hover:border-gray-400 hover:shadow-md'
+                          ? 'bg-success/10 border-success/30'
+                          : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
                           }`}
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <span className={`font-bold truncate ${task.completed ? 'text-green-800 line-through' : 'text-gray-800'}`}>
+                          <span className={`font-bold truncate ${task.completed ? 'text-success line-through' : 'text-card-foreground'}`}>
                             {task.client}
                           </span>
-                          <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 whitespace-nowrap">
+                          <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground whitespace-nowrap">
                             {task.startTime} - {task.endTime}
                           </span>
                         </div>
 
                         {task.phone && (
-                          <div className="text-xs text-blue-600 truncate flex items-center gap-1 mb-1 font-medium">
+                          <div className="text-xs text-primary truncate flex items-center gap-1 mb-1 font-medium">
                             <Phone size={10} />
                             {task.phone}
                           </div>
                         )}
 
                         {task.address && (
-                          <div className="text-xs text-gray-500 flex items-start gap-1 mb-1">
+                          <div className="text-xs text-muted-foreground flex items-start gap-1 mb-1">
                             <MapPin size={10} className="shrink-0 mt-0.5" />
                             <span className="break-words">{task.address}</span>
                           </div>
                         )}
 
-                        <div className="flex justify-between items-center border-t pt-1.5 border-dashed border-gray-100 mt-1">
-                          <div className="text-green-700 font-bold text-xs flex items-center gap-0.5">
+                        <div className="flex justify-between items-center border-t pt-1.5 border-dashed border-border mt-1">
+                          <div className="text-success font-bold text-xs flex items-center gap-0.5">
                             € {task.price || '0'}
                           </div>
 
@@ -1414,14 +1414,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                             <div className="flex gap-1 print:hidden opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => openEditModal(task)}
-                                className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                                className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
                                 title="Editar"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => handleToggleStatus(task.id, task.completed)}
-                                className={`p-1 rounded hover:scale-110 transition ${task.completed ? 'text-green-600 bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                                className={`p-1 rounded hover:scale-110 transition ${task.completed ? 'text-success bg-success/20' : 'text-muted-foreground hover:text-success hover:bg-success/10'
                                   }`}
                                 title={task.completed ? "Desmarcar" : "Concluir"}
                               >
@@ -1429,7 +1429,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                               </button>
                               <button
                                 onClick={() => handleDelete(task.id)}
-                                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 hover:scale-110 transition"
+                                className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:scale-110 transition"
                                 title="Apagar"
                               >
                                 <Trash2 size={14} />
@@ -1455,7 +1455,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             onClick={() => setShowModal(false)}
           ></div>
 
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in">
           <div className={`p-4 text-white flex justify-between items-center bg-gradient-to-r ${getThemeColor()}`}>
               <div className="flex items-center gap-2">
                 {!editingId && (
@@ -1487,11 +1487,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               {activeTab === 'single' && (
                 <form onSubmit={handleAddTask} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Data</label>
                     <select
                       value={newTask.date}
                       onChange={(e) => handleInputChange(setNewTask, newTask, 'date', e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       disabled={!!editingId}
                     >
                       {editingId ? (
@@ -1500,19 +1500,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                         currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)
                       )}
                     </select>
-                    {editingId && <p className="text-xs text-gray-500 mt-1">Para mudar o dia, arraste o cartão na agenda.</p>}
+                    {editingId && <p className="text-xs text-muted-foreground mt-1">Para mudar o dia, arraste o cartão na agenda.</p>}
                   </div>
                   {/* Client selector */}
                   {clients.length > 0 && !editingId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
                         <Users size={14} />
                         Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleClientSelect(e.target.value, setNewTask, newTask)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                        className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
                         {clients.map(c => (
@@ -1523,7 +1523,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Cliente <span className="text-destructive">*</span></label>
                     <input 
                       type="text" 
                       required={!selectedClientId}
@@ -1531,63 +1531,63 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       value={newTask.client} 
                       onChange={(e) => { handleInputChange(setNewTask, newTask, 'client', e.target.value); setSelectedClientId(''); }} 
                       readOnly={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
                       type="text" 
                       placeholder="Ex: 912 345 678" 
                       value={newTask.phone} 
                       onChange={(e) => handleInputChange(setNewTask, newTask, 'phone', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                      <input type="time" required value={newTask.startTime} onChange={(e) => handleInputChange(setNewTask, newTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
+                      <input type="time" required value={newTask.startTime} onChange={(e) => handleInputChange(setNewTask, newTask, 'startTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fim</label>
-                      <input type="time" required value={newTask.endTime} onChange={(e) => handleInputChange(setNewTask, newTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Fim</label>
+                      <input type="time" required value={newTask.endTime} onChange={(e) => handleInputChange(setNewTask, newTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
-                      <input type="number" step="0.01" min="0" value={newTask.pricePerHour} onChange={(e) => handleInputChange(setNewTask, newTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={newTask.pricePerHour} onChange={(e) => handleInputChange(setNewTask, newTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
-                      <input type="number" step="0.01" value={newTask.price} onChange={(e) => handleInputChange(setNewTask, newTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg text-green-800 font-bold" />
+                      <label className="block text-sm font-medium text-success mb-1">Total (€)</label>
+                      <input type="number" step="0.01" value={newTask.price} onChange={(e) => handleInputChange(setNewTask, newTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
                       type="text" 
                       placeholder="Rua..." 
                       value={newTask.address} 
                       onChange={(e) => handleInputChange(setNewTask, newTask, 'address', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                     {selectedClientId && (
-                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
                     )}
                   </div>
 
                   {/* Save as client checkbox */}
                   {!editingId && !selectedClientId && newTask.client && (
-                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-800">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
                       <input
                         type="checkbox"
                         checked={saveAsClient}
                         onChange={(e) => setSaveAsClient(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <UserPlus size={14} />
                       Guardar cliente para próximos agendamentos
@@ -1608,11 +1608,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               {activeTab === 'fixed' && (
                 <form onSubmit={handleAddFixedTask} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Dia da Semana</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Dia da Semana</label>
                     <select
                       value={fixedTask.weekDay}
                       onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'weekDay', e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                     >
                       {weekDaysList.map(day => <option key={day} value={day}>{day}</option>)}
                     </select>
@@ -1620,14 +1620,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   {/* Client selector for fixed */}
                   {clients.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
                         <Users size={14} />
                         Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleClientSelect(e.target.value, setFixedTask, fixedTask)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                        className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
                         {clients.map(c => (
@@ -1637,7 +1637,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Cliente <span className="text-destructive">*</span></label>
                     <input 
                       type="text" 
                       required={!selectedClientId}
@@ -1645,52 +1645,52 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       value={fixedTask.client} 
                       onChange={(e) => { handleInputChange(setFixedTask, fixedTask, 'client', e.target.value); setSelectedClientId(''); }} 
                       readOnly={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
                       type="text" 
                       placeholder="Ex: 912 345 678" 
                       value={fixedTask.phone} 
                       onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'phone', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                      <input type="time" required value={fixedTask.startTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
+                      <input type="time" required value={fixedTask.startTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'startTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fim</label>
-                      <input type="time" required value={fixedTask.endTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Fim</label>
+                      <input type="time" required value={fixedTask.endTime} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
-                      <input type="number" step="0.01" min="0" value={fixedTask.pricePerHour} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={fixedTask.pricePerHour} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
-                      <input type="number" step="0.01" value={fixedTask.price} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg text-green-800 font-bold" />
+                      <label className="block text-sm font-medium text-success mb-1">Total (€)</label>
+                      <input type="number" step="0.01" value={fixedTask.price} onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
                       type="text" 
                       placeholder="Rua..." 
                       value={fixedTask.address} 
                       onChange={(e) => handleInputChange(setFixedTask, fixedTask, 'address', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                     {selectedClientId && (
-                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
                     )}
                   </div>
                   <button 
@@ -1707,11 +1707,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               {activeTab === 'biweekly' && (
                 <form onSubmit={handleAddBiWeeklyTask} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data de Início</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Data de Início</label>
                     <select
                       value={biWeeklyTask.startDate}
                       onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startDate', e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                      className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                     >
                       {currentMonthDays.map(d => <option key={d.dateString} value={d.dateString}>{d.formatted} - {d.dayName}</option>)}
                     </select>
@@ -1719,14 +1719,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   {/* Client selector for biweekly */}
                   {clients.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                      <label className="block text-sm font-medium text-card-foreground mb-1 flex items-center gap-1">
                         <Users size={14} />
                         Selecionar Cliente Existente
                       </label>
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleClientSelect(e.target.value, setBiWeeklyTask, biWeeklyTask)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                        className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground"
                       >
                         <option value="">-- Novo cliente --</option>
                         {clients.map(c => (
@@ -1736,7 +1736,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Cliente <span className="text-destructive">*</span></label>
                     <input 
                       type="text" 
                       required={!selectedClientId}
@@ -1744,52 +1744,52 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                       value={biWeeklyTask.client} 
                       onChange={(e) => { handleInputChange(setBiWeeklyTask, biWeeklyTask, 'client', e.target.value); setSelectedClientId(''); }} 
                       readOnly={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border' : 'border-border'}`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                     <input 
                       type="text" 
                       placeholder="Ex: 912 345 678" 
                       value={biWeeklyTask.phone} 
                       onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'phone', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                      <input type="time" required value={biWeeklyTask.startTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Início</label>
+                      <input type="time" required value={biWeeklyTask.startTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'startTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fim</label>
-                      <input type="time" required value={biWeeklyTask.endTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'endTime', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">Fim</label>
+                      <input type="time" required value={biWeeklyTask.endTime} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'endTime', e.target.value)} className="w-full p-2 border border-border rounded-lg bg-input text-foreground" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 bg-secondary p-3 rounded-lg border border-border">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">€/h</label>
-                      <input type="number" step="0.01" min="0" value={biWeeklyTask.pricePerHour} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" />
+                      <label className="block text-sm font-medium text-card-foreground mb-1">€/h</label>
+                      <input type="number" step="0.01" min="0" value={biWeeklyTask.pricePerHour} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'pricePerHour', e.target.value)} className="w-full p-2 border border-border rounded-lg focus:ring-2 focus:ring-primary bg-input text-foreground" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-green-700 mb-1">Total (€)</label>
-                      <input type="number" step="0.01" value={biWeeklyTask.price} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'price', e.target.value)} className="w-full p-2 border-2 border-green-100 bg-green-50 rounded-lg text-green-800 font-bold" />
+                      <label className="block text-sm font-medium text-success mb-1">Total (€)</label>
+                      <input type="number" step="0.01" value={biWeeklyTask.price} onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'price', e.target.value)} className="w-full p-2 border-2 border-success/30 bg-success/10 rounded-lg text-success font-bold" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                     <input 
                       type="text" 
                       placeholder="Rua..." 
                       value={biWeeklyTask.address} 
                       onChange={(e) => handleInputChange(setBiWeeklyTask, biWeeklyTask, 'address', e.target.value)} 
                       disabled={!!selectedClientId}
-                      className={`w-full p-2 border rounded-lg ${selectedClientId ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                      className={`w-full p-2 border rounded-lg bg-input text-foreground ${selectedClientId ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'border-border'}`}
                     />
                     {selectedClientId && (
-                      <p className="text-xs text-gray-400 mt-1">Morada definida na ficha do cliente</p>
+                      <p className="text-xs text-muted-foreground mt-1">Morada definida na ficha do cliente</p>
                     )}
                   </div>
                   <button 
@@ -1826,7 +1826,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       {/* Popup de Seleção de Tipo */}
       {showTypeSelector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
             <div className={`bg-gradient-to-r ${getThemeColor()} text-white p-5 flex items-center justify-between`}>
               <h3 className="font-bold text-lg">Tipo de Agendamento</h3>
               <button 
@@ -1844,14 +1844,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
                   setShowModal(true);
                 }}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-4"
+                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Calendar size={24} className="text-purple-600" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Calendar size={24} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-gray-800">Único</p>
-                  <p className="text-sm text-gray-500">Agendamento para um dia específico</p>
+                  <p className="font-bold text-card-foreground">Único</p>
+                  <p className="text-sm text-muted-foreground">Agendamento para um dia específico</p>
                 </div>
               </button>
               
@@ -1862,14 +1862,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
                   setShowModal(true);
                 }}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4"
+                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Repeat size={24} className="text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Repeat size={24} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-gray-800">Semanal</p>
-                  <p className="text-sm text-gray-500">Repetir todas as semanas no mesmo dia</p>
+                  <p className="font-bold text-card-foreground">Semanal</p>
+                  <p className="text-sm text-muted-foreground">Repetir todas as semanas no mesmo dia</p>
                 </div>
               </button>
               
@@ -1880,22 +1880,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
                   setShowModal(true);
                 }}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 transition-all flex items-center gap-4"
+                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
-                  <CalendarRange size={24} className="text-pink-600" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CalendarRange size={24} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-gray-800">Quinzenal</p>
-                  <p className="text-sm text-gray-500">Repetir a cada 2 semanas</p>
+                  <p className="font-bold text-card-foreground">Quinzenal</p>
+                  <p className="text-sm text-muted-foreground">Repetir a cada 2 semanas</p>
                 </div>
               </button>
 
               {/* Separator */}
               <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 border-t border-gray-200"></div>
-                <span className="text-xs text-gray-400 font-medium">OU</span>
-                <div className="flex-1 border-t border-gray-200"></div>
+                <div className="flex-1 border-t border-border"></div>
+                <span className="text-xs text-muted-foreground font-medium">OU</span>
+                <div className="flex-1 border-t border-border"></div>
               </div>
 
               {/* Copy from Previous Month Button */}
@@ -1904,24 +1904,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                 disabled={copyingFromPrevious || activeMonth === 'december'}
                 className={`w-full p-4 border-2 rounded-xl transition-all flex items-center gap-4 ${
                   activeMonth === 'december' 
-                    ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50' 
-                    : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                    ? 'border-border bg-muted cursor-not-allowed opacity-50' 
+                    : 'border-border hover:border-success hover:bg-success/5'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  activeMonth === 'december' ? 'bg-gray-100' : 'bg-green-100'
+                  activeMonth === 'december' ? 'bg-muted' : 'bg-success/10'
                 }`}>
                   {copyingFromPrevious ? (
-                    <Loader2 size={24} className="text-green-600 animate-spin" />
+                    <Loader2 size={24} className="text-success animate-spin" />
                   ) : (
-                    <Copy size={24} className={activeMonth === 'december' ? 'text-gray-400' : 'text-green-600'} />
+                    <Copy size={24} className={activeMonth === 'december' ? 'text-muted-foreground' : 'text-success'} />
                   )}
                 </div>
                 <div className="text-left">
-                  <p className={`font-bold ${activeMonth === 'december' ? 'text-gray-400' : 'text-gray-800'}`}>
+                  <p className={`font-bold ${activeMonth === 'december' ? 'text-muted-foreground' : 'text-card-foreground'}`}>
                     Copiar do Mês Anterior
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {activeMonth === 'december' 
                       ? 'Não disponível para Dezembro' 
                       : `Copiar clientes cadastrados de ${MONTHS_CONFIG[getPreviousMonth()!]?.label || ''}`
@@ -1937,8 +1937,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       {/* Modal de Escolha de Posição */}
       {showPositionDialog && pendingDrop && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-border bg-gradient-to-r from-primary to-primary/80 text-white">
               <h2 className="text-xl font-bold">Escolher Posição</h2>
               <p className="text-white/80 text-sm mt-1">
                 Onde quer colocar <strong>{pendingDrop.taskToMove.client}</strong>?
@@ -1946,18 +1946,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             </div>
             
             <div className="p-6 space-y-3">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Este dia já tem {pendingDrop.existingTasks.length} agendamento(s). 
                 Escolha se quer colocar antes ou depois:
               </p>
               
               {/* Existing tasks preview */}
-              <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                <p className="text-xs text-gray-500 mb-2 font-medium">Agendamentos existentes:</p>
+              <div className="bg-secondary rounded-lg p-3 mb-4">
+                <p className="text-xs text-muted-foreground mb-2 font-medium">Agendamentos existentes:</p>
                 {pendingDrop.existingTasks.map((task, idx) => (
-                  <div key={idx} className="text-sm text-gray-700 flex justify-between">
+                  <div key={idx} className="text-sm text-card-foreground flex justify-between">
                     <span>{task.client}</span>
-                    <span className="text-gray-500">{task.startTime} - {task.endTime}</span>
+                    <span className="text-muted-foreground">{task.startTime} - {task.endTime}</span>
                   </div>
                 ))}
               </div>
@@ -1965,38 +1965,38 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               {/* Position buttons */}
               <button
                 onClick={() => handlePositionChoice('above')}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4"
+                className="w-full p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <ArrowUp size={24} className="text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowUp size={24} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-gray-800">Colocar Antes</p>
-                  <p className="text-sm text-gray-500">1 hora antes do primeiro agendamento</p>
+                  <p className="font-bold text-card-foreground">Colocar Antes</p>
+                  <p className="text-sm text-muted-foreground">1 hora antes do primeiro agendamento</p>
                 </div>
               </button>
 
               <button
                 onClick={() => handlePositionChoice('below')}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all flex items-center gap-4"
+                className="w-full p-4 border-2 border-border rounded-xl hover:border-success hover:bg-success/5 transition-all flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <ArrowDown size={24} className="text-green-600" />
+                <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                  <ArrowDown size={24} className="text-success" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-gray-800">Colocar Depois</p>
-                  <p className="text-sm text-gray-500">1 hora depois do último agendamento</p>
+                  <p className="font-bold text-card-foreground">Colocar Depois</p>
+                  <p className="text-sm text-muted-foreground">1 hora depois do último agendamento</p>
                 </div>
               </button>
             </div>
 
-            <div className="p-4 border-t bg-gray-50">
+            <div className="p-4 border-t border-border bg-secondary">
               <button
                 onClick={() => {
                   setShowPositionDialog(false);
                   setPendingDrop(null);
                 }}
-                className="w-full py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                className="w-full py-2 text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
                 Cancelar
               </button>
