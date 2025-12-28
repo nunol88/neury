@@ -5,9 +5,16 @@ import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2,
-  ArrowUp, ArrowDown, BarChart3, CalendarDays
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, Copy, Undo2,
+  ArrowUp, ArrowDown, BarChart3, CalendarDays, Menu, ChevronLeft
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import CalendarModal from '@/components/CalendarModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -146,6 +153,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
   const { clients, addClient } = useClients();
   
@@ -1165,40 +1173,60 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/')}
-            >
-              <ChevronLeft size={16} className="mr-1" />
-              Menu
-            </Button>
-            {isAdmin && (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/admin/dashboard')}
-                >
-                  <BarChart3 size={16} className="mr-1" />
-                  Dashboard
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Menu size={20} />
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/admin/clientes')}
-                >
-                  <Users size={16} className="mr-1" />
-                  Clientes
-                </Button>
-              </>
-            )}
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut size={16} className="mr-1" />
-              Sair
-            </Button>
-          </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white z-50">
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
+                      <BarChart3 size={16} className="mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/admin/clientes')}>
+                      <Users size={16} className="mr-2" />
+                      Clientes
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut size={16} className="mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate('/admin/dashboard')}
+                  >
+                    <BarChart3 size={16} className="mr-1" />
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate('/admin/clientes')}
+                  >
+                    <Users size={16} className="mr-1" />
+                    Clientes
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut size={16} className="mr-1" />
+                Sair
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
