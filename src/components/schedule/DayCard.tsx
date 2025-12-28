@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import TaskCard from './TaskCard';
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, Sparkles } from 'lucide-react';
 
 interface DayInfo {
   dateObject: Date;
@@ -23,6 +23,7 @@ interface DayCardProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onToggleStatus: (id: string, completed: boolean) => void;
+  animationDelay?: number;
 }
 
 const DayCard: React.FC<DayCardProps> = ({
@@ -37,8 +38,10 @@ const DayCard: React.FC<DayCardProps> = ({
   onEditTask,
   onDeleteTask,
   onToggleStatus,
+  animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
   const isSunday = dayObj.dateObject.getDay() === 0;
@@ -50,8 +53,18 @@ const DayCard: React.FC<DayCardProps> = ({
   // Check if date is in the past
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
 
-  const borderClass = 'border-border';
-  const textHeader = 'text-card-foreground';
+  // Scroll to today on mount
+  useEffect(() => {
+    if (isToday && cardRef.current) {
+      setTimeout(() => {
+        cardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+      }, 300);
+    }
+  }, [isToday]);
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
@@ -64,7 +77,6 @@ const DayCard: React.FC<DayCardProps> = ({
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Only set to false if leaving the card entirely
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
@@ -81,25 +93,35 @@ const DayCard: React.FC<DayCardProps> = ({
     }
   };
 
+  // Calculate total value for the day
+  const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
+  const completedTasks = tasks.filter(t => t.completed).length;
+
   return (
     <div
+      ref={cardRef}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`rounded-xl shadow-sm overflow-hidden border flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-200
-        ${isWeekend ? 'bg-muted border-border' : `bg-card ${borderClass}`}
+      style={{ 
+        animationDelay: `${animationDelay}ms`,
+        animationFillMode: 'backwards'
+      }}
+      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up
+        ${isWeekend ? 'bg-muted/50' : ''}
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
-        ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}
+        ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-glow-primary' : ''}
         ${isPast && isAdmin ? 'opacity-60' : ''}
-        ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 scale-[1.02] shadow-lg border-primary/50' : ''}
+        ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
+        hover:shadow-lg hover:scale-[1.01]
       `}
     >
       {/* Drop indicator overlay */}
       {isDragOver && !isPast && (
-        <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center animate-pulse">
-          <div className="bg-primary/20 rounded-full p-3 backdrop-blur-sm">
-            <CalendarPlus className="w-6 h-6 text-primary" />
+        <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center animate-pulse backdrop-blur-[1px]">
+          <div className="glass rounded-full p-4 shadow-lg">
+            <CalendarPlus className="w-8 h-8 text-primary animate-bounce" />
           </div>
         </div>
       )}
@@ -107,41 +129,79 @@ const DayCard: React.FC<DayCardProps> = ({
       {/* Past date warning overlay */}
       {isDragOver && isPast && (
         <div className="absolute inset-0 bg-destructive/10 rounded-xl pointer-events-none z-10 flex items-center justify-center">
-          <div className="bg-destructive/20 rounded-lg px-3 py-2 backdrop-blur-sm">
-            <span className="text-xs text-destructive font-medium">Data passada</span>
+          <div className="glass rounded-lg px-4 py-2">
+            <span className="text-sm text-destructive font-semibold">Data passada</span>
           </div>
         </div>
       )}
 
-      <div className={`p-3 border-b border-border flex justify-between items-center ${isWeekend ? 'bg-muted' : headerBg}`}>
-        <div>
-          <h2 className={`font-bold capitalize ${isSunday ? 'text-destructive' : textHeader} ${isToday ? 'text-primary' : ''}`}>
-            {dayObj.dayName}
-            {isToday && <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Hoje</span>}
-          </h2>
-          <span className="text-xs text-muted-foreground font-semibold">{dayObj.formatted}</span>
-        </div>
-        {tasks.length > 0 && (
-          <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full shadow-sm">
-            {tasks.length}
-          </span>
+      {/* Header */}
+      <div className={`p-3 border-b border-border/50 flex justify-between items-center relative overflow-hidden
+        ${isWeekend ? 'bg-muted/50' : 'bg-gradient-to-r from-card to-card/80'}
+        ${isToday ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent' : ''}
+      `}>
+        {/* Decorative gradient for today */}
+        {isToday && (
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
         )}
+        
+        <div className="relative z-10">
+          <h2 className={`font-bold capitalize flex items-center gap-2 ${
+            isSunday ? 'text-destructive' : 'text-card-foreground'
+          } ${isToday ? 'text-primary' : ''}`}>
+            {dayObj.dayName}
+            {isToday && (
+              <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2.5 py-1 rounded-full shadow-md animate-pulse">
+                <Sparkles size={10} className="animate-spin" style={{ animationDuration: '3s' }} />
+                Hoje
+              </span>
+            )}
+          </h2>
+          <span className="text-xs text-muted-foreground font-semibold tracking-wide">{dayObj.formatted}</span>
+        </div>
+        
+        <div className="flex items-center gap-2 relative z-10">
+          {tasks.length > 0 && (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full shadow-sm transition-all
+                ${completedTasks === tasks.length 
+                  ? 'bg-success/20 text-success border border-success/30' 
+                  : 'bg-primary/10 text-primary border border-primary/20'
+                }`}>
+                {completedTasks}/{tasks.length}
+              </span>
+              {dayTotal > 0 && (
+                <span className="text-[10px] text-success font-bold">
+                  €{dayTotal.toFixed(0)}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className={`p-2 flex-1 min-h-[100px] relative transition-colors duration-200 ${
+      {/* Content */}
+      <div className={`p-2 flex-1 min-h-[100px] relative transition-all duration-300 ${
         isDragOver && !isPast ? 'bg-primary/5' : ''
       }`}>
         {tasks.length === 0 ? (
-          <div className={`h-full flex items-center justify-center text-xs italic transition-colors duration-200 ${
+          <div className={`h-full flex items-center justify-center text-xs italic transition-all duration-300 ${
             isDragOver && !isPast 
-              ? 'text-primary font-medium' 
-              : 'text-muted-foreground/50'
+              ? 'text-primary font-semibold scale-105' 
+              : 'text-muted-foreground/40'
           }`}>
-            {isDragOver && !isPast ? 'Soltar aqui' : (isSunday ? 'Domingo' : 'Livre')}
+            {isDragOver && !isPast ? (
+              <span className="flex items-center gap-2">
+                <CalendarPlus size={14} />
+                Soltar aqui
+              </span>
+            ) : (
+              isSunday ? 'Domingo' : 'Livre'
+            )}
           </div>
         ) : (
           <div className="space-y-2">
-            {tasks.map((task) => (
+            {tasks.map((task, index) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -150,6 +210,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
                 onToggleStatus={onToggleStatus}
+                animationDelay={index * 50}
               />
             ))}
           </div>

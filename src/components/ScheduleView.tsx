@@ -21,6 +21,7 @@ import {
   DayCard,
   ScheduleHeader,
   MonthTabs,
+  MonthSummaryBar,
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
@@ -953,14 +954,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </header>
 
-      {/* Financial Summary */}
+      {/* Hero Summary Bar */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
-        <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex justify-between items-center">
-          <span className="text-muted-foreground font-medium">Total previsto ({activeConfig?.label}):</span>
-          <span className="text-3xl font-bold flex items-center gap-1 text-primary">
-            € {calculateMonthTotal().toFixed(2)}
-          </span>
-        </div>
+        <MonthSummaryBar
+          tasks={getTasksForMonth(activeMonth)}
+          monthLabel={activeConfig?.label || ''}
+          totalDays={currentMonthDays.length}
+        />
       </div>
 
 

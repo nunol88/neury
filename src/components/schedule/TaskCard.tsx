@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 
 interface TaskCardProps {
@@ -10,6 +10,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, completed: boolean) => void;
+  animationDelay?: number;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -19,6 +20,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
   onToggleStatus,
+  animationDelay = 0,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -48,15 +50,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
     dragElement.style.position = 'absolute';
     dragElement.style.top = '-1000px';
     dragElement.style.width = `${e.currentTarget.clientWidth}px`;
-    dragElement.style.opacity = '0.9';
-    dragElement.style.transform = 'rotate(2deg) scale(1.02)';
-    dragElement.style.boxShadow = '0 10px 40px rgba(0,0,0,0.3)';
-    dragElement.style.borderRadius = '12px';
+    dragElement.style.opacity = '0.95';
+    dragElement.style.transform = 'rotate(2deg) scale(1.05)';
+    dragElement.style.boxShadow = '0 20px 60px rgba(0,0,0,0.4)';
+    dragElement.style.borderRadius = '16px';
     dragElement.style.background = 'hsl(var(--card))';
     document.body.appendChild(dragElement);
     e.dataTransfer.setDragImage(dragElement, e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     
-    // Clean up after drag starts
     requestAnimationFrame(() => {
       document.body.removeChild(dragElement);
     });
@@ -66,67 +67,97 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setIsDragging(false);
   };
 
+  // Calculate hours
+  const startTime = new Date(`1970-01-01T${task.startTime}`);
+  const endTime = new Date(`1970-01-01T${task.endTime}`);
+  const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
   return (
     <div
       draggable={isAdmin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className={`relative group p-2 rounded-lg border transition-all text-sm ${
+      style={{ 
+        animationDelay: `${animationDelay}ms`,
+        animationFillMode: 'backwards'
+      }}
+      className={`relative group p-3 rounded-xl border-2 transition-all duration-300 text-sm animate-fade-in ${
         isAdmin ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
       } ${
         isDragging 
-          ? 'opacity-40 scale-95 border-dashed border-primary/50 bg-primary/5' 
-          : 'hover-lift'
+          ? 'opacity-40 scale-95 border-dashed border-primary/50 bg-primary/5 rotate-1' 
+          : 'hover:shadow-lg hover:-translate-y-0.5'
       } ${
         task.completed
-          ? 'bg-success/10 border-success/30'
-          : 'bg-card border-border hover:border-primary/50'
+          ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/40 shadow-success/10'
+          : 'bg-gradient-to-br from-card to-card/80 border-border/50 hover:border-primary/40'
       }`}
     >
+      {/* Gradient border effect on hover */}
+      <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none
+        ${task.completed ? '' : 'bg-gradient-to-br from-primary/5 via-transparent to-primary/5'}
+      `} />
+
       {/* Drag handle indicator */}
       {isAdmin && (
-        <div className="absolute -left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 transition-opacity">
-          <GripVertical size={14} className="text-muted-foreground" />
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-70 transition-all duration-300 group-hover:-translate-x-1">
+          <GripVertical size={16} className="text-muted-foreground" />
+        </div>
+      )}
+
+      {/* Completed seal */}
+      {task.completed && (
+        <div className="absolute -top-1 -right-1 z-10">
+          <div className="bg-success text-success-foreground rounded-full p-1.5 shadow-lg animate-scale-in">
+            <Check size={10} strokeWidth={3} />
+          </div>
         </div>
       )}
 
       {/* Confetti animation */}
       {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
-          {[...Array(6)].map((_, i) => (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl z-20">
+          {[...Array(8)].map((_, i) => (
             <div
               key={i}
               className="confetti-particle"
               style={{
-                left: `${20 + i * 12}%`,
+                left: `${10 + i * 11}%`,
                 top: '50%',
-                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'][i],
-                animationDelay: `${i * 0.05}s`,
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'][i],
+                animationDelay: `${i * 0.03}s`,
               }}
             />
           ))}
         </div>
       )}
       
-      <div className="flex justify-between items-start mb-1 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <ClientAvatar name={task.client} size="sm" />
-          <span className={`font-bold truncate ${task.completed ? 'text-success line-through' : 'text-card-foreground'}`}>
+      {/* Header: Avatar + Name + Time */}
+      <div className="flex justify-between items-start mb-2 gap-2 relative z-10">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={`relative ${task.completed ? '' : 'ring-2 ring-offset-1 ring-offset-card ring-primary/20'} rounded-full`}>
+            <ClientAvatar name={task.client} size="sm" />
+          </div>
+          <span className={`font-bold truncate ${task.completed ? 'text-success line-through decoration-2' : 'text-card-foreground'}`}>
             {task.client}
           </span>
         </div>
-        <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground whitespace-nowrap shrink-0">
-          {task.startTime} - {task.endTime}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Clock size={10} className="text-muted-foreground" />
+          <span className="text-xs bg-secondary/80 backdrop-blur-sm px-2 py-1 rounded-lg text-muted-foreground font-medium border border-border/50">
+            {task.startTime} - {task.endTime}
+          </span>
+        </div>
       </div>
 
+      {/* Contact info */}
       {task.phone && (
         <a 
           href={`tel:${task.phone}`}
           onClick={(e) => e.stopPropagation()}
-          className="text-xs text-primary truncate flex items-center gap-1 mb-1 font-medium hover:underline"
+          className="text-xs text-primary truncate flex items-center gap-1.5 mb-1.5 font-medium hover:underline hover:text-primary/80 transition-colors group/phone"
         >
-          <Phone size={10} />
+          <Phone size={11} className="group-hover/phone:animate-wiggle" />
           {task.phone}
         </a>
       )}
@@ -134,55 +165,72 @@ const TaskCard: React.FC<TaskCardProps> = ({
       {task.address && (
         <button
           onClick={openGoogleMaps}
-          className="text-xs text-muted-foreground flex items-start gap-1 mb-1 hover:text-primary transition-colors text-left w-full group/address"
+          className="text-xs text-muted-foreground flex items-start gap-1.5 mb-2 hover:text-primary transition-colors text-left w-full group/address"
         >
-          <MapPin size={10} className="shrink-0 mt-0.5 group-hover/address:text-primary" />
-          <span className="break-words group-hover/address:underline">{task.address}</span>
-          <Navigation size={10} className="shrink-0 mt-0.5 opacity-0 group-hover/address:opacity-100 text-primary transition-opacity" />
+          <MapPin size={11} className="shrink-0 mt-0.5 group-hover/address:text-primary transition-colors" />
+          <span className="break-words group-hover/address:underline line-clamp-2">{task.address}</span>
+          <Navigation size={11} className="shrink-0 mt-0.5 opacity-0 group-hover/address:opacity-100 text-primary transition-all -translate-x-1 group-hover/address:translate-x-0" />
         </button>
       )}
 
-      <div className="flex justify-between items-center border-t pt-1.5 border-dashed border-border mt-1">
-        <div className="text-success font-bold text-xs flex items-center gap-0.5">
-          €{task.price}
+      {/* Footer: Price + Actions */}
+      <div className="flex justify-between items-center border-t pt-2 border-dashed border-border/50 mt-1 relative z-10">
+        <div className="flex items-center gap-2">
+          {/* Price badge with shimmer effect */}
+          <div className="relative overflow-hidden rounded-lg">
+            <div className="flex items-center gap-1 bg-gradient-to-r from-success/20 to-success/10 text-success font-bold text-sm px-2.5 py-1 border border-success/30">
+              <Euro size={12} />
+              {task.price}
+            </div>
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </div>
+          
+          {/* Hours indicator */}
+          <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-medium">
+            {hours.toFixed(1)}h
+          </span>
         </div>
+        
         <div className="flex items-center gap-1">
-          {/* Map button - always visible if address exists */}
+          {/* Map button */}
           {task.address && (
             <button
               onClick={openGoogleMaps}
-              className="p-1.5 hover:bg-primary/10 rounded-full transition-all hover:scale-110 hover-wiggle"
+              className="p-2 hover:bg-primary/10 rounded-full transition-all duration-200 hover:scale-110"
               title="Navegar no Google Maps"
             >
-              <Navigation size={12} className="text-primary" />
+              <Navigation size={14} className="text-primary" />
             </button>
           )}
+          
+          {/* Admin actions - reveal on hover */}
           {isAdmin && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
               <button
                 onClick={() => onEdit(task)}
-                className="p-1.5 hover:bg-primary/10 rounded-full transition-all hover:scale-110"
+                className="p-2 hover:bg-primary/10 rounded-full transition-all duration-200 hover:scale-110"
                 title="Editar"
               >
-                <Pencil size={12} className="text-primary" />
+                <Pencil size={14} className="text-primary" />
               </button>
               <button
                 onClick={() => onDelete(task.id)}
-                className="p-1.5 hover:bg-destructive/10 rounded-full transition-all hover:scale-110"
+                className="p-2 hover:bg-destructive/10 rounded-full transition-all duration-200 hover:scale-110"
                 title="Eliminar"
               >
-                <Trash2 size={12} className="text-destructive" />
+                <Trash2 size={14} className="text-destructive" />
               </button>
               <button
                 onClick={handleToggleStatus}
-                className={`p-1.5 rounded-full transition-all hover:scale-110 ${
+                className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
                   task.completed
                     ? 'bg-success/20 hover:bg-success/30 text-success'
                     : 'hover:bg-success/10 text-muted-foreground hover:text-success'
                 }`}
                 title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
               >
-                <Check size={12} className={task.completed ? 'animate-success-pop' : ''} />
+                <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
               </button>
             </div>
           )}
