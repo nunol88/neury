@@ -41,8 +41,101 @@ const MONTHS_CONFIG = {
     startDay: 1,
     endDay: 28,
     color: 'pink',
+  },
+  march: {
+    id: 'march',
+    label: 'Março 2026',
+    year: 2026,
+    monthIndex: 2,
+    startDay: 1,
+    endDay: 31,
+    color: 'green',
+  },
+  april: {
+    id: 'april',
+    label: 'Abril 2026',
+    year: 2026,
+    monthIndex: 3,
+    startDay: 1,
+    endDay: 30,
+    color: 'yellow',
+  },
+  may: {
+    id: 'may',
+    label: 'Maio 2026',
+    year: 2026,
+    monthIndex: 4,
+    startDay: 1,
+    endDay: 31,
+    color: 'emerald',
+  },
+  june: {
+    id: 'june',
+    label: 'Junho 2026',
+    year: 2026,
+    monthIndex: 5,
+    startDay: 1,
+    endDay: 30,
+    color: 'cyan',
+  },
+  july: {
+    id: 'july',
+    label: 'Julho 2026',
+    year: 2026,
+    monthIndex: 6,
+    startDay: 1,
+    endDay: 31,
+    color: 'sky',
+  },
+  august: {
+    id: 'august',
+    label: 'Agosto 2026',
+    year: 2026,
+    monthIndex: 7,
+    startDay: 1,
+    endDay: 31,
+    color: 'orange',
+  },
+  september: {
+    id: 'september',
+    label: 'Setembro 2026',
+    year: 2026,
+    monthIndex: 8,
+    startDay: 1,
+    endDay: 30,
+    color: 'amber',
+  },
+  october: {
+    id: 'october',
+    label: 'Outubro 2026',
+    year: 2026,
+    monthIndex: 9,
+    startDay: 1,
+    endDay: 31,
+    color: 'red',
+  },
+  november: {
+    id: 'november',
+    label: 'Novembro 2026',
+    year: 2026,
+    monthIndex: 10,
+    startDay: 1,
+    endDay: 30,
+    color: 'rose',
+  },
+  december2026: {
+    id: 'december2026',
+    label: 'Dezembro 2026',
+    year: 2026,
+    monthIndex: 11,
+    startDay: 1,
+    endDay: 31,
+    color: 'violet',
   }
 };
+
+type MonthKey = keyof typeof MONTHS_CONFIG;
+const ALL_MONTH_KEYS: MonthKey[] = Object.keys(MONTHS_CONFIG) as MonthKey[];
 
 interface ScheduleViewProps {
   isAdmin: boolean;
@@ -55,7 +148,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
   const { clients, addClient } = useClients();
   
-  const [activeMonth, setActiveMonth] = useState<'december' | 'january' | 'february'>('december');
+  const [activeMonth, setActiveMonth] = useState<MonthKey>('december');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
@@ -120,9 +213,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     const year = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10) - 1; // 0-indexed
 
-    if (month === 11 && year === 2025) return 'december';
-    if (month === 0 && year === 2026) return 'january';
-    if (month === 1 && year === 2026) return 'february';
+    if (year === 2025 && month === 11) return 'december';
+    if (year === 2026) {
+      const monthKeys: (keyof AllTasks)[] = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december2026'
+      ];
+      return monthKeys[month] || null;
+    }
     return null;
   };
 
@@ -318,7 +416,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     // Find the task
     let taskToMove: Task | null = null;
-    for (const monthKey of ['december', 'january', 'february'] as const) {
+    for (const monthKey of ALL_MONTH_KEYS) {
       const found = allTasks[monthKey].find(t => t.id === taskId);
       if (found) {
         taskToMove = found;
@@ -480,7 +578,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     try {
       // Find the task
       let taskToRestore: Task | null = null;
-      for (const monthKey of ['december', 'january', 'february'] as const) {
+      for (const monthKey of ALL_MONTH_KEYS) {
         const found = allTasks[monthKey].find(t => t.id === lastMovedTask.id);
         if (found) {
           taskToRestore = found;
@@ -655,11 +753,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     setSaving(true);
 
     try {
-      const allDaysContinuous = [
-        ...generateDaysForMonth('december'),
-        ...generateDaysForMonth('january'),
-        ...generateDaysForMonth('february')
-      ];
+      const allDaysContinuous = ALL_MONTH_KEYS.flatMap(key => generateDaysForMonth(key));
 
       const startIndex = allDaysContinuous.findIndex(d => d.dateString === biWeeklyTask.startDate);
 
@@ -737,9 +831,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   };
 
   const getPreviousMonth = (): keyof AllTasks | null => {
-    if (activeMonth === 'january') return 'december';
-    if (activeMonth === 'february') return 'january';
-    return null; // December has no previous month in our range
+    const monthOrder: MonthKey[] = [
+      'december', 'january', 'february', 'march', 'april', 'may',
+      'june', 'july', 'august', 'september', 'october', 'november', 'december2026'
+    ];
+    const currentIndex = monthOrder.indexOf(activeMonth);
+    if (currentIndex <= 0) return null; // December 2025 has no previous month
+    return monthOrder[currentIndex - 1];
   };
 
   const handleCopyFromPreviousMonth = async () => {
@@ -947,17 +1045,41 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   };
 
   const getThemeColor = () => {
-    if (activeMonth === 'december') return 'from-purple-600 to-purple-800';
-    if (activeMonth === 'january') return 'from-blue-600 to-blue-800';
-    if (activeMonth === 'february') return 'from-pink-500 to-pink-700';
-    return 'from-purple-600 to-purple-800';
+    const colorMap: Record<MonthKey, string> = {
+      december: 'from-purple-600 to-purple-800',
+      january: 'from-blue-600 to-blue-800',
+      february: 'from-pink-500 to-pink-700',
+      march: 'from-green-500 to-green-700',
+      april: 'from-yellow-500 to-yellow-700',
+      may: 'from-emerald-500 to-emerald-700',
+      june: 'from-cyan-500 to-cyan-700',
+      july: 'from-sky-500 to-sky-700',
+      august: 'from-orange-500 to-orange-700',
+      september: 'from-amber-500 to-amber-700',
+      october: 'from-red-500 to-red-700',
+      november: 'from-rose-500 to-rose-700',
+      december2026: 'from-violet-500 to-violet-700'
+    };
+    return colorMap[activeMonth] || 'from-purple-600 to-purple-800';
   };
 
   const getBgColor = () => {
-    if (activeMonth === 'december') return 'bg-purple-50';
-    if (activeMonth === 'january') return 'bg-blue-50';
-    if (activeMonth === 'february') return 'bg-pink-50';
-    return 'bg-purple-50';
+    const bgMap: Record<MonthKey, string> = {
+      december: 'bg-purple-50',
+      january: 'bg-blue-50',
+      february: 'bg-pink-50',
+      march: 'bg-green-50',
+      april: 'bg-yellow-50',
+      may: 'bg-emerald-50',
+      june: 'bg-cyan-50',
+      july: 'bg-sky-50',
+      august: 'bg-orange-50',
+      september: 'bg-amber-50',
+      october: 'bg-red-50',
+      november: 'bg-rose-50',
+      december2026: 'bg-violet-50'
+    };
+    return bgMap[activeMonth] || 'bg-purple-50';
   };
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
