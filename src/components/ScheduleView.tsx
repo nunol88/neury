@@ -24,7 +24,6 @@ import {
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
-  SearchBar,
 } from '@/components/schedule';
 
 import {
@@ -81,7 +80,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [copiedTaskIds, setCopiedTaskIds] = useState<string[]>([]);
   const [showUndoBar, setShowUndoBar] = useState(false);
   const [copyingFromPrevious, setCopyingFromPrevious] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  
   
   // State for undo move functionality
   const [lastMovedTask, setLastMovedTask] = useState<{
@@ -117,18 +116,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     return getMonthKeyFromDateUtil(dateString, monthsConfig);
   };
 
-  // Filter tasks by search query
-  const getFilteredTasksForMonth = (monthKey: string): Task[] => {
-    const monthTasks = allTasks[monthKey as keyof AllTasks] || [];
-    if (!searchQuery.trim()) return monthTasks;
-    
-    const query = searchQuery.toLowerCase().trim();
-    return monthTasks.filter(task => 
-      task.client.toLowerCase().includes(query) ||
-      (task.address && task.address.toLowerCase().includes(query)) ||
-      (task.phone && task.phone.toLowerCase().includes(query)) ||
-      (task.notes && task.notes.toLowerCase().includes(query))
-    );
+  // Get tasks for a month
+  const getTasksForMonth = (monthKey: string): Task[] => {
+    return allTasks[monthKey as keyof AllTasks] || [];
   };
 
   const [newTask, setNewTask] = useState({
@@ -952,14 +942,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
 
           <div className="mt-4 md:mt-0 flex gap-3 flex-wrap items-center">
-            {/* Search Bar */}
-            <div className="w-64">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Pesquisar..."
-              />
-            </div>
             <button
               onClick={exportToPDF}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
@@ -981,27 +963,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </div>
 
-      {/* Search Results Indicator */}
-      {searchQuery && (
-        <div className="max-w-7xl mx-auto px-4 mt-4">
-          <div className="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium">
-              A pesquisar por: "{searchQuery}" - {getFilteredTasksForMonth(activeMonth).length} resultados neste mês
-            </span>
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="text-primary hover:text-primary/80"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Days Grid */}
       <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
         {currentMonthDays.map((dayObj) => {
-          const dayTasks = getFilteredTasksForMonth(activeMonth)
+          const dayTasks = getTasksForMonth(activeMonth)
             .filter(t => t.date === dayObj.dateString)
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
