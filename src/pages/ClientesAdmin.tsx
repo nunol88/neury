@@ -429,32 +429,32 @@ const ClientesAdmin = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-800 text-lg">{client.nome}</h3>
+                          <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
                           {stats && stats.totalAgendamentos > 0 && (
-                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
                               {stats.totalAgendamentos} agendamentos
                             </span>
                           )}
                         </div>
-                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                           {client.telefone && (
                             <div className="flex items-center gap-2">
-                              <Phone size={14} className="text-blue-500" />
+                              <Phone size={14} className="text-primary" />
                               {client.telefone}
                             </div>
                           )}
                           {client.morada && (
                             <div className="flex items-center gap-2">
-                              <MapPin size={14} className="text-gray-400" />
+                              <MapPin size={14} className="text-muted-foreground" />
                               {client.morada}
                             </div>
                           )}
-                          <div className="text-green-600 font-medium">
+                          <div className="text-success font-medium">
                             €{client.preco_hora}/hora
                           </div>
                         </div>
                         {client.notas && (
-                          <p className="mt-2 text-xs text-gray-400 italic">{client.notas}</p>
+                          <p className="mt-2 text-xs text-muted-foreground italic">{client.notas}</p>
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -462,7 +462,7 @@ const ClientesAdmin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleShowHistory(client.nome)}
-                          className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                          className="text-primary hover:text-primary hover:bg-primary/10"
                         >
                           <History size={14} />
                         </Button>
@@ -477,7 +477,7 @@ const ClientesAdmin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(client.id)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -488,7 +488,7 @@ const ClientesAdmin = () => {
                     {stats && stats.totalAgendamentos > 0 && (
                       <button
                         onClick={() => setExpandedClient(isExpanded ? null : client.id)}
-                        className="mt-3 text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        className="mt-3 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                       >
                         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         {isExpanded ? 'Ocultar estatísticas' : 'Ver estatísticas'}
@@ -499,38 +499,38 @@ const ClientesAdmin = () => {
                   {/* Expanded Stats */}
                   {isExpanded && stats && (
                     <div className="px-4 pb-4 pt-0">
-                      <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div className="bg-secondary rounded-lg p-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div className="flex items-center gap-2">
-                          <CheckCircle size={16} className="text-green-500" />
+                          <CheckCircle size={16} className="text-success" />
                           <div>
-                            <p className="text-xs text-gray-500">Concluídos</p>
-                            <p className="font-bold text-gray-800">{stats.concluidos}</p>
+                            <p className="text-xs text-muted-foreground">Concluídos</p>
+                            <p className="font-bold text-card-foreground">{stats.concluidos}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Clock size={16} className="text-yellow-500" />
+                          <Clock size={16} className="text-warning" />
                           <div>
-                            <p className="text-xs text-gray-500">Pendentes</p>
-                            <p className="font-bold text-gray-800">{stats.pendentes}</p>
+                            <p className="text-xs text-muted-foreground">Pendentes</p>
+                            <p className="font-bold text-card-foreground">{stats.pendentes}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Euro size={16} className="text-green-500" />
+                          <Euro size={16} className="text-success" />
                           <div>
-                            <p className="text-xs text-gray-500">Total Faturado</p>
-                            <p className="font-bold text-green-600">€{stats.totalRevenue.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">Total Faturado</p>
+                            <p className="font-bold text-success">€{stats.totalRevenue.toFixed(2)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <TrendingUp size={16} className="text-indigo-500" />
+                          <TrendingUp size={16} className="text-primary" />
                           <div>
-                            <p className="text-xs text-gray-500">Horas Trabalhadas</p>
-                            <p className="font-bold text-gray-800">{stats.totalHours.toFixed(1)}h</p>
+                            <p className="text-xs text-muted-foreground">Horas Trabalhadas</p>
+                            <p className="font-bold text-card-foreground">{stats.totalHours.toFixed(1)}h</p>
                           </div>
                         </div>
                       </div>
                       {stats.firstService && stats.lastService && (
-                        <div className="mt-2 text-xs text-gray-400 flex gap-4">
+                        <div className="mt-2 text-xs text-muted-foreground flex gap-4">
                           <span>Primeiro serviço: {formatDate(stats.firstService)}</span>
                           <span>Último serviço: {formatDate(stats.lastService)}</span>
                         </div>
@@ -543,7 +543,7 @@ const ClientesAdmin = () => {
           </div>
         )}
 
-        <p className="text-center text-sm text-gray-400 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           {clients.length} cliente{clients.length !== 1 ? 's' : ''} guardado{clients.length !== 1 ? 's' : ''}
         </p>
       </div>

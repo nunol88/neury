@@ -171,8 +171,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
               <div className="flex-1 overflow-y-auto">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <div className="w-12 h-12 rounded-full border-4 border-red-100 border-t-red-500 animate-spin" />
-                    <p className="mt-4 text-sm text-gray-500 font-medium">A carregar...</p>
+                    <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                    <p className="mt-4 text-sm text-muted-foreground font-medium">A carregar...</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-7">
@@ -219,8 +219,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                                       className={`
                                         text-[8px] leading-tight px-1 py-0.5 rounded truncate cursor-default
                                         ${task.completed 
-                                          ? 'bg-green-100 text-green-700' 
-                                          : 'bg-yellow-100 text-yellow-700'
+                                          ? 'bg-success/20 text-success' 
+                                          : 'bg-warning/20 text-warning'
                                         }
                                         active:scale-95 transition-transform
                                       `}
@@ -238,18 +238,18 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                                   </TooltipTrigger>
                                   <TooltipContent 
                                     side="top" 
-                                    className="bg-gray-900 text-white border-0 shadow-lg max-w-[200px]"
+                                    className="bg-popover text-popover-foreground border border-border shadow-lg max-w-[200px]"
                                     sideOffset={4}
                                   >
                                     <div className="text-xs space-y-1 p-0.5">
                                       <p className="font-semibold">{task.client}</p>
-                                      <div className="flex items-center gap-1 text-gray-300">
+                                      <div className="flex items-center gap-1 text-muted-foreground">
                                         <Clock size={10} />
                                         <span>{task.startTime} - {task.endTime}</span>
                                       </div>
-                                      <p className="text-green-400 font-bold">€{task.price}</p>
+                                      <p className="text-success font-bold">€{task.price}</p>
                                       {task.completed && (
-                                        <span className="text-green-400 text-[10px]">✓ Concluído</span>
+                                        <span className="text-success text-[10px]">✓ Concluído</span>
                                       )}
                                     </div>
                                   </TooltipContent>
@@ -257,7 +257,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                               );
                             })}
                             {tasks.length > 3 && (
-                              <div className="text-[8px] text-gray-400 text-center">
+                              <div className="text-[8px] text-muted-foreground text-center">
                                 +{tasks.length - 3}
                               </div>
                             )}
@@ -368,49 +368,49 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                             `} />
                           </div>
                           
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <h4 className="font-bold text-gray-800 text-sm">
-                                  {task.client}
-                                </h4>
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                  <Clock size={12} />
-                                  <span className="font-medium">{task.startTime} - {task.endTime}</span>
-                                </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-bold text-card-foreground text-sm">
+                                {task.client}
+                              </h4>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock size={12} />
+                                <span className="font-medium">{task.startTime} - {task.endTime}</span>
                               </div>
-                              <span className="text-sm font-bold text-green-600 shrink-0">
-                                €{task.price}
-                              </span>
                             </div>
-                            
-                            {task.phone && (
-                              <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
-                                <Phone size={10} />
-                                <span>{task.phone}</span>
-                              </div>
-                            )}
-                            
-                            {task.address && (
-                              <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
-                                <MapPin size={10} />
-                                <span className="truncate">{task.address}</span>
-                              </div>
-                            )}
-                            
-                            {/* Status badge */}
-                            <div className="mt-2">
-                              <span className={`
-                                text-[10px] px-2 py-0.5 rounded-full font-medium
-                                ${task.completed 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-yellow-100 text-yellow-700'
-                                }
-                              `}>
-                                {task.completed ? '✓ Concluído' : '○ Pendente'}
-                              </span>
-                            </div>
+                            <span className="text-sm font-bold text-success shrink-0">
+                              €{task.price}
+                            </span>
                           </div>
+                          
+                          {task.phone && (
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                              <Phone size={10} />
+                              <span>{task.phone}</span>
+                            </div>
+                          )}
+                          
+                          {task.address && (
+                            <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                              <MapPin size={10} />
+                              <span className="truncate">{task.address}</span>
+                            </div>
+                          )}
+                          
+                          {/* Status badge */}
+                          <div className="mt-2">
+                            <span className={`
+                              text-[10px] px-2 py-0.5 rounded-full font-medium
+                              ${task.completed 
+                                ? 'bg-success/20 text-success' 
+                                : 'bg-warning/20 text-warning'
+                              }
+                            `}>
+                              {task.completed ? '✓ Concluído' : '○ Pendente'}
+                            </span>
+                          </div>
+                        </div>
                         </div>
                       </div>
                     ))}
