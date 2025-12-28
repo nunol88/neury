@@ -25,6 +25,13 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  Legend,
+  RadialBarChart,
+  RadialBar,
 } from 'recharts';
 import {
   startOfDay,
@@ -54,6 +61,12 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
 };
 
 const COLORS = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#6366F1', '#14B8A6', '#F97316'];
+const GRADIENT_COLORS = {
+  primary: ['#8B5CF6', '#6366F1'],
+  success: ['#10B981', '#059669'],
+  warning: ['#F59E0B', '#D97706'],
+  danger: ['#EF4444', '#DC2626'],
+};
 
 const Dashboard = () => {
   const { user, role, signOut } = useAuth();
@@ -225,6 +238,22 @@ const Dashboard = () => {
     // Unique clients in period
     const uniqueClients = new Set(filteredTasks.map(t => t.client)).size;
 
+    // Completion rate for radial chart
+    const completionRate = totalAgendamentos > 0 
+      ? Math.round((concluidos / totalAgendamentos) * 100) 
+      : 0;
+
+    // Status distribution for pie chart
+    const statusData = [
+      { name: 'Concluídos', value: concluidos, color: '#10B981' },
+      { name: 'Pendentes', value: pendentes, color: '#F59E0B' },
+    ];
+
+    // Average per day
+    const avgPerDay = displayData.length > 0 
+      ? (totalRevenue + pendingRevenue) / displayData.length 
+      : 0;
+
     return {
       chartData: displayData,
       topClients,
@@ -236,6 +265,9 @@ const Dashboard = () => {
       totalHours,
       uniqueClients,
       totalClients: clients.length,
+      completionRate,
+      statusData,
+      avgPerDay,
     };
   }, [filteredTasks, clients, periodFilter]);
 
@@ -440,119 +472,231 @@ const Dashboard = () => {
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-success/10 rounded-lg">
-                <Euro size={24} className="text-success" />
+        {/* Hero Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Revenue Card with Gradient */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-lg p-5 text-white">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Euro size={20} className="opacity-80" />
+                <span className="text-sm opacity-80">Receita Concluída</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Receita Concluída</p>
-                <p className="text-2xl font-bold text-success">€{stats.totalRevenue.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-warning/10 rounded-lg">
-                <Clock size={24} className="text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Receita Pendente</p>
-                <p className="text-2xl font-bold text-warning">€{stats.pendingRevenue.toFixed(2)}</p>
+              <p className="text-3xl font-bold">€{stats.totalRevenue.toFixed(2)}</p>
+              <div className="mt-2 text-xs opacity-70">
+                {stats.concluidos} serviços concluídos
               </div>
             </div>
           </div>
           
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Calendar size={24} className="text-primary" />
+          {/* Pending Revenue Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg p-5 text-white">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock size={20} className="opacity-80" />
+                <span className="text-sm opacity-80">Receita Pendente</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Agendamentos</p>
-                <p className="text-2xl font-bold text-primary">{stats.totalAgendamentos}</p>
+              <p className="text-3xl font-bold">€{stats.pendingRevenue.toFixed(2)}</p>
+              <div className="mt-2 text-xs opacity-70">
+                {stats.pendentes} por concluir
               </div>
             </div>
           </div>
           
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Users size={24} className="text-primary" />
+          {/* Appointments Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl shadow-lg p-5 text-white">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar size={20} className="opacity-80" />
+                <span className="text-sm opacity-80">Agendamentos</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Clientes no Período</p>
-                <p className="text-2xl font-bold text-primary">{stats.uniqueClients}</p>
+              <p className="text-3xl font-bold">{stats.totalAgendamentos}</p>
+              <div className="mt-2 text-xs opacity-70">
+                {stats.totalHours.toFixed(1)}h trabalhadas
+              </div>
+            </div>
+          </div>
+          
+          {/* Clients Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg p-5 text-white">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={20} className="opacity-80" />
+                <span className="text-sm opacity-80">Clientes</span>
+              </div>
+              <p className="text-3xl font-bold">{stats.uniqueClients}</p>
+              <div className="mt-2 text-xs opacity-70">
+                de {stats.totalClients} total
               </div>
             </div>
           </div>
         </div>
 
-        {/* Secondary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
-            <CheckCircle size={20} className="text-success" />
-            <div>
-              <p className="text-xs text-muted-foreground">Concluídos</p>
-              <p className="text-lg font-bold text-foreground">{stats.concluidos}</p>
+        {/* Completion Rate & Quick Stats */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {/* Completion Rate Gauge */}
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+            <h3 className="font-bold text-foreground mb-4 text-center">Taxa de Conclusão</h3>
+            <div className="relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height={180}>
+                <RadialBarChart
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="60%"
+                  outerRadius="90%"
+                  data={[{ value: stats.completionRate, fill: stats.completionRate >= 70 ? '#10B981' : stats.completionRate >= 40 ? '#F59E0B' : '#EF4444' }]}
+                  startAngle={180}
+                  endAngle={0}
+                >
+                  <RadialBar
+                    dataKey="value"
+                    cornerRadius={10}
+                    background={{ fill: 'hsl(var(--muted))' }}
+                  />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold text-foreground">{stats.completionRate}%</span>
+                <span className="text-xs text-muted-foreground">concluídos</span>
+              </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
-            <Clock size={20} className="text-warning" />
-            <div>
-              <p className="text-xs text-muted-foreground">Pendentes</p>
-              <p className="text-lg font-bold text-foreground">{stats.pendentes}</p>
-            </div>
+
+          {/* Status Distribution Pie */}
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
+            <h3 className="font-bold text-foreground mb-4 text-center">Distribuição de Status</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={stats.statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  paddingAngle={5}
+                >
+                  {stats.statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => [value, '']} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value, entry: any) => (
+                    <span className="text-xs text-foreground">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
-            <TrendingUp size={20} className="text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Horas Trabalhadas</p>
-              <p className="text-lg font-bold text-foreground">{stats.totalHours.toFixed(1)}h</p>
+
+          {/* Quick Stats */}
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col justify-between">
+            <h3 className="font-bold text-foreground mb-4">Resumo Rápido</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-success/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={18} className="text-success" />
+                  <span className="text-sm text-foreground">Concluídos</span>
+                </div>
+                <span className="font-bold text-success">{stats.concluidos}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-warning/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <Clock size={18} className="text-warning" />
+                  <span className="text-sm text-foreground">Pendentes</span>
+                </div>
+                <span className="font-bold text-warning">{stats.pendentes}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={18} className="text-primary" />
+                  <span className="text-sm text-foreground">Média/Dia</span>
+                </div>
+                <span className="font-bold text-primary">€{stats.avgPerDay.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Charts */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Revenue Chart */}
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+        {/* Main Charts */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Revenue Area Chart */}
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
             <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <BarChart3 size={18} className="text-primary" />
-              Receita {periodFilter === 'yearly' ? 'por Mês' : 'por Dia'}
+              Evolução da Receita {periodFilter === 'yearly' ? '(Mensal)' : '(Diária)'}
             </h3>
             {stats.chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={stats.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={stats.chartData}>
+                  <defs>
+                    <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorPendente" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip 
                     formatter={(value: number) => [`€${value.toFixed(2)}`, '']}
-                    labelStyle={{ fontWeight: 'bold' }}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    labelStyle={{ fontWeight: 'bold', color: 'hsl(var(--foreground))' }}
                   />
-                  <Bar dataKey="receita" name="Concluído" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pendente" name="Pendente" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Legend />
+                  <Area 
+                    type="monotone" 
+                    dataKey="receita" 
+                    name="Concluído" 
+                    stroke="#10B981" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorReceita)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="pendente" 
+                    name="Pendente" 
+                    stroke="#F59E0B" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorPendente)" 
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                Sem dados para o período selecionado
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <BarChart3 size={48} className="mx-auto mb-2 opacity-20" />
+                  <p>Sem dados para o período selecionado</p>
+                </div>
               </div>
             )}
           </div>
 
           {/* Top Clients Pie Chart */}
-          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
             <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <Users size={18} className="text-primary" />
               Top Clientes por Receita
             </h3>
             {stats.topClients.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={stats.topClients}
@@ -560,27 +704,90 @@ const Dashboard = () => {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
-                    label={({ name, percent }) => `${name.split(' ')[0]} (${(percent * 100).toFixed(0)}%)`}
-                    labelLine={false}
+                    innerRadius={50}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
                   >
                     {stats.topClients.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]}
+                        className="hover:opacity-80 transition-opacity cursor-pointer"
+                      />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Total']} />
+                  <Tooltip 
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, 'Total']}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                Sem dados para o período selecionado
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Users size={48} className="mx-auto mb-2 opacity-20" />
+                  <p>Sem dados para o período selecionado</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Bar Chart Comparison */}
+        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border mb-8">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <TrendingUp size={18} className="text-primary" />
+            Comparativo de Receitas
+          </h3>
+          {stats.chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.chartData} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip 
+                  formatter={(value: number) => [`€${value.toFixed(2)}`, '']}
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    borderColor: 'hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Legend />
+                <Bar 
+                  dataKey="receita" 
+                  name="Concluído" 
+                  fill="#10B981" 
+                  radius={[6, 6, 0, 0]}
+                  className="hover:opacity-80 transition-opacity"
+                />
+                <Bar 
+                  dataKey="pendente" 
+                  name="Pendente" 
+                  fill="#F59E0B" 
+                  radius={[6, 6, 0, 0]}
+                  className="hover:opacity-80 transition-opacity"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <TrendingUp size={48} className="mx-auto mb-2 opacity-20" />
+                <p>Sem dados para o período selecionado</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Top Clients Table */}
-        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+        <div className="bg-card rounded-2xl shadow-sm p-6 border border-border">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
             Ranking de Clientes - {PERIOD_LABELS[periodFilter]}
@@ -589,37 +796,55 @@ const Dashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">#</th>
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Cliente</th>
-                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Agendamentos</th>
-                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Faturado</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground rounded-tl-lg">#</th>
+                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Cliente</th>
+                    <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Agendamentos</th>
+                    <th className="text-right py-3 px-4 font-semibold text-muted-foreground rounded-tr-lg">Total Faturado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.topClients.map((client, index) => (
-                    <tr key={client.name} className="border-b border-border last:border-0 hover:bg-secondary">
-                      <td className="py-3 px-3">
-                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                          index === 0 ? 'bg-warning/20 text-warning' :
-                          index === 1 ? 'bg-muted text-muted-foreground' :
-                          index === 2 ? 'bg-warning/10 text-warning' :
-                          'bg-secondary text-muted-foreground'
+                    <tr 
+                      key={client.name} 
+                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                          index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-md' :
+                          index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-md' :
+                          index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md' :
+                          'bg-muted text-muted-foreground'
                         }`}>
                           {index + 1}
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-medium text-card-foreground">{client.name}</td>
-                      <td className="py-3 px-3 text-right text-muted-foreground">{client.count}</td>
-                      <td className="py-3 px-3 text-right font-bold text-success">€{client.total.toFixed(2)}</td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-bold">
+                            {client.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-foreground">{client.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <Calendar size={14} />
+                          {client.count}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <span className="font-bold text-success text-lg">€{client.total.toFixed(2)}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              Sem dados para o período selecionado
+            <div className="py-12 text-center text-muted-foreground">
+              <Users size={48} className="mx-auto mb-3 opacity-20" />
+              <p>Sem dados para o período selecionado</p>
             </div>
           )}
         </div>
