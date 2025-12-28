@@ -55,6 +55,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { clients, addClient } = useClients();
   
   const [activeMonth, setActiveMonth] = useState<'december' | 'january' | 'february'>('december');
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -763,30 +764,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               </button>
             </div>
 
-            {!editingId && (
-              <div className="flex border-b border-gray-200 overflow-x-auto bg-gray-50">
-                <button
-                  onClick={() => setActiveTab('single')}
-                  className={`flex-1 min-w-[100px] py-3 text-xs md:text-sm font-bold transition-colors whitespace-nowrap ${activeTab === 'single' ? 'text-purple-600 border-b-2 border-purple-600 bg-white' : 'text-gray-500 hover:bg-white'}`}
-                >
-                  Único
-                </button>
-                <button
-                  onClick={() => setActiveTab('fixed')}
-                  className={`flex-1 min-w-[100px] py-3 text-xs md:text-sm font-bold transition-colors whitespace-nowrap flex items-center justify-center gap-1 ${activeTab === 'fixed' ? 'text-purple-600 border-b-2 border-purple-600 bg-white' : 'text-gray-500 hover:bg-white'}`}
-                >
-                  <Repeat size={14} />
-                  Semanal
-                </button>
-                <button
-                  onClick={() => setActiveTab('biweekly')}
-                  className={`flex-1 min-w-[100px] py-3 text-xs md:text-sm font-bold transition-colors whitespace-nowrap flex items-center justify-center gap-1 ${activeTab === 'biweekly' ? 'text-purple-600 border-b-2 border-purple-600 bg-white' : 'text-gray-500 hover:bg-white'}`}
-                >
-                  <CalendarRange size={14} />
-                  Quinzenal
-                </button>
-              </div>
-            )}
+            {/* Tabs removidas - seleção feita no popup inicial */}
 
             <div className="p-6 max-h-[70vh] overflow-y-auto">
 
@@ -1129,14 +1107,85 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         }
       `}</style>
 
+      {/* Popup de Seleção de Tipo */}
+      {showTypeSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
+            <div className={`bg-gradient-to-r ${getThemeColor()} text-white p-5 flex items-center justify-between`}>
+              <h3 className="font-bold text-lg">Tipo de Agendamento</h3>
+              <button 
+                onClick={() => setShowTypeSelector(false)}
+                className="hover:bg-white/20 p-2 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              <button
+                onClick={() => {
+                  setActiveTab('single');
+                  setShowTypeSelector(false);
+                  setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
+                  setShowModal(true);
+                }}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Calendar size={24} className="text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">Único</p>
+                  <p className="text-sm text-gray-500">Agendamento para um dia específico</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setActiveTab('fixed');
+                  setShowTypeSelector(false);
+                  setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
+                  setShowModal(true);
+                }}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Repeat size={24} className="text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">Semanal</p>
+                  <p className="text-sm text-gray-500">Repetir todas as semanas no mesmo dia</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setActiveTab('biweekly');
+                  setShowTypeSelector(false);
+                  setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
+                  setShowModal(true);
+                }}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
+                  <CalendarRange size={24} className="text-pink-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-gray-800">Quinzenal</p>
+                  <p className="text-sm text-gray-500">Repetir a cada 2 semanas</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Botão Flutuante - Apenas Admin */}
       {isAdmin && (
         <button
           onClick={() => {
             setEditingId(null);
-            setActiveTab('single');
-            setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
-            setShowModal(true);
+            setSelectedClientId('');
+            setShowTypeSelector(true);
           }}
           className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r ${getThemeColor()} text-white`}
           title="Novo Agendamento"
