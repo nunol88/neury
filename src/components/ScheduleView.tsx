@@ -1141,21 +1141,51 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       {/* Navegação de Meses (Abas) */}
       <div className="bg-white shadow-sm pt-2 px-2 sticky top-0 z-20 print:hidden overflow-x-auto">
-        <div className="max-w-7xl mx-auto flex gap-2">
-          {Object.values(MONTHS_CONFIG).map((month) => (
-            <button
-              key={month.id}
-              onClick={() => setActiveMonth(month.id as 'december' | 'january' | 'february')}
-              className={`px-6 py-3 rounded-t-xl font-bold text-sm transition-all flex items-center gap-2
-                ${activeMonth === month.id
-                  ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-            >
-              <Calendar size={16} />
-              {month.label}
-            </button>
-          ))}
+        <div className="max-w-7xl mx-auto flex gap-2 items-end">
+          {/* 2025 */}
+          <div className="flex items-end gap-1">
+            <span className="text-xs font-bold text-gray-400 px-2 pb-3">2025</span>
+            {Object.values(MONTHS_CONFIG)
+              .filter(m => m.year === 2025)
+              .map((month) => (
+                <button
+                  key={month.id}
+                  onClick={() => setActiveMonth(month.id as MonthKey)}
+                  className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
+                    ${activeMonth === month.id
+                      ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                >
+                  <Calendar size={14} />
+                  {month.label.split(' ')[0]}
+                </button>
+              ))}
+          </div>
+          
+          {/* Separator */}
+          <div className="h-8 w-px bg-gray-300 mx-1"></div>
+          
+          {/* 2026 */}
+          <div className="flex items-end gap-1">
+            <span className="text-xs font-bold text-gray-400 px-2 pb-3">2026</span>
+            {Object.values(MONTHS_CONFIG)
+              .filter(m => m.year === 2026)
+              .map((month) => (
+                <button
+                  key={month.id}
+                  onClick={() => setActiveMonth(month.id as MonthKey)}
+                  className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
+                    ${activeMonth === month.id
+                      ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                >
+                  <Calendar size={14} />
+                  {month.label.split(' ')[0]}
+                </button>
+              ))}
+          </div>
         </div>
       </div>
 
