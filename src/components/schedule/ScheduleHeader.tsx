@@ -34,7 +34,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="bg-card border-b border-border px-4 py-2 print:hidden">
+    <div className="sticky-header px-4 py-2 print:hidden">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center gap-3">
           <img 
