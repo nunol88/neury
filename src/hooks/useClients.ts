@@ -44,12 +44,29 @@ export const useClients = () => {
     fetchClients();
   }, [fetchClients]);
 
+  const clientExists = useCallback((nome: string, excludeId?: string): boolean => {
+    const normalizedName = nome.trim().toLowerCase();
+    return clients.some(client => 
+      client.nome.toLowerCase() === normalizedName && client.id !== excludeId
+    );
+  }, [clients]);
+
   const addClient = async (clientData: Omit<Client, 'id'>): Promise<Client | null> => {
+    // Check for duplicate name
+    if (clientExists(clientData.nome)) {
+      toast({
+        title: 'Cliente já existe',
+        description: `Já existe um cliente com o nome "${clientData.nome.trim()}"`,
+        variant: 'destructive'
+      });
+      return null;
+    }
+
     try {
       const { data, error } = await supabase
         .from('clients')
         .insert({
-          nome: clientData.nome,
+          nome: clientData.nome.trim(),
           telefone: clientData.telefone || null,
           morada: clientData.morada || null,
           preco_hora: clientData.preco_hora || '7',
@@ -87,6 +104,7 @@ export const useClients = () => {
     clients,
     loading,
     addClient,
+    clientExists,
     refetch: fetchClients
   };
 };
