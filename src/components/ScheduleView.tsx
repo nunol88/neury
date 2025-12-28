@@ -5,7 +5,7 @@ import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus
+  Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -753,8 +753,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           ></div>
 
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in">
-            <div className={`p-4 text-white flex justify-between items-center bg-gradient-to-r ${getThemeColor()}`}>
-              <h2 className="text-xl font-bold">{editingId ? 'Editar Agendamento' : 'Agendar Limpeza'}</h2>
+          <div className={`p-4 text-white flex justify-between items-center bg-gradient-to-r ${getThemeColor()}`}>
+              <div className="flex items-center gap-2">
+                {!editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setShowTypeSelector(true);
+                    }}
+                    className="hover:bg-white/20 p-2 rounded-full transition-colors"
+                    title="Voltar"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                )}
+                <h2 className="text-xl font-bold">{editingId ? 'Editar Agendamento' : 'Agendar Limpeza'}</h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
@@ -763,8 +778,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                 <X size={24} />
               </button>
             </div>
-
-            {/* Tabs removidas - seleção feita no popup inicial */}
 
             <div className="p-6 max-h-[70vh] overflow-y-auto">
 
