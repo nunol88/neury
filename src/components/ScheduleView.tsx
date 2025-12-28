@@ -1445,29 +1445,32 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         isLoading={loading}
       />
 
-      {/* Floating Calendar Button */}
-      <button
-        onClick={() => setShowCalendarModal(true)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r from-red-500 to-red-600 text-white"
-        title="Ver Calendário"
-      >
-        <CalendarDays size={26} />
-      </button>
-
-      {/* Floating New Button - Admin Only */}
-      {isAdmin && (
+      {/* Floating Action Buttons - Stacked on left */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3 print:hidden">
+        {/* Floating New Button - Admin Only (on top) */}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              setEditingId(null);
+              setSelectedClientId('');
+              setShowTypeSelector(true);
+            }}
+            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white`}
+            title="Novo Agendamento"
+          >
+            <Plus size={28} />
+          </button>
+        )}
+        
+        {/* Floating Calendar Button (below) */}
         <button
-          onClick={() => {
-            setEditingId(null);
-            setSelectedClientId('');
-            setShowTypeSelector(true);
-          }}
-          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 print:hidden bg-gradient-to-r ${themeGradient} text-white`}
-          title="Novo Agendamento"
+          onClick={() => setShowCalendarModal(true)}
+          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r from-red-500 to-red-600 text-white"
+          title="Ver Calendário"
         >
-          <Plus size={28} />
+          <CalendarDays size={26} />
         </button>
-      )}
+      </div>
 
       <style>{`
         @keyframes fade-in {
