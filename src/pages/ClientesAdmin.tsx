@@ -4,11 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
-  CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp
+  CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,7 @@ const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const { clients, loading, addClient, refetch } = useClients();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clientStats, getClientHistory } = useClientStats(allTasks, clients);
@@ -132,7 +134,7 @@ const ClientesAdmin = () => {
 
   if (loading || loadingAgendamentos) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -145,27 +147,32 @@ const ClientesAdmin = () => {
   const totalHours = Object.values(clientStats).reduce((sum, s) => sum + s.totalHours, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-2">
+      <div className="bg-card border-b border-border px-4 py-2">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
               src={logoMayslimpo} 
               alt="MaysLimpo Logo" 
-              className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-200"
+              className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
             />
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="capitalize font-medium">{username}</span>
               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
                 {role === 'admin' ? 'Administrador' : 'Neury'}
               </span>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut size={16} className="mr-1" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2">
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut size={16} className="mr-1" />
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -181,12 +188,12 @@ const ClientesAdmin = () => {
               <ArrowLeft size={16} className="mr-1" />
               Voltar
             </Button>
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Users size={24} />
               Gestão de Clientes
             </h1>
           </div>
-          <Button onClick={() => setShowForm(true)} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90">
             <Plus size={16} className="mr-1" />
             Novo Cliente
           </Button>
@@ -194,47 +201,47 @@ const ClientesAdmin = () => {
 
         {/* Summary Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users size={18} className="text-purple-600" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Users size={18} className="text-primary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Clientes</p>
-                <p className="text-xl font-bold text-purple-600">{totalClients}</p>
+                <p className="text-xs text-muted-foreground">Total Clientes</p>
+                <p className="text-xl font-bold text-primary">{totalClients}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp size={18} className="text-blue-600" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <TrendingUp size={18} className="text-primary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Clientes Ativos</p>
-                <p className="text-xl font-bold text-blue-600">{activeClients}</p>
+                <p className="text-xs text-muted-foreground">Clientes Ativos</p>
+                <p className="text-xl font-bold text-primary">{activeClients}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Euro size={18} className="text-green-600" />
+              <div className="p-2 bg-success/10 rounded-lg">
+                <Euro size={18} className="text-success" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Faturado</p>
-                <p className="text-xl font-bold text-green-600">€{totalRevenue.toFixed(0)}</p>
+                <p className="text-xs text-muted-foreground">Total Faturado</p>
+                <p className="text-xl font-bold text-success">€{totalRevenue.toFixed(0)}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock size={18} className="text-yellow-600" />
+              <div className="p-2 bg-warning/10 rounded-lg">
+                <Clock size={18} className="text-warning" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Horas Trabalhadas</p>
-                <p className="text-xl font-bold text-yellow-600">{totalHours.toFixed(0)}h</p>
+                <p className="text-xs text-muted-foreground">Horas Trabalhadas</p>
+                <p className="text-xl font-bold text-warning">{totalHours.toFixed(0)}h</p>
               </div>
             </div>
           </div>
@@ -244,8 +251,8 @@ const ClientesAdmin = () => {
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={resetForm} />
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md relative z-10">
-              <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white p-4 rounded-t-xl flex justify-between items-center">
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-md relative z-10">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center">
                 <h2 className="text-lg font-bold">
                   {editingClient ? 'Editar Cliente' : 'Novo Cliente'}
                 </h2>
@@ -255,53 +262,53 @@ const ClientesAdmin = () => {
               </div>
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">
+                    Nome <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
                     placeholder="Nome do cliente"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">Telefone</label>
                   <input
                     type="text"
                     value={formData.telefone}
                     onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
                     placeholder="Ex: 912 345 678"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Morada</label>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">Morada</label>
                   <input
                     type="text"
                     value={formData.morada}
                     onChange={(e) => setFormData({ ...formData, morada: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
                     placeholder="Rua..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">€/hora</label>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">€/hora</label>
                   <input
                     type="number"
                     value={formData.preco_hora}
                     onChange={(e) => setFormData({ ...formData, preco_hora: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">Notas</label>
                   <textarea
                     value={formData.notas}
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
                     rows={2}
                     placeholder="Observações..."
                   />
@@ -309,7 +316,7 @@ const ClientesAdmin = () => {
                 <Button 
                   type="submit" 
                   disabled={saving}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-800"
+                  className="w-full bg-gradient-to-r from-primary to-primary/80"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
                   {editingClient ? 'Guardar Alterações' : 'Criar Cliente'}
@@ -323,8 +330,8 @@ const ClientesAdmin = () => {
         {showHistoryModal && selectedClientHistory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowHistoryModal(false)} />
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl relative z-10 max-h-[80vh] flex flex-col">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 rounded-t-xl flex justify-between items-center">
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl relative z-10 max-h-[80vh] flex flex-col">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   <History size={20} />
                   Histórico: {selectedClientHistory.name}
@@ -335,7 +342,7 @@ const ClientesAdmin = () => {
               </div>
               <div className="p-4 overflow-y-auto flex-1">
                 {selectedClientHistory.history.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-muted-foreground">
                     <Calendar size={48} className="mx-auto mb-2 opacity-50" />
                     <p>Sem histórico de agendamentos</p>
                   </div>
@@ -346,47 +353,47 @@ const ClientesAdmin = () => {
                         key={item.id} 
                         className={`p-3 rounded-lg border ${
                           item.completed 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-yellow-50 border-yellow-200'
+                            ? 'bg-success/10 border-success/30' 
+                            : 'bg-warning/10 border-warning/30'
                         }`}
                       >
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-800">
+                              <span className="font-medium text-foreground">
                                 {formatDate(item.date)}
                               </span>
                               <span className={`text-xs px-2 py-0.5 rounded ${
                                 item.completed 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-yellow-100 text-yellow-700'
+                                  ? 'bg-success/20 text-success' 
+                                  : 'bg-warning/20 text-warning'
                               }`}>
                                 {item.completed ? 'Concluído' : 'Pendente'}
                               </span>
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="text-sm text-muted-foreground mt-1">
                               {item.startTime} - {item.endTime}
                               {item.address && (
-                                <span className="ml-2 text-gray-400">• {item.address}</span>
+                                <span className="ml-2 text-muted-foreground/60">• {item.address}</span>
                               )}
                             </div>
                             {item.notes && (
-                              <p className="text-xs text-gray-400 mt-1 italic">{item.notes}</p>
+                              <p className="text-xs text-muted-foreground/60 mt-1 italic">{item.notes}</p>
                             )}
                           </div>
-                          <span className="font-bold text-green-600">€{item.price}</span>
+                          <span className="font-bold text-success">€{item.price}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+              <div className="p-4 border-t border-border bg-secondary rounded-b-xl">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">
+                  <span className="text-muted-foreground">
                     Total de agendamentos: <strong>{selectedClientHistory.history.length}</strong>
                   </span>
-                  <span className="text-green-600 font-bold">
+                  <span className="text-success font-bold">
                     Total: €{selectedClientHistory.history
                       .filter(h => h.completed)
                       .reduce((sum, h) => sum + parseFloat(h.price), 0)
@@ -400,10 +407,10 @@ const ClientesAdmin = () => {
 
         {/* Clients List */}
         {clients.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <Users size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">Nenhum cliente guardado</p>
-            <p className="text-sm text-gray-400 mt-1">
+          <div className="bg-card rounded-xl shadow-sm p-12 text-center border border-border">
+            <Users size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground">Nenhum cliente guardado</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">
               Adicione clientes ao agendar ou clique em "Novo Cliente"
             </p>
           </div>
@@ -416,7 +423,7 @@ const ClientesAdmin = () => {
               return (
                 <div 
                   key={client.id} 
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition overflow-hidden"
+                  className="bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition overflow-hidden"
                 >
                   <div className="p-4">
                     <div className="flex justify-between items-start">

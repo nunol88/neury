@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useClients } from '@/hooks/useClients';
+import { useTheme } from '@/hooks/useTheme';
 import { 
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
-  CalendarDays, CalendarRange
+  CalendarDays, CalendarRange, Sun, Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
@@ -54,6 +55,7 @@ const COLORS = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#6366F1'
 const Dashboard = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clients, loading: loadingClients } = useClients();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
@@ -262,37 +264,42 @@ const Dashboard = () => {
 
   if (loadingAgendamentos || loadingClients) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-gray-600">A carregar dashboard...</p>
+          <p className="text-muted-foreground">A carregar dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-2">
+      <div className="bg-card border-b border-border px-4 py-2">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
               src={logoMayslimpo} 
               alt="MaysLimpo Logo" 
-              className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-200"
+              className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
             />
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="capitalize font-medium">{username}</span>
               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
                 {role === 'admin' ? 'Administrador' : 'Neury'}
               </span>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut size={16} className="mr-1" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2">
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut size={16} className="mr-1" />
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -308,7 +315,7 @@ const Dashboard = () => {
               <ArrowLeft size={16} className="mr-1" />
               Voltar
             </Button>
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <BarChart3 size={24} />
               Dashboard
             </h1>
@@ -319,7 +326,7 @@ const Dashboard = () => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {availableYears.map((year) => (
                 <option key={year} value={year}>
@@ -337,8 +344,8 @@ const Dashboard = () => {
                 onClick={() => setPeriodFilter(period)}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                   periodFilter === period
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
                 }`}
               >
                 {period === 'daily' && <CalendarDays size={14} />}
@@ -354,56 +361,56 @@ const Dashboard = () => {
 
         {/* Period Display */}
         <div className="mb-6 text-center">
-          <p className="text-sm text-gray-500">A mostrar dados de</p>
-          <p className="text-lg font-semibold text-gray-800 capitalize">{getPeriodDisplay()}</p>
+          <p className="text-sm text-muted-foreground">A mostrar dados de</p>
+          <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Euro size={24} className="text-green-600" />
+              <div className="p-3 bg-success/10 rounded-lg">
+                <Euro size={24} className="text-success" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Receita Concluída</p>
-                <p className="text-2xl font-bold text-green-600">€{stats.totalRevenue.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Receita Concluída</p>
+                <p className="text-2xl font-bold text-success">€{stats.totalRevenue.toFixed(2)}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock size={24} className="text-yellow-600" />
+              <div className="p-3 bg-warning/10 rounded-lg">
+                <Clock size={24} className="text-warning" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Receita Pendente</p>
-                <p className="text-2xl font-bold text-yellow-600">€{stats.pendingRevenue.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Receita Pendente</p>
+                <p className="text-2xl font-bold text-warning">€{stats.pendingRevenue.toFixed(2)}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Calendar size={24} className="text-purple-600" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Calendar size={24} className="text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Agendamentos</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.totalAgendamentos}</p>
+                <p className="text-sm text-muted-foreground">Agendamentos</p>
+                <p className="text-2xl font-bold text-primary">{stats.totalAgendamentos}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users size={24} className="text-blue-600" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Users size={24} className="text-primary" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Clientes no Período</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.uniqueClients}</p>
+                <p className="text-sm text-muted-foreground">Clientes no Período</p>
+                <p className="text-2xl font-bold text-primary">{stats.uniqueClients}</p>
               </div>
             </div>
           </div>
@@ -411,25 +418,25 @@ const Dashboard = () => {
 
         {/* Secondary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex items-center gap-3">
-            <CheckCircle size={20} className="text-green-500" />
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
+            <CheckCircle size={20} className="text-success" />
             <div>
-              <p className="text-xs text-gray-500">Concluídos</p>
-              <p className="text-lg font-bold text-gray-800">{stats.concluidos}</p>
+              <p className="text-xs text-muted-foreground">Concluídos</p>
+              <p className="text-lg font-bold text-foreground">{stats.concluidos}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex items-center gap-3">
-            <Clock size={20} className="text-yellow-500" />
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
+            <Clock size={20} className="text-warning" />
             <div>
-              <p className="text-xs text-gray-500">Pendentes</p>
-              <p className="text-lg font-bold text-gray-800">{stats.pendentes}</p>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+              <p className="text-lg font-bold text-foreground">{stats.pendentes}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex items-center gap-3">
-            <TrendingUp size={20} className="text-indigo-500" />
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border flex items-center gap-3">
+            <TrendingUp size={20} className="text-primary" />
             <div>
-              <p className="text-xs text-gray-500">Horas Trabalhadas</p>
-              <p className="text-lg font-bold text-gray-800">{stats.totalHours.toFixed(1)}h</p>
+              <p className="text-xs text-muted-foreground">Horas Trabalhadas</p>
+              <p className="text-lg font-bold text-foreground">{stats.totalHours.toFixed(1)}h</p>
             </div>
           </div>
         </div>
@@ -437,9 +444,9 @@ const Dashboard = () => {
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Revenue Chart */}
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <BarChart3 size={18} className="text-purple-600" />
+          <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
+            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+              <BarChart3 size={18} className="text-primary" />
               Receita {periodFilter === 'yearly' ? 'por Mês' : 'por Dia'}
             </h3>
             {stats.chartData.length > 0 ? (
