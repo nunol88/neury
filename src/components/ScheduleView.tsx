@@ -6,9 +6,10 @@ import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, Copy, Undo2,
-  ArrowUp, ArrowDown, BarChart3, CalendarDays, Menu, ChevronLeft
+  ArrowUp, ArrowDown, BarChart3, CalendarDays, Menu, ChevronLeft, Sun, Moon
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTheme } from '@/hooks/useTheme';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,6 +155,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
   const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, moveTask } = useAgendamentos();
   const { clients, addClient } = useClients();
   
@@ -1150,18 +1152,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   }
 
   return (
-    <div className={`min-h-screen font-sans text-gray-800 pb-10 print:bg-white ${getBgColor()}`}>
+    <div className={`min-h-screen font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : getBgColor()}`}>
 
       {/* User Info Bar */}
-      <div className="bg-white border-b px-4 py-2 print:hidden">
+      <div className="bg-card border-b border-border px-4 py-2 print:hidden">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
               src={logoMayslimpo} 
               alt="MaysLimpo Logo" 
-              className="w-10 h-10 rounded-full object-cover shadow-sm border border-gray-200"
+              className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
             />
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="capitalize font-medium">{username}</span>
               <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
                 {roleLabel}
@@ -1173,69 +1175,80 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               )}
             </div>
           </div>
-          {isMobile ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Menu size={20} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white z-50">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={toggleTheme}
+              className="p-2"
+              title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            {isMobile ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Menu size={20} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover z-50">
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
+                        <BarChart3 size={16} className="mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/clientes')}>
+                        <Users size={16} className="mr-2" />
+                        Clientes
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut size={16} className="mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
                 {isAdmin && (
                   <>
-                    <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
-                      <BarChart3 size={16} className="mr-2" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate('/admin/dashboard')}
+                    >
+                      <BarChart3 size={16} className="mr-1" />
                       Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/admin/clientes')}>
-                      <Users size={16} className="mr-2" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate('/admin/clientes')}
+                    >
+                      <Users size={16} className="mr-1" />
                       Clientes
-                    </DropdownMenuItem>
+                    </Button>
                   </>
                 )}
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut size={16} className="mr-2" />
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut size={16} className="mr-1" />
                   Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => navigate('/admin/dashboard')}
-                  >
-                    <BarChart3 size={16} className="mr-1" />
-                    Dashboard
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => navigate('/admin/clientes')}
-                  >
-                    <Users size={16} className="mr-1" />
-                    Clientes
-                  </Button>
-                </>
-              )}
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
-                <LogOut size={16} className="mr-1" />
-                Sair
-              </Button>
-            </div>
-          )}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Navegação de Meses (Abas) */}
-      <div className="bg-white shadow-sm pt-2 px-2 sticky top-0 z-20 print:hidden overflow-x-auto">
+      <div className="bg-card shadow-sm pt-2 px-2 sticky top-0 z-20 print:hidden overflow-x-auto">
         <div className="max-w-7xl mx-auto flex gap-2 items-end">
           {/* 2025 */}
           <div className="flex items-end gap-1">
-            <span className="text-xs font-bold text-gray-400 px-2 pb-3">2025</span>
+            <span className="text-xs font-bold text-muted-foreground px-2 pb-3">2025</span>
             {Object.values(MONTHS_CONFIG)
               .filter(m => m.year === 2025)
               .map((month) => (
@@ -1245,7 +1258,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
                     ${activeMonth === month.id
                       ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   <Calendar size={14} />
@@ -1255,11 +1268,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
           
           {/* Separator */}
-          <div className="h-8 w-px bg-gray-300 mx-1"></div>
+          <div className="h-8 w-px bg-border mx-1"></div>
           
           {/* 2026 */}
           <div className="flex items-end gap-1">
-            <span className="text-xs font-bold text-gray-400 px-2 pb-3">2026</span>
+            <span className="text-xs font-bold text-muted-foreground px-2 pb-3">2026</span>
             {Object.values(MONTHS_CONFIG)
               .filter(m => m.year === 2026)
               .map((month) => (
@@ -1269,7 +1282,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   className={`px-4 py-2 rounded-t-lg font-bold text-xs transition-all flex items-center gap-1
                     ${activeMonth === month.id
                       ? `bg-gradient-to-r ${getThemeColor()} text-white shadow-lg transform -translate-y-1`
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   <Calendar size={14} />
