@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
+import { CountUp } from '@/hooks/useCountUp';
 import { 
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
@@ -482,9 +483,11 @@ const Dashboard = () => {
                 <Euro size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Receita Concluída</span>
               </div>
-              <p className="text-3xl font-bold">€{stats.totalRevenue.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={stats.totalRevenue} decimals={2} prefix="€" duration={1800} />
+              </p>
               <div className="mt-2 text-xs opacity-70">
-                {stats.concluidos} serviços concluídos
+                <CountUp end={stats.concluidos} duration={1500} /> serviços concluídos
               </div>
             </div>
           </div>
@@ -497,9 +500,11 @@ const Dashboard = () => {
                 <Clock size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Receita Pendente</span>
               </div>
-              <p className="text-3xl font-bold">€{stats.pendingRevenue.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={stats.pendingRevenue} decimals={2} prefix="€" duration={1800} />
+              </p>
               <div className="mt-2 text-xs opacity-70">
-                {stats.pendentes} por concluir
+                <CountUp end={stats.pendentes} duration={1500} /> por concluir
               </div>
             </div>
           </div>
@@ -512,9 +517,11 @@ const Dashboard = () => {
                 <Calendar size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Agendamentos</span>
               </div>
-              <p className="text-3xl font-bold">{stats.totalAgendamentos}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={stats.totalAgendamentos} duration={1500} />
+              </p>
               <div className="mt-2 text-xs opacity-70">
-                {stats.totalHours.toFixed(1)}h trabalhadas
+                <CountUp end={stats.totalHours} decimals={1} duration={1600} />h trabalhadas
               </div>
             </div>
           </div>
@@ -527,9 +534,11 @@ const Dashboard = () => {
                 <Users size={20} className="opacity-80" />
                 <span className="text-sm opacity-80">Clientes</span>
               </div>
-              <p className="text-3xl font-bold">{stats.uniqueClients}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={stats.uniqueClients} duration={1500} />
+              </p>
               <div className="mt-2 text-xs opacity-70">
-                de {stats.totalClients} total
+                de <CountUp end={stats.totalClients} duration={1400} /> total
               </div>
             </div>
           </div>
@@ -559,7 +568,9 @@ const Dashboard = () => {
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-foreground">{stats.completionRate}%</span>
+                <span className="text-4xl font-bold text-foreground">
+                  <CountUp end={stats.completionRate} duration={2000} suffix="%" />
+                </span>
                 <span className="text-xs text-muted-foreground">concluídos</span>
               </div>
             </div>
@@ -605,21 +616,21 @@ const Dashboard = () => {
                   <CheckCircle size={18} className="text-success" />
                   <span className="text-sm text-foreground">Concluídos</span>
                 </div>
-                <span className="font-bold text-success">{stats.concluidos}</span>
+                <span className="font-bold text-success"><CountUp end={stats.concluidos} duration={1500} /></span>
               </div>
               <div className="flex items-center justify-between p-3 bg-warning/10 rounded-xl">
                 <div className="flex items-center gap-2">
                   <Clock size={18} className="text-warning" />
                   <span className="text-sm text-foreground">Pendentes</span>
                 </div>
-                <span className="font-bold text-warning">{stats.pendentes}</span>
+                <span className="font-bold text-warning"><CountUp end={stats.pendentes} duration={1500} /></span>
               </div>
               <div className="flex items-center justify-between p-3 bg-primary/10 rounded-xl">
                 <div className="flex items-center gap-2">
                   <TrendingUp size={18} className="text-primary" />
                   <span className="text-sm text-foreground">Média/Dia</span>
                 </div>
-                <span className="font-bold text-primary">€{stats.avgPerDay.toFixed(2)}</span>
+                <span className="font-bold text-primary"><CountUp end={stats.avgPerDay} decimals={2} prefix="€" duration={1800} /></span>
               </div>
             </div>
           </div>
