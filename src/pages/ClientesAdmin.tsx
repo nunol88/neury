@@ -20,7 +20,7 @@ const ClientesAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { clients, loading, addClient, refetch } = useClients();
+  const { clients, loading, addClient, clientExists, refetch } = useClients();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clientStats, getClientHistory } = useClientStats(allTasks, clients);
   
@@ -63,13 +63,24 @@ const ClientesAdmin = () => {
     e.preventDefault();
     if (!formData.nome.trim()) return;
 
+    // Check for duplicate name (exclude current client when editing)
+    const excludeId = editingClient?.id;
+    if (clientExists(formData.nome, excludeId)) {
+      toast({
+        title: 'Cliente já existe',
+        description: `Já existe um cliente com o nome "${formData.nome.trim()}"`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       if (editingClient) {
         const { error } = await supabase
           .from('clients')
           .update({
-            nome: formData.nome,
+            nome: formData.nome.trim(),
             telefone: formData.telefone || null,
             morada: formData.morada || null,
             preco_hora: formData.preco_hora,
