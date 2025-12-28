@@ -52,8 +52,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
   
-  // Generate dynamic month configuration (12 months from now)
-  const monthsConfig = useMemo(() => generateMonthsConfig(15), []);
+  // Static month configuration matching useAgendamentos
+  const monthsConfig = useMemo(() => generateMonthsConfig(), []);
   const monthKeys = useMemo(() => Object.keys(monthsConfig), [monthsConfig]);
   
   // Get current month key
