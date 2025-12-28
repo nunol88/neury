@@ -400,10 +400,20 @@ const Dashboard = () => {
     );
   }
 
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-2">
+      {/* Sticky Header with Blur */}
+      <div className={`sticky-header border-b border-border/50 px-4 py-2 ${isScrolled ? 'scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
@@ -500,16 +510,18 @@ const Dashboard = () => {
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
-        {/* Hero Stats Cards */}
+        {/* Hero Stats Cards with Glassmorphism */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Revenue Card with Gradient */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up hover-lift">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          {/* Revenue Card with Gradient + Glass */}
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white animate-fade-in-up hover-lift glass-gradient" 
+               style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.85) 100%)' }}>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-lg" />
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Euro size={20} className="opacity-80" />
-                  <span className="text-sm opacity-80">Receita Concluída</span>
+                  <Euro size={20} className="opacity-90" />
+                  <span className="text-sm font-medium opacity-90">Receita Concluída</span>
                 </div>
                 {stats.trendPercent !== 0 && (
                   <TrendIndicator 
@@ -518,15 +530,15 @@ const Dashboard = () => {
                   />
                 )}
               </div>
-              <p className="text-3xl font-bold">
+              <p className="text-3xl font-bold drop-shadow-sm">
                 <CountUp end={stats.totalRevenue} decimals={2} prefix="€" duration={1800} />
               </p>
-              <div className="mt-1 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-80">
                 <CountUp end={stats.concluidos} duration={1500} /> serviços concluídos
               </div>
             </div>
             {/* Sparkline */}
-            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
               <Sparkline 
                 data={stats.sparklineData.map(d => ({ value: d.receita }))} 
                 color="#ffffff" 
@@ -535,23 +547,25 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Pending Revenue Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-100 hover-lift">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          {/* Pending Revenue Card + Glass */}
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white animate-fade-in-up animation-delay-100 hover-lift glass-gradient"
+               style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(234, 88, 12, 0.85) 100%)' }}>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-lg" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <Clock size={20} className="opacity-80" />
-                <span className="text-sm opacity-80">Receita Pendente</span>
+                <Clock size={20} className="opacity-90" />
+                <span className="text-sm font-medium opacity-90">Receita Pendente</span>
               </div>
-              <p className="text-3xl font-bold">
+              <p className="text-3xl font-bold drop-shadow-sm">
                 <CountUp end={stats.pendingRevenue} decimals={2} prefix="€" duration={1800} />
               </p>
-              <div className="mt-1 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-80">
                 <CountUp end={stats.pendentes} duration={1500} /> por concluir
               </div>
             </div>
             {/* Sparkline */}
-            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
               <Sparkline 
                 data={stats.sparklineData.map(d => ({ value: d.pendente }))} 
                 color="#ffffff" 
@@ -560,23 +574,25 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Appointments Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-200 hover-lift">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          {/* Appointments Card + Glass */}
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white animate-fade-in-up animation-delay-200 hover-lift glass-gradient"
+               style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(124, 58, 237, 0.85) 100%)' }}>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-lg" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar size={20} className="opacity-80" />
-                <span className="text-sm opacity-80">Agendamentos</span>
+                <Calendar size={20} className="opacity-90" />
+                <span className="text-sm font-medium opacity-90">Agendamentos</span>
               </div>
-              <p className="text-3xl font-bold">
+              <p className="text-3xl font-bold drop-shadow-sm">
                 <CountUp end={stats.totalAgendamentos} duration={1500} />
               </p>
-              <div className="mt-1 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-80">
                 <CountUp end={stats.totalHours} decimals={1} duration={1600} />h trabalhadas
               </div>
             </div>
             {/* Sparkline */}
-            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
               <Sparkline 
                 data={stats.sparklineData.map(d => ({ value: d.count }))} 
                 color="#ffffff" 
@@ -585,23 +601,25 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Clients Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg p-5 text-white animate-fade-in-up animation-delay-300 hover-lift">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          {/* Clients Card + Glass */}
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white animate-fade-in-up animation-delay-300 hover-lift glass-gradient"
+               style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(6, 182, 212, 0.85) 100%)' }}>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-lg" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <Users size={20} className="opacity-80" />
-                <span className="text-sm opacity-80">Clientes</span>
+                <Users size={20} className="opacity-90" />
+                <span className="text-sm font-medium opacity-90">Clientes</span>
               </div>
-              <p className="text-3xl font-bold">
+              <p className="text-3xl font-bold drop-shadow-sm">
                 <CountUp end={stats.uniqueClients} duration={1500} />
               </p>
-              <div className="mt-1 text-xs opacity-70">
+              <div className="mt-1 text-xs opacity-80">
                 de <CountUp end={stats.totalClients} duration={1400} /> total
               </div>
             </div>
             {/* Sparkline */}
-            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-60">
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
               <Sparkline 
                 data={stats.sparklineData.map(d => ({ value: d.value }))} 
                 color="#ffffff" 
@@ -611,10 +629,10 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Completion Rate & Quick Stats */}
+        {/* Completion Rate & Quick Stats with Glass */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Completion Rate Gauge */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-scale-in animation-delay-400 hover-lift">
+          <div className="glass-card rounded-2xl p-6 animate-scale-in animation-delay-400 hover-lift">
             <h3 className="font-bold text-foreground mb-4 text-center">Taxa de Conclusão</h3>
             <div className="relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height={180}>
@@ -644,7 +662,7 @@ const Dashboard = () => {
           </div>
 
           {/* Status Distribution Pie */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border animate-scale-in animation-delay-500 hover-lift">
+          <div className="glass-card rounded-2xl p-6 animate-scale-in animation-delay-500 hover-lift">
             <h3 className="font-bold text-foreground mb-4 text-center">Distribuição de Status</h3>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -675,7 +693,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-card rounded-2xl shadow-sm p-6 border border-border flex flex-col justify-between animate-scale-in animation-delay-600 hover-lift">
+          <div className="glass-card rounded-2xl p-6 flex flex-col justify-between animate-scale-in animation-delay-600 hover-lift">
             <h3 className="font-bold text-foreground mb-4">Resumo Rápido</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-success/10 rounded-xl">
