@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClients, Client } from '@/hooks/useClients';
+import { useAgendamentos } from '@/hooks/useAgendamentos';
+import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
-  Phone, MapPin, Loader2, LogOut, User
+  Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
+  CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -16,10 +19,18 @@ const ClientesAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { clients, loading, addClient, refetch } = useClients();
+  const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
+  const { clientStats, getClientHistory } = useClientStats(allTasks, clients);
   
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedClientHistory, setSelectedClientHistory] = useState<{
+    name: string;
+    history: ClientHistory[];
+  } | null>(null);
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -99,6 +110,12 @@ const ClientesAdmin = () => {
     }
   };
 
+  const handleShowHistory = (clientName: string) => {
+    const history = getClientHistory(clientName);
+    setSelectedClientHistory({ name: clientName, history });
+    setShowHistoryModal(true);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -106,13 +123,26 @@ const ClientesAdmin = () => {
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
 
-  if (loading) {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+    const formatted = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return `${formatted} (${dayName})`;
+  };
+
+  if (loading || loadingAgendamentos) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  // Calculate summary stats
+  const totalClients = clients.length;
+  const activeClients = Object.values(clientStats).filter(s => s.totalAgendamentos > 0).length;
+  const totalRevenue = Object.values(clientStats).reduce((sum, s) => sum + s.totalRevenue, 0);
+  const totalHours = Object.values(clientStats).reduce((sum, s) => sum + s.totalHours, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
@@ -160,6 +190,54 @@ const ClientesAdmin = () => {
             <Plus size={16} className="mr-1" />
             Novo Cliente
           </Button>
+        </div>
+
+        {/* Summary Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Users size={18} className="text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Clientes</p>
+                <p className="text-xl font-bold text-purple-600">{totalClients}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUp size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Clientes Ativos</p>
+                <p className="text-xl font-bold text-blue-600">{activeClients}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Euro size={18} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Faturado</p>
+                <p className="text-xl font-bold text-green-600">€{totalRevenue.toFixed(0)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock size={18} className="text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Horas Trabalhadas</p>
+                <p className="text-xl font-bold text-yellow-600">{totalHours.toFixed(0)}h</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Form Modal */}
@@ -241,6 +319,85 @@ const ClientesAdmin = () => {
           </div>
         )}
 
+        {/* History Modal */}
+        {showHistoryModal && selectedClientHistory && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowHistoryModal(false)} />
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl relative z-10 max-h-[80vh] flex flex-col">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 rounded-t-xl flex justify-between items-center">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <History size={20} />
+                  Histórico: {selectedClientHistory.name}
+                </h2>
+                <button onClick={() => setShowHistoryModal(false)} className="hover:bg-white/20 p-1 rounded">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1">
+                {selectedClientHistory.history.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <Calendar size={48} className="mx-auto mb-2 opacity-50" />
+                    <p>Sem histórico de agendamentos</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedClientHistory.history.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className={`p-3 rounded-lg border ${
+                          item.completed 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-800">
+                                {formatDate(item.date)}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                item.completed 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {item.completed ? 'Concluído' : 'Pendente'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {item.startTime} - {item.endTime}
+                              {item.address && (
+                                <span className="ml-2 text-gray-400">• {item.address}</span>
+                              )}
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-gray-400 mt-1 italic">{item.notes}</p>
+                            )}
+                          </div>
+                          <span className="font-bold text-green-600">€{item.price}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    Total de agendamentos: <strong>{selectedClientHistory.history.length}</strong>
+                  </span>
+                  <span className="text-green-600 font-bold">
+                    Total: €{selectedClientHistory.history
+                      .filter(h => h.completed)
+                      .reduce((sum, h) => sum + parseFloat(h.price), 0)
+                      .toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Clients List */}
         {clients.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
@@ -252,55 +409,130 @@ const ClientesAdmin = () => {
           </div>
         ) : (
           <div className="grid gap-3">
-            {clients.map((client) => (
-              <div 
-                key={client.id} 
-                className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-800 text-lg">{client.nome}</h3>
-                    <div className="mt-2 space-y-1 text-sm text-gray-600">
-                      {client.telefone && (
+            {clients.map((client) => {
+              const stats = clientStats[client.nome];
+              const isExpanded = expandedClient === client.id;
+              
+              return (
+                <div 
+                  key={client.id} 
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition overflow-hidden"
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Phone size={14} className="text-blue-500" />
-                          {client.telefone}
+                          <h3 className="font-bold text-gray-800 text-lg">{client.nome}</h3>
+                          {stats && stats.totalAgendamentos > 0 && (
+                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                              {stats.totalAgendamentos} agendamentos
+                            </span>
+                          )}
                         </div>
-                      )}
-                      {client.morada && (
-                        <div className="flex items-center gap-2">
-                          <MapPin size={14} className="text-gray-400" />
-                          {client.morada}
+                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                          {client.telefone && (
+                            <div className="flex items-center gap-2">
+                              <Phone size={14} className="text-blue-500" />
+                              {client.telefone}
+                            </div>
+                          )}
+                          {client.morada && (
+                            <div className="flex items-center gap-2">
+                              <MapPin size={14} className="text-gray-400" />
+                              {client.morada}
+                            </div>
+                          )}
+                          <div className="text-green-600 font-medium">
+                            €{client.preco_hora}/hora
+                          </div>
                         </div>
-                      )}
-                      <div className="text-green-600 font-medium">
-                        €{client.preco_hora}/hora
+                        {client.notas && (
+                          <p className="mt-2 text-xs text-gray-400 italic">{client.notas}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleShowHistory(client.nome)}
+                          className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                        >
+                          <History size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(client)}
+                        >
+                          <Pencil size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(client.id)}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
                       </div>
                     </div>
-                    {client.notas && (
-                      <p className="mt-2 text-xs text-gray-400 italic">{client.notas}</p>
+
+                    {/* Stats toggle */}
+                    {stats && stats.totalAgendamentos > 0 && (
+                      <button
+                        onClick={() => setExpandedClient(isExpanded ? null : client.id)}
+                        className="mt-3 text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                      >
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {isExpanded ? 'Ocultar estatísticas' : 'Ver estatísticas'}
+                      </button>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(client)}
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(client.id)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
+
+                  {/* Expanded Stats */}
+                  {isExpanded && stats && (
+                    <div className="px-4 pb-4 pt-0">
+                      <div className="bg-gray-50 rounded-lg p-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle size={16} className="text-green-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Concluídos</p>
+                            <p className="font-bold text-gray-800">{stats.concluidos}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock size={16} className="text-yellow-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Pendentes</p>
+                            <p className="font-bold text-gray-800">{stats.pendentes}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Euro size={16} className="text-green-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Total Faturado</p>
+                            <p className="font-bold text-green-600">€{stats.totalRevenue.toFixed(2)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <TrendingUp size={16} className="text-indigo-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Horas Trabalhadas</p>
+                            <p className="font-bold text-gray-800">{stats.totalHours.toFixed(1)}h</p>
+                          </div>
+                        </div>
+                      </div>
+                      {stats.firstService && stats.lastService && (
+                        <div className="mt-2 text-xs text-gray-400 flex gap-4">
+                          <span>Primeiro serviço: {formatDate(stats.firstService)}</span>
+                          <span>Último serviço: {formatDate(stats.lastService)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

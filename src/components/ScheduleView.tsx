@@ -6,7 +6,7 @@ import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, LogOut, User, Loader2, Users, UserPlus, ChevronLeft, Copy, Undo2,
-  ArrowUp, ArrowDown
+  ArrowUp, ArrowDown, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -995,11 +995,31 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const exportToPDF = () => {
     const doc = new jsPDF();
     const tasks = allTasks[activeMonth];
+    const completedTasks = tasks.filter(t => t.completed);
+    const pendingTasks = tasks.filter(t => !t.completed);
     
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Agenda da Neury - ${activeConfig.label}`, 14, 20);
+    // Header with logo placeholder
+    doc.setFillColor(139, 92, 246);
+    doc.rect(0, 0, 220, 35, 'F');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text('MaysLimpo', 14, 18);
+    doc.setFontSize(12);
+    doc.text(`Agenda - ${activeConfig.label}`, 14, 28);
+    
+    // Summary section
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    const totalConcluido = completedTasks.reduce((s, t) => s + parseFloat(t.price || '0'), 0);
+    const totalPendente = pendingTasks.reduce((s, t) => s + parseFloat(t.price || '0'), 0);
+    const totalHoras = tasks.reduce((s, t) => {
+      const start = new Date(`1970-01-01T${t.startTime}`);
+      const end = new Date(`1970-01-01T${t.endTime}`);
+      return s + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    }, 0);
+    
+    doc.text(`Total Agendamentos: ${tasks.length}  |  Concluídos: ${completedTasks.length}  |  Pendentes: ${pendingTasks.length}`, 14, 45);
+    doc.text(`Horas: ${totalHoras.toFixed(1)}h  |  Faturado: €${totalConcluido.toFixed(2)}  |  Pendente: €${totalPendente.toFixed(2)}`, 14, 52);
     
     // Prepare table data
     const tableData = tasks.map(task => {
@@ -1014,25 +1034,46 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         `${task.startTime} - ${task.endTime}`,
         task.address || '-',
         `€${task.price}`,
-        task.completed ? 'Concluído' : 'Pendente'
+        task.completed ? '✓' : '○'
       ];
     });
     
     // Add table
     autoTable(doc, {
-      head: [['Data', 'Cliente', 'Telefone', 'Horário', 'Morada', 'Preço', 'Estado']],
+      head: [['Data', 'Cliente', 'Telefone', 'Horário', 'Morada', 'Preço', '']],
       body: tableData,
-      startY: 30,
+      startY: 58,
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [100, 100, 100] },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
+      headStyles: { fillColor: [139, 92, 246], textColor: 255 },
+      alternateRowStyles: { fillColor: [248, 245, 255] },
+      columnStyles: {
+        6: { halign: 'center', fontStyle: 'bold' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          const val = data.cell.raw as string;
+          if (val === '✓') {
+            data.cell.styles.textColor = [16, 185, 129];
+          } else {
+            data.cell.styles.textColor = [245, 158, 11];
+          }
+        }
+      }
     });
     
-    // Total
-    const finalY = (doc as any).lastAutoTable.finalY || 30;
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Total: €${calculateMonthTotal().toFixed(2)}`, 14, finalY + 10);
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY || 58;
+    doc.setDrawColor(139, 92, 246);
+    doc.setLineWidth(0.5);
+    doc.line(14, finalY + 8, 196, finalY + 8);
+    doc.setFontSize(10);
+    doc.setTextColor(139, 92, 246);
+    doc.text(`Total Faturado: €${totalConcluido.toFixed(2)}`, 14, finalY + 16);
+    doc.setTextColor(245, 158, 11);
+    doc.text(`Total Pendente: €${totalPendente.toFixed(2)}`, 80, finalY + 16);
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 14, finalY + 24);
     
     // Save
     doc.save(`agenda-${activeMonth}-${activeConfig.year}.pdf`);
@@ -1122,14 +1163,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/admin/clientes')}
-              >
-                <Users size={16} className="mr-1" />
-                Clientes
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/admin/dashboard')}
+                >
+                  <BarChart3 size={16} className="mr-1" />
+                  Dashboard
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/admin/clientes')}
+                >
+                  <Users size={16} className="mr-1" />
+                  Clientes
+                </Button>
+              </>
             )}
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut size={16} className="mr-1" />

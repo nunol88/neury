@@ -10,6 +10,7 @@ import SetupUsers from "./pages/SetupUsers";
 import AdminAgendamentos from "./pages/AdminAgendamentos";
 import NeuryAgendamentos from "./pages/NeuryAgendamentos";
 import ClientesAdmin from "./pages/ClientesAdmin";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <ClientesAdmin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Dashboard />
                 </ProtectedRoute>
               } 
             />
