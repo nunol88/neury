@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { ClientsViewSkeleton } from '@/components/ui/skeleton-loader';
+import ClientAvatar from '@/components/ui/client-avatar';
+import EmptyState from '@/components/ui/empty-state';
 
 const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
@@ -440,13 +442,15 @@ const ClientesAdmin = () => {
 
         {/* Clients List */}
         {clients.length === 0 ? (
-          <div className="bg-card rounded-xl shadow-sm p-12 text-center border border-border">
-            <Users size={48} className="mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-muted-foreground">Nenhum cliente guardado</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">
-              Adicione clientes ao agendar ou clique em "Novo Cliente"
-            </p>
-          </div>
+          <EmptyState 
+            type="clients"
+            action={
+              <Button onClick={() => setShowForm(true)} className="gap-2">
+                <Plus size={16} />
+                Adicionar primeiro cliente
+              </Button>
+            }
+          />
         ) : (
           <div className="grid gap-3">
             {clients.map((client) => {
@@ -461,13 +465,16 @@ const ClientesAdmin = () => {
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
-                          {stats && stats.totalAgendamentos > 0 && (
-                            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                              {stats.totalAgendamentos} agendamentos
-                            </span>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <ClientAvatar name={client.nome} size="lg" />
+                          <div>
+                            <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
+                            {stats && stats.totalAgendamentos > 0 && (
+                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                                {stats.totalAgendamentos} agendamentos
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                           {client.telefone && (
