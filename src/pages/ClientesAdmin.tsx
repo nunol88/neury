@@ -9,11 +9,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
-  CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon
+  CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
+  Navigation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+import { ClientsViewSkeleton } from '@/components/ui/skeleton-loader';
 
 const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
@@ -143,10 +145,30 @@ const ClientesAdmin = () => {
     return `${formatted} (${dayName})`;
   };
 
+  const openGoogleMaps = (address: string) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (loading || loadingAgendamentos) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background">
+        {/* Header skeleton */}
+        <div className="bg-card border-b border-border px-4 py-2">
+          <div className="max-w-4xl mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+              <div className="h-8 w-16 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto">
+          <ClientsViewSkeleton />
+        </div>
       </div>
     );
   }
@@ -449,16 +471,23 @@ const ClientesAdmin = () => {
                         </div>
                         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                           {client.telefone && (
-                            <div className="flex items-center gap-2">
+                            <a 
+                              href={`tel:${client.telefone}`}
+                              className="flex items-center gap-2 hover:text-primary transition-colors"
+                            >
                               <Phone size={14} className="text-primary" />
                               {client.telefone}
-                            </div>
+                            </a>
                           )}
                           {client.morada && (
-                            <div className="flex items-center gap-2">
-                              <MapPin size={14} className="text-muted-foreground" />
-                              {client.morada}
-                            </div>
+                            <button
+                              onClick={() => openGoogleMaps(client.morada)}
+                              className="flex items-center gap-2 hover:text-primary transition-colors text-left group"
+                            >
+                              <MapPin size={14} className="text-muted-foreground group-hover:text-primary" />
+                              <span className="group-hover:underline">{client.morada}</span>
+                              <Navigation size={12} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
                           )}
                           <div className="text-success font-medium">
                             €{client.preco_hora}/hora
@@ -469,6 +498,17 @@ const ClientesAdmin = () => {
                         )}
                       </div>
                       <div className="flex gap-2">
+                        {client.morada && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openGoogleMaps(client.morada)}
+                            className="text-primary hover:text-primary hover:bg-primary/10"
+                            title="Navegar no Google Maps"
+                          >
+                            <Navigation size={14} />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
