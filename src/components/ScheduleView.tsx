@@ -313,9 +313,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
     try {
       let count = 0;
+      const normalizedWeekDay = fixedTask.weekDay.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      
+      console.log('Creating fixed tasks:', { weekDay: fixedTask.weekDay, normalized: normalizedWeekDay, activeMonth, daysCount: currentMonthDays.length });
 
       for (const day of currentMonthDays) {
-        if (day.dayName.toLowerCase().includes(fixedTask.weekDay.toLowerCase())) {
+        const normalizedDayName = day.dayName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        console.log('Checking day:', { dayName: day.dayName, normalized: normalizedDayName, date: day.dateString });
+        
+        if (normalizedDayName.includes(normalizedWeekDay)) {
           const taskData = {
             date: day.dateString,
             client: fixedTask.client,
@@ -328,6 +334,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             notes: fixedTask.notes,
             completed: fixedTask.completed
           };
+          console.log('Adding task for:', day.dateString);
           const result = await addTask(taskData);
           if (result) count++;
         }
