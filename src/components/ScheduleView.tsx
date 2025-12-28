@@ -22,6 +22,7 @@ import {
   ScheduleHeader,
   MonthTabs,
   MonthSummaryBar,
+  FloatingTotal,
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
@@ -989,6 +990,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           );
         })}
       </main>
+
+      {/* Floating Total Button */}
+      <FloatingTotal
+        totalValue={(() => {
+          const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          return monthTasks.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+        })()}
+        completedValue={(() => {
+          const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          return monthTasks.filter(t => t.completed).reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+        })()}
+      />
 
       {/* Task Form Modal */}
       {showModal && (
