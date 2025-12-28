@@ -31,46 +31,59 @@ function getLastDayOfMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
-// Generate month key - use simple names without year suffix for 2026 months (except december2026)
-// This maintains compatibility with the existing useAgendamentos hook
-function generateMonthKey(monthIndex: number, year: number): string {
-  const baseKey = MONTH_KEYS[monthIndex];
-  // Special case: December 2026 needs suffix to distinguish from December 2025
-  if (monthIndex === 11 && year === 2026) {
-    return 'december2026';
-  }
-  // December 2025 is just 'december'
-  if (monthIndex === 11 && year === 2025) {
-    return 'december';
-  }
-  // All other months in 2026 use simple names
-  return baseKey;
-}
-
-// Generate configuration for months from startDate to endDate (up to 24 months)
-export function generateMonthsConfig(monthsAhead: number = 12): Record<string, MonthConfig> {
+// Static month configuration that matches useAgendamentos exactly
+// This ensures compatibility with existing data
+export function generateMonthsConfig(): Record<string, MonthConfig> {
   const config: Record<string, MonthConfig> = {};
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
   
-  // Start from current month
-  for (let i = 0; i < monthsAhead; i++) {
-    const date = new Date(currentYear, currentMonth + i, 1);
-    const year = date.getFullYear();
-    const monthIndex = date.getMonth();
-    const key = generateMonthKey(monthIndex, year);
-    
-    config[key] = {
-      id: key,
-      label: `${MONTH_NAMES[monthIndex]} ${year}`,
-      year,
-      monthIndex,
+  // December 2025
+  config['december'] = {
+    id: 'december',
+    label: 'Dezembro 2025',
+    year: 2025,
+    monthIndex: 11,
+    startDay: 1,
+    endDay: 31,
+    color: 'rose',
+  };
+  
+  // 2026 months - January through November use simple keys
+  const months2026 = [
+    { key: 'january', name: 'Janeiro', monthIndex: 0, days: 31, color: 'purple' },
+    { key: 'february', name: 'Fevereiro', monthIndex: 1, days: 28, color: 'blue' },
+    { key: 'march', name: 'Março', monthIndex: 2, days: 31, color: 'pink' },
+    { key: 'april', name: 'Abril', monthIndex: 3, days: 30, color: 'green' },
+    { key: 'may', name: 'Maio', monthIndex: 4, days: 31, color: 'yellow' },
+    { key: 'june', name: 'Junho', monthIndex: 5, days: 30, color: 'emerald' },
+    { key: 'july', name: 'Julho', monthIndex: 6, days: 31, color: 'cyan' },
+    { key: 'august', name: 'Agosto', monthIndex: 7, days: 31, color: 'sky' },
+    { key: 'september', name: 'Setembro', monthIndex: 8, days: 30, color: 'orange' },
+    { key: 'october', name: 'Outubro', monthIndex: 9, days: 31, color: 'amber' },
+    { key: 'november', name: 'Novembro', monthIndex: 10, days: 30, color: 'red' },
+  ];
+  
+  for (const month of months2026) {
+    config[month.key] = {
+      id: month.key,
+      label: `${month.name} 2026`,
+      year: 2026,
+      monthIndex: month.monthIndex,
       startDay: 1,
-      endDay: getLastDayOfMonth(year, monthIndex),
-      color: MONTH_COLORS[monthIndex],
+      endDay: month.days,
+      color: month.color,
     };
   }
+  
+  // December 2026 uses special key
+  config['december2026'] = {
+    id: 'december2026',
+    label: 'Dezembro 2026',
+    year: 2026,
+    monthIndex: 11,
+    startDay: 1,
+    endDay: 31,
+    color: 'rose',
+  };
   
   return config;
 }
