@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 
 interface TaskCardProps {
@@ -21,6 +21,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onToggleStatus,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const openGoogleMaps = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -38,16 +39,57 @@ const TaskCard: React.FC<TaskCardProps> = ({
     onToggleStatus(task.id, task.completed);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    onDragStart(e, task);
+    
+    // Create custom drag image
+    const dragElement = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragElement.style.position = 'absolute';
+    dragElement.style.top = '-1000px';
+    dragElement.style.width = `${e.currentTarget.clientWidth}px`;
+    dragElement.style.opacity = '0.9';
+    dragElement.style.transform = 'rotate(2deg) scale(1.02)';
+    dragElement.style.boxShadow = '0 10px 40px rgba(0,0,0,0.3)';
+    dragElement.style.borderRadius = '12px';
+    dragElement.style.background = 'hsl(var(--card))';
+    document.body.appendChild(dragElement);
+    e.dataTransfer.setDragImage(dragElement, e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    
+    // Clean up after drag starts
+    requestAnimationFrame(() => {
+      document.body.removeChild(dragElement);
+    });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <div
       draggable={isAdmin}
-      onDragStart={(e) => onDragStart(e, task)}
-      className={`relative group p-2 rounded-lg border transition-all text-sm hover-lift ${isAdmin ? 'cursor-move' : 'cursor-default'} ${
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`relative group p-2 rounded-lg border transition-all text-sm ${
+        isAdmin ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+      } ${
+        isDragging 
+          ? 'opacity-40 scale-95 border-dashed border-primary/50 bg-primary/5' 
+          : 'hover-lift'
+      } ${
         task.completed
           ? 'bg-success/10 border-success/30'
           : 'bg-card border-border hover:border-primary/50'
       }`}
     >
+      {/* Drag handle indicator */}
+      {isAdmin && (
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 transition-opacity">
+          <GripVertical size={14} className="text-muted-foreground" />
+        </div>
+      )}
+
       {/* Confetti animation */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
