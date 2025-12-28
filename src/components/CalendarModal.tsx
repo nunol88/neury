@@ -117,12 +117,12 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
         />
         
         {/* Modal */}
-        <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[85vh]">
+        <div className="relative bg-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[85vh]">
           
           {viewMode === 'calendar' ? (
             <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-3">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white px-3 py-3">
                 <div className="flex items-center justify-between">
                   <button
                     onClick={handleClose}
@@ -159,9 +159,9 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
               </div>
 
               {/* Week days header */}
-              <div className="grid grid-cols-7 bg-gray-50 border-b">
+              <div className="grid grid-cols-7 bg-secondary border-b border-border">
                 {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day, i) => (
-                  <div key={i} className="py-2 text-center text-[10px] font-semibold text-gray-500">
+                  <div key={i} className="py-2 text-center text-[10px] font-semibold text-muted-foreground">
                     {day}
                   </div>
                 ))}
@@ -186,19 +186,19 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                           key={idx}
                           onClick={() => tasks.length > 0 && handleDayClick(day)}
                           className={`
-                            relative min-h-[70px] p-1 border-b border-r border-gray-100
+                            relative min-h-[70px] p-1 border-b border-r border-border
                             transition-all duration-150
-                            ${!isCurrentMonth ? 'bg-gray-50/50' : 'bg-white'}
-                            ${isTodayDate ? 'bg-red-50/50' : ''}
-                            ${tasks.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}
+                            ${!isCurrentMonth ? 'bg-muted/50' : 'bg-card'}
+                            ${isTodayDate ? 'bg-primary/10' : ''}
+                            ${tasks.length > 0 ? 'cursor-pointer hover:bg-secondary' : ''}
                           `}
                         >
                           {/* Day number */}
                           <div className="flex justify-end mb-0.5">
                             <span className={`
                               text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full
-                              ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                              ${isTodayDate ? 'bg-red-500 text-white font-bold' : ''}
+                              ${!isCurrentMonth ? 'text-muted-foreground/50' : 'text-card-foreground'}
+                              ${isTodayDate ? 'bg-primary text-white font-bold' : ''}
                             `}>
                               {format(day, 'd')}
                             </span>
@@ -270,13 +270,13 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
               </div>
 
               {/* Legend */}
-              <div className="px-3 py-2 bg-white border-t flex items-center justify-center gap-4 text-xs text-gray-500">
+              <div className="px-3 py-2 bg-card border-t border-border flex items-center justify-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-2 rounded bg-yellow-100 border border-yellow-300" />
+                  <div className="w-3 h-2 rounded bg-warning/20 border border-warning/50" />
                   <span>Pendente</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-2 rounded bg-green-100 border border-green-300" />
+                  <div className="w-3 h-2 rounded bg-success/20 border border-success/50" />
                   <span>Concluído</span>
                 </div>
               </div>
@@ -284,7 +284,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
           ) : (
             <>
               {/* Day View Header */}
-              <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-3">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white px-3 py-3">
                 <div className="flex items-center justify-between">
                   <button
                     onClick={handleBackToCalendar}
@@ -323,23 +323,23 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
               </div>
 
               {/* Status pills */}
-              <div className="flex gap-2 px-3 py-2 bg-gray-50 border-b">
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+              <div className="flex gap-2 px-3 py-2 bg-secondary border-b border-border">
+                <span className="px-2 py-0.5 bg-success/20 text-success rounded-full text-xs font-medium">
                   {completedCount} concluído{completedCount !== 1 ? 's' : ''}
                 </span>
-                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                <span className="px-2 py-0.5 bg-warning/20 text-warning rounded-full text-xs font-medium">
                   {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}
                 </span>
               </div>
 
               {/* Tasks list */}
-              <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-3 bg-secondary">
                 {selectedDateTasks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400 py-8">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                      <Clock size={24} className="text-gray-300" />
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                      <Clock size={24} className="text-muted-foreground/50" />
                     </div>
-                    <p className="text-sm font-medium text-gray-500">Sem agendamentos</p>
+                    <p className="text-sm font-medium text-muted-foreground">Sem agendamentos</p>
                     <p className="text-xs">Este dia está livre</p>
                   </div>
                 ) : (
@@ -350,8 +350,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                         className={`
                           w-full text-left p-3 rounded-xl
                           ${task.completed 
-                            ? 'bg-white border border-green-200' 
-                            : 'bg-white border border-gray-100 shadow-sm'
+                            ? 'bg-card border border-success/30' 
+                            : 'bg-card border border-border shadow-sm'
                           }
                         `}
                       >
