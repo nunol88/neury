@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClients, Client } from '@/hooks/useClients';
@@ -10,7 +10,7 @@ import {
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation
+  Navigation, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +44,19 @@ const ClientesAdmin = () => {
     preco_hora: '7',
     notas: ''
   });
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter clients based on search term
+  const filteredClients = useMemo(() => {
+    if (!searchTerm.trim()) return clients;
+    const term = searchTerm.toLowerCase().trim();
+    return clients.filter(client =>
+      client.nome.toLowerCase().includes(term) ||
+      client.telefone.toLowerCase().includes(term) ||
+      client.morada.toLowerCase().includes(term) ||
+      client.notas.toLowerCase().includes(term)
+    );
+  }, [clients, searchTerm]);
 
   const resetForm = () => {
     setFormData({ nome: '', telefone: '', morada: '', preco_hora: '7', notas: '' });
@@ -282,6 +295,33 @@ const ClientesAdmin = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Pesquisar por nome, telefone, morada..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 border border-border rounded-xl bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {filteredClients.length} de {clients.length} cliente{clients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+
         {/* Form Modal */}
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -451,9 +491,20 @@ const ClientesAdmin = () => {
               </Button>
             }
           />
+        ) : filteredClients.length === 0 ? (
+          <div className="text-center py-12">
+            <Search size={48} className="mx-auto mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground">Nenhum cliente encontrado para "{searchTerm}"</p>
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="mt-2 text-primary hover:underline text-sm"
+            >
+              Limpar pesquisa
+            </button>
+          </div>
         ) : (
           <div className="grid gap-3">
-            {clients.map((client) => {
+            {filteredClients.map((client) => {
               const stats = clientStats[client.nome];
               const isExpanded = expandedClient === client.id;
               
