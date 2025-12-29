@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getHoliday } from '@/utils/portugueseHolidays';
 
 interface CalendarModalProps {
   isOpen: boolean;
@@ -180,6 +181,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                       const tasks = getTasksForDate(day);
                       const isCurrentMonth = isSameMonth(day, currentMonth);
                       const isTodayDate = isToday(day);
+                      const dateString = format(day, 'yyyy-MM-dd');
+                      const holiday = getHoliday(dateString);
                       
                       return (
                         <div
@@ -190,19 +193,32 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                             transition-all duration-150
                             ${!isCurrentMonth ? 'bg-muted/50' : 'bg-card'}
                             ${isTodayDate ? 'bg-primary/10' : ''}
+                            ${holiday ? 'bg-sky-50 dark:bg-sky-900/20' : ''}
                             ${tasks.length > 0 ? 'cursor-pointer hover:bg-secondary' : ''}
                           `}
                         >
                           {/* Day number */}
-                          <div className="flex justify-end mb-0.5">
+                          <div className="flex justify-between items-start mb-0.5">
+                            {holiday && (
+                              <span className="text-[8px] text-sky-600 dark:text-sky-400 truncate max-w-[50px]" title={holiday.name}>
+                                {holiday.emoji}
+                              </span>
+                            )}
                             <span className={`
-                              text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full
+                              text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full ml-auto
                               ${!isCurrentMonth ? 'text-muted-foreground/50' : 'text-card-foreground'}
                               ${isTodayDate ? 'bg-primary text-white font-bold' : ''}
                             `}>
                               {format(day, 'd')}
                             </span>
                           </div>
+                          
+                          {/* Holiday name */}
+                          {holiday && (
+                            <div className="text-[7px] text-sky-600 dark:text-sky-400 font-medium truncate mb-0.5 leading-tight">
+                              {holiday.name}
+                            </div>
+                          )}
                           
                           {/* Client names with tooltips */}
                           <div className="space-y-0.5">
