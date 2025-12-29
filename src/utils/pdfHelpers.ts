@@ -1,10 +1,10 @@
 import jsPDF from 'jspdf';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-// Brand colors matching the logo
-const BRAND_PRIMARY = { r: 45, g: 137, b: 108 }; // Teal green
-const BRAND_SECONDARY = { r: 34, g: 115, b: 90 }; // Darker teal
-const BRAND_LIGHT = { r: 180, g: 220, b: 205 }; // Light teal
+// Brand colors matching the logo - Baby blue and white
+const BRAND_PRIMARY = { r: 135, g: 206, b: 235 }; // Baby blue
+const BRAND_SECONDARY = { r: 100, g: 180, b: 220 }; // Slightly darker baby blue
+const BRAND_LIGHT = { r: 255, g: 255, b: 255 }; // White
 
 // Convert image to base64 for PDF embedding
 const getLogoBase64 = (): Promise<string> => {
