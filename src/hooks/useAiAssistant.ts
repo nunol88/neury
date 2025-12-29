@@ -7,14 +7,14 @@ export interface Message {
 }
 
 export const QUICK_SUGGESTIONS = [
+  { emoji: '🇬🇧', text: 'Traduz para inglês:' },
+  { emoji: '🇵🇹', text: 'Traduz para português:' },
   { emoji: '💰', text: 'Quanto ganhei este mês?' },
   { emoji: '📅', text: 'Resumo de amanhã' },
   { emoji: '✉️', text: 'Escreve uma mensagem para confirmar agendamento' },
   { emoji: '🧹', text: 'Dicas para limpar vidros sem manchas' },
   { emoji: '💡', text: 'Como remover gordura da cozinha?' },
-  { emoji: '📝', text: 'Quanto cobrar por um T2?' },
   { emoji: '👥', text: 'Clientes mais frequentes' },
-  { emoji: '🌿', text: 'Produtos naturais para limpeza' },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
