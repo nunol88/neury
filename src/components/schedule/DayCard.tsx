@@ -83,6 +83,9 @@ const DayCard: React.FC<DayCardProps> = ({
   // Calculate total value for the day
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
   const completedTasks = tasks.filter(t => t.completed).length;
+  
+  // Check if day is empty (no tasks)
+  const isEmpty = tasks.length === 0;
 
   return (
     <div
@@ -102,6 +105,7 @@ const DayCard: React.FC<DayCardProps> = ({
         ${isPast && isAdmin ? 'opacity-60' : ''}
         ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
+        ${isEmpty && !isToday && !isPast ? 'opacity-50 hover:opacity-80' : ''}
         hover:shadow-lg hover:scale-[1.01]
       `}
     >

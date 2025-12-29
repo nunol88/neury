@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface TaskCardProps {
   task: Task;
   isAdmin: boolean;
@@ -190,9 +190,42 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-medium">
             {hours.toFixed(1)}h
           </span>
+          
+          {/* Notes indicator with tooltip */}
+          {task.notes && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded font-medium cursor-help border border-amber-200 dark:border-amber-800/50">
+                    <StickyNote size={10} />
+                    <span className="hidden sm:inline">Notas</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px] text-xs">
+                  <p className="whitespace-pre-wrap">{task.notes}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         
         <div className="flex items-center gap-1">
+          {/* Notes indicator on mobile */}
+          {task.notes && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-full transition-all duration-200 sm:hidden">
+                    <StickyNote size={14} className="text-amber-600 dark:text-amber-400" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px] text-xs">
+                  <p className="whitespace-pre-wrap">{task.notes}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
           {/* Map button */}
           {task.address && (
             <button
@@ -204,7 +237,22 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </button>
           )}
           
-          {/* Admin actions - reveal on hover */}
+          {/* Always visible complete button for admin */}
+          {isAdmin && (
+            <button
+              onClick={handleToggleStatus}
+              className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
+                task.completed
+                  ? 'bg-success/20 hover:bg-success/30 text-success'
+                  : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success border border-border/50'
+              }`}
+              title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
+            >
+              <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
+            </button>
+          )}
+          
+          {/* Edit and Delete - reveal on hover */}
           {isAdmin && (
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
               <button
@@ -220,17 +268,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 title="Eliminar"
               >
                 <Trash2 size={14} className="text-destructive" />
-              </button>
-              <button
-                onClick={handleToggleStatus}
-                className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
-                  task.completed
-                    ? 'bg-success/20 hover:bg-success/30 text-success'
-                    : 'hover:bg-success/10 text-muted-foreground hover:text-success'
-                }`}
-                title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
-              >
-                <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
               </button>
             </div>
           )}
