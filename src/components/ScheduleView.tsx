@@ -6,7 +6,7 @@ import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, Loader2, Users, UserPlus,
-  CalendarDays
+  CalendarDays, CalendarCheck
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import CalendarModal from '@/components/CalendarModal';
@@ -26,7 +26,6 @@ import {
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
-  GoToTodayButton,
 } from '@/components/schedule';
 
 import {
@@ -1535,7 +1534,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       {/* Floating Action Buttons - Stacked on left */}
       <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3 print:hidden">
-        {/* Floating New Button - Admin Only (on top) */}
+        {/* Go to Today Button (on top) */}
+        {showGoToToday && (
+          <button
+            onClick={scrollToToday}
+            style={{ animationDelay: '50ms' }}
+            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white animate-fade-in`}
+            title="Ir para Hoje"
+          >
+            <CalendarCheck size={24} />
+          </button>
+        )}
+        
+        {/* Floating New Button - Admin Only */}
         {isAdmin && (
           <button
             onClick={() => {
@@ -1561,12 +1572,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           <CalendarDays size={26} />
         </button>
       </div>
-
-      {/* Go to Today floating button */}
-      <GoToTodayButton 
-        onClick={scrollToToday}
-        isVisible={showGoToToday}
-      />
 
       <style>{`
         @keyframes fade-in {
