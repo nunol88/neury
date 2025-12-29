@@ -6,6 +6,7 @@ import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
 import { CountUp } from '@/hooks/useCountUp';
 import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
+import AiAssistant from '@/components/AiAssistant';
 import {
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
@@ -941,6 +942,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      <AiAssistant />
     </div>
   );
 };
