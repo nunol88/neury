@@ -45,18 +45,22 @@ const AiAssistant: React.FC = () => {
   return (
     <>
       {/* Floating Button */}
-      <Button
+      <button
         onClick={() => setIsOpen(true)}
         className={cn(
           "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg",
-          "bg-primary hover:bg-primary/90 text-primary-foreground",
-          "transition-all duration-300 hover:scale-110",
+          "bg-background border-2 border-primary/20",
+          "transition-all duration-300 hover:scale-110 hover:shadow-xl",
+          "overflow-hidden",
           isOpen && "hidden"
         )}
-        size="icon"
       >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+        <img 
+          src={mayiaAvatar} 
+          alt="MayIA" 
+          className="h-full w-full object-cover"
+        />
+      </button>
 
       {/* Chat Panel */}
       <div
