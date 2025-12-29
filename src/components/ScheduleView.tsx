@@ -175,6 +175,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             behavior: 'smooth', 
             block: 'center' 
           });
+          
+          // Add highlight animation after scroll completes
+          setTimeout(() => {
+            todayCard.classList.add('today-highlight-pulse');
+            setTimeout(() => {
+              todayCard.classList.remove('today-highlight-pulse');
+            }, 1500);
+          }, 500);
         }
       }, 400);
     } else {
