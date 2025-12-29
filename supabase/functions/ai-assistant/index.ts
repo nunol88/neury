@@ -63,12 +63,16 @@ serve(async (req) => {
       const inicio = new Date(a.data_inicio);
       const fim = new Date(a.data_fim);
       
-      // Parse descricao for price
+      // Parse descricao for price - the field can be "price" or "preco"
       let preco = "N/A";
+      let morada = "N/A";
+      let notas = "";
       try {
         if (a.descricao) {
           const desc = JSON.parse(a.descricao);
-          preco = desc.preco || "N/A";
+          preco = desc.price || desc.preco || "N/A";
+          morada = desc.address || desc.morada || "N/A";
+          notas = desc.notes || desc.notas || "";
         }
       } catch {
         // Not JSON, ignore
@@ -79,7 +83,9 @@ serve(async (req) => {
         cliente: a.cliente_nome,
         horario: `${inicio.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} - ${fim.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}`,
         status: a.status,
-        preco: preco,
+        preco: preco + "€",
+        morada: morada,
+        notas: notas,
         contacto: a.cliente_contacto || "N/A",
       };
     });
@@ -108,24 +114,68 @@ serve(async (req) => {
       try {
         if (a.descricao) {
           const desc = JSON.parse(a.descricao);
-          receitaMes += parseFloat(desc.preco) || 0;
+          // Check for "price" (English) or "preco" (Portuguese)
+          receitaMes += parseFloat(desc.price) || parseFloat(desc.preco) || 0;
         }
       } catch {
         // Ignore
       }
     });
 
-    const systemPrompt = `És um assistente de gestão de agendamentos de limpeza. Respondes SEMPRE em português de Portugal.
+    // Calculate pending revenue
+    const pendentes = thisMonthAgendamentos.filter((a) => a.status === "agendado");
+    let receitaPendente = 0;
+    pendentes.forEach((a) => {
+      try {
+        if (a.descricao) {
+          const desc = JSON.parse(a.descricao);
+          receitaPendente += parseFloat(desc.price) || parseFloat(desc.preco) || 0;
+        }
+      } catch {
+        // Ignore
+      }
+    });
+
+    // Get tomorrow's appointments
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    const tomorrowAgendamentos = (agendamentos || []).filter((a) => {
+      const dataInicio = a.data_inicio.split('T')[0];
+      return dataInicio === tomorrowStr;
+    });
+
+    const systemPrompt = `És a MayIA, uma assistente de gestão de agendamentos de limpeza. Respondes SEMPRE em português de Portugal.
 Responde de forma concisa, amigável e útil. Usa emojis ocasionalmente para tornar a conversa mais agradável.
 
 Data atual: ${dateStr}
 
-📊 RESUMO DO MÊS ATUAL:
+📊 RESUMO DO MÊS ATUAL (${today.toLocaleDateString("pt-PT", { month: "long", year: "numeric" })}):
 - Total de agendamentos este mês: ${thisMonthAgendamentos.length}
 - Concluídos: ${concluidos.length}
-- Receita do mês: ${receitaMes.toFixed(2)}€
+- Pendentes: ${pendentes.length}
+- Receita já ganhos (concluídos): ${receitaMes.toFixed(2)}€
+- Receita pendente (por concluir): ${receitaPendente.toFixed(2)}€
+- Receita total prevista: ${(receitaMes + receitaPendente).toFixed(2)}€
 
-📅 TODOS OS AGENDAMENTOS (${agendamentosContext.length} total):
+📅 AGENDAMENTOS DE AMANHÃ (${tomorrow.toLocaleDateString("pt-PT")}):
+${tomorrowAgendamentos.length > 0 
+  ? tomorrowAgendamentos.map((a) => {
+      const inicio = new Date(a.data_inicio);
+      const fim = new Date(a.data_fim);
+      let preco = "N/A";
+      try {
+        if (a.descricao) {
+          const desc = JSON.parse(a.descricao);
+          preco = (desc.price || desc.preco || "N/A") + "€";
+        }
+      } catch {}
+      return `- ${a.cliente_nome}: ${inicio.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} - ${fim.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })} (${preco})`;
+    }).join("\n")
+  : "Sem agendamentos para amanhã."}
+
+📋 TODOS OS AGENDAMENTOS (${agendamentosContext.length} total):
 ${JSON.stringify(agendamentosContext, null, 2)}
 
 👥 CLIENTES REGISTADOS (${clientsContext.length} total):
@@ -133,8 +183,9 @@ ${JSON.stringify(clientsContext, null, 2)}
 
 INSTRUÇÕES:
 - Responde sempre em português de Portugal
-- Quando perguntarem sobre dinheiro/receita, calcula a partir dos preços nos agendamentos concluídos
-- Quando perguntarem sobre agendamentos futuros, considera a data atual
+- Quando perguntarem sobre dinheiro/receita, usa os valores calculados acima
+- Quando perguntarem sobre agendamentos futuros, considera a data atual: ${dateStr}
+- Se perguntarem sobre amanhã, usa a lista de agendamentos de amanhã
 - Se não tiveres informação suficiente, indica isso educadamente
 - Formata valores monetários com o símbolo €
 - Usa formatação simples (sem markdown complexo)`;
