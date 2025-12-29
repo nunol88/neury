@@ -26,6 +26,7 @@ import {
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
+  GoToTodayButton,
 } from '@/components/schedule';
 
 import {
@@ -107,6 +108,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   
   // State for calendar modal
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  
+  // State for "Go to Today" button visibility
+  const [showGoToToday, setShowGoToToday] = useState(false);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -185,11 +189,66 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           }, 500);
         }
       }, 400);
+      setShowGoToToday(false);
     } else {
       // If viewing a different month, scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setShowGoToToday(true);
     }
   }, [activeMonth]);
+  
+  // Track scroll position to show/hide "Go to Today" button
+  useEffect(() => {
+    const currentMonthKey = getCurrentMonthKey();
+    if (activeMonth !== currentMonthKey) {
+      setShowGoToToday(true);
+      return;
+    }
+    
+    const handleScroll = () => {
+      const todayCard = document.querySelector('[data-is-today="true"]');
+      if (!todayCard) {
+        setShowGoToToday(false);
+        return;
+      }
+      
+      const rect = todayCard.getBoundingClientRect();
+      const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+      setShowGoToToday(!isVisible);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeMonth]);
+  
+  const scrollToToday = () => {
+    const currentMonthKey = getCurrentMonthKey();
+    
+    // If not on current month, switch to it first
+    if (activeMonth !== currentMonthKey) {
+      setActiveMonth(currentMonthKey);
+      return; // The useEffect will handle scrolling
+    }
+    
+    // Scroll to today's card
+    const todayCard = document.querySelector('[data-is-today="true"]');
+    if (todayCard) {
+      todayCard.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      
+      // Add highlight animation
+      setTimeout(() => {
+        todayCard.classList.add('today-highlight-pulse');
+        setTimeout(() => {
+          todayCard.classList.remove('today-highlight-pulse');
+        }, 1500);
+      }, 500);
+    }
+  };
 
   useEffect(() => {
     if (currentMonthDays.length > 0) {
@@ -1502,6 +1561,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           <CalendarDays size={26} />
         </button>
       </div>
+
+      {/* Go to Today floating button */}
+      <GoToTodayButton 
+        onClick={scrollToToday}
+        isVisible={showGoToToday}
+      />
 
       <style>{`
         @keyframes fade-in {
