@@ -13,6 +13,65 @@ serve(async (req) => {
   }
 
   try {
+    // Extract and validate Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Missing or invalid Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Autenticação necessária" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Create client with user's token to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("Auth verification failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Sessão inválida. Por favor, faça login novamente." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check user role using service role client to bypass RLS
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: roleData, error: roleError } = await supabaseService
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (roleError || !roleData) {
+      console.error("Role check failed:", roleError?.message);
+      return new Response(
+        JSON.stringify({ error: "Utilizador sem permissões atribuídas" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only allow admin role to access the AI assistant
+    if (roleData.role !== "admin") {
+      console.error("Insufficient permissions for user:", user.id, "role:", roleData.role);
+      return new Response(
+        JSON.stringify({ error: "Acesso restrito a administradores" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { messages } = await req.json();
     
     if (!messages || !Array.isArray(messages)) {
@@ -24,13 +83,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Get Supabase client to fetch data
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+    // Now use service client to fetch data (user is verified as admin)
     // Fetch appointments
-    const { data: agendamentos, error: agendamentosError } = await supabase
+    const { data: agendamentos, error: agendamentosError } = await supabaseService
       .from("agendamentos")
       .select("*")
       .order("data_inicio", { ascending: true });
@@ -40,7 +95,7 @@ serve(async (req) => {
     }
 
     // Fetch clients
-    const { data: clients, error: clientsError } = await supabase
+    const { data: clients, error: clientsError } = await supabaseService
       .from("clients")
       .select("*")
       .order("nome", { ascending: true });
