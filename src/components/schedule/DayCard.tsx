@@ -172,8 +172,8 @@ const DayCard: React.FC<DayCardProps> = ({
             <span className="text-xs text-muted-foreground font-semibold tracking-wide">{dayObj.formatted}</span>
             {holiday && (
               <span className="flex items-center gap-1 text-[10px] bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 px-1.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">
+                <span className="font-medium">{holiday.name}</span>
                 <span>{holiday.emoji}</span>
-                <span className="font-medium hidden sm:inline">{holiday.name}</span>
               </span>
             )}
           </div>
