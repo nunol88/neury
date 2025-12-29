@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import TaskCard from './TaskCard';
-import { CalendarPlus, Sparkles } from 'lucide-react';
+import { CalendarPlus, Sparkles, Star, Trophy } from 'lucide-react';
 
 interface DayInfo {
   dateObject: Date;
@@ -84,6 +84,9 @@ const DayCard: React.FC<DayCardProps> = ({
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
   const completedTasks = tasks.filter(t => t.completed).length;
   
+  // Check if day is fully completed (has tasks and all are done)
+  const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length;
+  
   // Check if day is empty (no tasks)
   const isEmpty = tasks.length === 0;
 
@@ -98,10 +101,11 @@ const DayCard: React.FC<DayCardProps> = ({
         animationDelay: `${animationDelay}ms`,
         animationFillMode: 'backwards'
       }}
-      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up
+      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative
         ${isWeekend ? 'bg-muted/50' : ''}
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
         ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-glow-primary' : ''}
+        ${isFullyCompleted && !isToday ? 'ring-2 ring-success/50 shadow-glow-success' : ''}
         ${isPast && isAdmin ? 'opacity-60' : ''}
         ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
@@ -109,6 +113,17 @@ const DayCard: React.FC<DayCardProps> = ({
         hover:shadow-lg hover:scale-[1.01]
       `}
     >
+      {/* Gold medal for fully completed days */}
+      {isFullyCompleted && (
+        <div className="absolute -top-1 -right-1 z-20 animate-scale-in">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 flex items-center justify-center shadow-lg">
+              <Star size={16} className="text-white fill-white" />
+            </div>
+            <div className="absolute inset-0 rounded-full bg-yellow-400/50 animate-ping" style={{ animationDuration: '2s' }} />
+          </div>
+        </div>
+      )}
       {/* Drop indicator overlay */}
       {isDragOver && !isPast && (
         <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center animate-pulse backdrop-blur-[1px]">
