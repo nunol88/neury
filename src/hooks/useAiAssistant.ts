@@ -116,11 +116,16 @@ export const useAiAssistant = () => {
     try {
       const allMessages = [...messages, userMessage];
       
-      // Get user's session token for authentication
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get user's session token for authentication - try to refresh if needed
+      let { data: { session } } = await supabase.auth.getSession();
       
+      // If no session or token seems stale, try to refresh
       if (!session?.access_token) {
-        throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
+          throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        }
+        session = refreshData.session;
       }
       
       const response = await fetch(CHAT_URL, {

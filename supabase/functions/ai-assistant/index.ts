@@ -63,11 +63,11 @@ serve(async (req) => {
       );
     }
 
-    // Only allow admin role to access the AI assistant
-    if (roleData.role !== "admin") {
+    // Allow both admin and neury roles to access the AI assistant
+    if (roleData.role !== "admin" && roleData.role !== "neury") {
       console.error("Insufficient permissions for user:", user.id, "role:", roleData.role);
       return new Response(
-        JSON.stringify({ error: "Acesso restrito a administradores" }),
+        JSON.stringify({ error: "Acesso restrito" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
