@@ -593,6 +593,36 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       return;
     }
 
+    // Block creation if there are overlapping conflicts
+    const monthKey = getMonthKeyFromDate(newTask.date);
+    if (monthKey) {
+      const allMonthTasks = getTasksForMonth(monthKey);
+      const conflicts = detectConflicts(
+        { 
+          date: newTask.date, 
+          startTime: newTask.startTime, 
+          endTime: newTask.endTime,
+          id: editingId || undefined
+        },
+        allMonthTasks
+      );
+      
+      // Check for actual overlaps (not just close intervals)
+      const overlaps = conflicts.filter(c => c.type === 'overlap');
+      if (overlaps.length > 0) {
+        const conflictDetails = overlaps.map(c => 
+          `${c.task.startTime}-${c.task.endTime} (${c.task.client})`
+        ).join(', ');
+        
+        toast({
+          title: 'Conflito de horário!',
+          description: `Não é possível agendar. Já existe agendamento: ${conflictDetails}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
