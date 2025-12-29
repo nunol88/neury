@@ -12,9 +12,9 @@ import { useTheme } from '@/hooks/useTheme';
 import CalendarModal from '@/components/CalendarModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 
 // Import refactored components
 import {
@@ -891,20 +891,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF();
     const tasks = allTasks[activeMonth as keyof AllTasks] || [];
     const completedTasks = tasks.filter(t => t.completed);
     const pendingTasks = tasks.filter(t => !t.completed);
     
-    doc.setFillColor(139, 92, 246);
-    doc.rect(0, 0, 220, 35, 'F');
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
-    doc.text('MaysLimpo', 14, 18);
-    doc.setFontSize(12);
-    doc.text(`Agenda - ${activeConfig.label}`, 14, 28);
+    // Add professional header with logo
+    await addProfessionalHeader(doc, 'Agenda', activeConfig.label);
     
+    // Summary section
+    const startY = getContentStartY();
     doc.setFontSize(11);
     doc.setTextColor(80, 80, 80);
     const totalConcluido = completedTasks.reduce((s, t) => s + parseFloat(t.price || '0'), 0);
@@ -915,8 +912,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       return s + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     }, 0);
     
-    doc.text(`Total Agendamentos: ${tasks.length}  |  Concluídos: ${completedTasks.length}  |  Pendentes: ${pendingTasks.length}`, 14, 45);
-    doc.text(`Horas: ${totalHoras.toFixed(1)}h  |  Faturado: €${totalConcluido.toFixed(2)}  |  Pendente: €${totalPendente.toFixed(2)}`, 14, 52);
+    doc.text(`Total Agendamentos: ${tasks.length}  |  Concluídos: ${completedTasks.length}  |  Pendentes: ${pendingTasks.length}`, 14, startY);
+    doc.text(`Horas: ${totalHoras.toFixed(1)}h  |  Faturado: €${totalConcluido.toFixed(2)}  |  Pendente: €${totalPendente.toFixed(2)}`, 14, startY + 7);
     
     const tableData = tasks.map(task => {
       const date = new Date(task.date);
@@ -937,7 +934,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     autoTable(doc, {
       head: [['Data', 'Cliente', 'Telefone', 'Horário', 'Morada', 'Preço', '']],
       body: tableData,
-      startY: 58,
+      startY: startY + 12,
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [139, 92, 246], textColor: 255 },
       alternateRowStyles: { fillColor: [248, 245, 255] },
@@ -956,18 +953,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
     });
     
-    const finalY = (doc as any).lastAutoTable.finalY || 58;
-    doc.setDrawColor(139, 92, 246);
-    doc.setLineWidth(0.5);
-    doc.line(14, finalY + 8, 196, finalY + 8);
+    const finalY = (doc as any).lastAutoTable.finalY || startY + 12;
+    
+    // Summary totals
     doc.setFontSize(10);
     doc.setTextColor(139, 92, 246);
-    doc.text(`Total Faturado: €${totalConcluido.toFixed(2)}`, 14, finalY + 16);
+    doc.text(`Total Faturado: €${totalConcluido.toFixed(2)}`, 14, finalY + 10);
     doc.setTextColor(245, 158, 11);
-    doc.text(`Total Pendente: €${totalPendente.toFixed(2)}`, 80, finalY + 16);
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 14, finalY + 24);
+    doc.text(`Total Pendente: €${totalPendente.toFixed(2)}`, 80, finalY + 10);
+    
+    // Add professional footer with logo
+    await addProfessionalFooter(doc, finalY + 15);
     
     doc.save(`agenda-${activeMonth}-${activeConfig.year}.pdf`);
     toast({ title: 'PDF exportado com sucesso' });
