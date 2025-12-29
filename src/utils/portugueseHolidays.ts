@@ -45,6 +45,7 @@ function getHolidaysForYear(year: number): Record<string, Holiday> {
   const easter = calculateEaster(year);
   
   // Feriados móveis (baseados na Páscoa)
+  const carnival = addDays(easter, -47); // Carnaval (terça-feira gorda)
   const goodFriday = addDays(easter, -2); // Sexta-feira Santa
   const corpusChristi = addDays(easter, 60); // Corpo de Deus
   
@@ -62,6 +63,7 @@ function getHolidaysForYear(year: number): Record<string, Holiday> {
     [`${year}-12-25`]: { name: 'Natal', emoji: '🎄' },
     
     // Feriados móveis
+    [formatDate(carnival)]: { name: 'Carnaval', emoji: '🎭' },
     [formatDate(goodFriday)]: { name: 'Sexta-feira Santa', emoji: '✝️' },
     [formatDate(easter)]: { name: 'Páscoa', emoji: '🐣' },
     [formatDate(corpusChristi)]: { name: 'Corpo de Deus', emoji: '⛪' },
