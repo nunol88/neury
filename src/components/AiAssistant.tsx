@@ -76,8 +76,8 @@ const AiAssistant: React.FC = () => {
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm">Assistente IA</h3>
-              <p className="text-xs text-muted-foreground">Pergunta sobre agendamentos</p>
+              <h3 className="font-semibold text-sm">MayIA</h3>
+              <p className="text-xs text-muted-foreground">A tua assistente inteligente</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -112,9 +112,9 @@ const AiAssistant: React.FC = () => {
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <Sparkles className="h-6 w-6 text-primary" />
                   </div>
-                  <h4 className="font-medium mb-1">Olá! 👋</h4>
+                  <h4 className="font-medium mb-1">Olá! Sou a MayIA 👋</h4>
                   <p className="text-sm text-muted-foreground">
-                    Sou o teu assistente de agendamentos. Posso ajudar-te com informações sobre clientes, receitas e agenda.
+                    A tua assistente de agendamentos. Posso ajudar-te com informações sobre clientes, receitas e agenda.
                   </p>
                 </div>
 

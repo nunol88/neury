@@ -10,6 +10,10 @@ export const QUICK_SUGGESTIONS = [
   { emoji: '📅', text: 'Resumo de amanhã' },
   { emoji: '👥', text: 'Clientes mais frequentes' },
   { emoji: '📊', text: 'Como foi a minha semana?' },
+  { emoji: '⏳', text: 'Agendamentos pendentes' },
+  { emoji: '🏆', text: 'Qual foi o meu melhor mês?' },
+  { emoji: '📞', text: 'Contactos dos clientes' },
+  { emoji: '🔮', text: 'Previsão para o resto do mês' },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
