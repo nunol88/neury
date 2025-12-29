@@ -1,6 +1,11 @@
 import jsPDF from 'jspdf';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
+// Brand colors matching the logo
+const BRAND_PRIMARY = { r: 45, g: 137, b: 108 }; // Teal green
+const BRAND_SECONDARY = { r: 34, g: 115, b: 90 }; // Darker teal
+const BRAND_LIGHT = { r: 180, g: 220, b: 205 }; // Light teal
+
 // Convert image to base64 for PDF embedding
 const getLogoBase64 = (): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -8,12 +13,23 @@ const getLogoBase64 = (): Promise<string> => {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      const size = Math.min(img.width, img.height);
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg'));
+        // Create circular clip for round logo
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        
+        // Center the image in the circular clip
+        const offsetX = (img.width - size) / 2;
+        const offsetY = (img.height - size) / 2;
+        ctx.drawImage(img, -offsetX, -offsetY, img.width, img.height);
+        
+        resolve(canvas.toDataURL('image/png'));
       } else {
         reject(new Error('Could not get canvas context'));
       }
@@ -23,7 +39,7 @@ const getLogoBase64 = (): Promise<string> => {
   });
 };
 
-// Professional PDF header with logo
+// Professional PDF header with round logo and brand colors
 export const addProfessionalHeader = async (
   doc: jsPDF, 
   title: string, 
@@ -32,14 +48,16 @@ export const addProfessionalHeader = async (
   try {
     const logoBase64 = await getLogoBase64();
     
-    // Header background with gradient effect (two rectangles)
-    doc.setFillColor(139, 92, 246);
+    // Header background with brand colors
+    doc.setFillColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.rect(0, 0, 220, 40, 'F');
-    doc.setFillColor(124, 58, 237);
+    doc.setFillColor(BRAND_SECONDARY.r, BRAND_SECONDARY.g, BRAND_SECONDARY.b);
     doc.rect(0, 0, 220, 5, 'F');
     
-    // Add logo
-    doc.addImage(logoBase64, 'JPEG', 14, 8, 24, 24);
+    // Add round logo with white circle background
+    doc.setFillColor(255, 255, 255);
+    doc.circle(26, 20, 13, 'F');
+    doc.addImage(logoBase64, 'PNG', 14, 8, 24, 24);
     
     // Company name and title
     doc.setFontSize(20);
@@ -50,7 +68,7 @@ export const addProfessionalHeader = async (
     // Slogan
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(220, 220, 255);
+    doc.setTextColor(BRAND_LIGHT.r, BRAND_LIGHT.g, BRAND_LIGHT.b);
     doc.text('Limpeza Profissional', 44, 24);
     
     // Title and subtitle on right side
@@ -61,7 +79,7 @@ export const addProfessionalHeader = async (
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(220, 220, 255);
+    doc.setTextColor(BRAND_LIGHT.r, BRAND_LIGHT.g, BRAND_LIGHT.b);
     doc.text(subtitle, 196, 26, { align: 'right' });
     
     // Decorative line at bottom of header
@@ -72,7 +90,7 @@ export const addProfessionalHeader = async (
   } catch (error) {
     console.error('Error adding logo to PDF:', error);
     // Fallback without logo
-    doc.setFillColor(139, 92, 246);
+    doc.setFillColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.rect(0, 0, 220, 40, 'F');
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255);
@@ -81,12 +99,12 @@ export const addProfessionalHeader = async (
     doc.setFontSize(14);
     doc.text(title, 196, 18, { align: 'right' });
     doc.setFontSize(10);
-    doc.setTextColor(220, 220, 255);
+    doc.setTextColor(BRAND_LIGHT.r, BRAND_LIGHT.g, BRAND_LIGHT.b);
     doc.text(subtitle, 196, 26, { align: 'right' });
   }
 };
 
-// Professional PDF footer with logo and generation info
+// Professional PDF footer with round logo and generation info
 export const addProfessionalFooter = async (
   doc: jsPDF,
   yPosition: number
@@ -97,17 +115,19 @@ export const addProfessionalFooter = async (
   try {
     const logoBase64 = await getLogoBase64();
     
-    // Footer line
-    doc.setDrawColor(139, 92, 246);
+    // Footer line with brand color
+    doc.setDrawColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.setLineWidth(0.5);
     doc.line(14, footerY, 196, footerY);
     
-    // Small logo in footer
-    doc.addImage(logoBase64, 'JPEG', 14, footerY + 3, 10, 10);
+    // Small round logo in footer
+    doc.setFillColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
+    doc.circle(19, footerY + 8, 6, 'F');
+    doc.addImage(logoBase64, 'PNG', 14, footerY + 3, 10, 10);
     
     // Footer text
     doc.setFontSize(8);
-    doc.setTextColor(139, 92, 246);
+    doc.setTextColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.setFont('helvetica', 'bold');
     doc.text('Documento gerado por MaysLimpo', 28, footerY + 8);
     
@@ -118,13 +138,13 @@ export const addProfessionalFooter = async (
     doc.text(`${dateStr} às ${timeStr}`, 28, footerY + 13);
     
     // Website/contact on right
-    doc.setTextColor(139, 92, 246);
+    doc.setTextColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.text('www.mayslimpo.pt', 196, footerY + 10, { align: 'right' });
     
   } catch (error) {
     console.error('Error adding footer logo:', error);
     // Fallback without logo
-    doc.setDrawColor(139, 92, 246);
+    doc.setDrawColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.setLineWidth(0.5);
     doc.line(14, footerY, 196, footerY);
     
