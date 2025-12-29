@@ -266,6 +266,26 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     }
   }, [activeMonth, currentMonthDays.length, editingId]);
 
+  // Auto-detect conflicts when modal is open and single task data changes
+  useEffect(() => {
+    if (showModal && activeTab === 'single' && newTask.date) {
+      const monthKey = getMonthKeyFromDate(newTask.date);
+      if (monthKey) {
+        const allMonthTasks = getTasksForMonth(monthKey);
+        const conflicts = detectConflicts(
+          { 
+            date: newTask.date, 
+            startTime: newTask.startTime, 
+            endTime: newTask.endTime,
+            id: editingId || undefined
+          },
+          allMonthTasks
+        );
+        setCurrentConflicts(conflicts);
+      }
+    }
+  }, [showModal, activeTab, newTask.date, newTask.startTime, newTask.endTime, editingId, allTasks]);
+
   const weekDaysList = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
 
   const handleInputChange = (setter: any, state: any, field: string, value: string) => {
