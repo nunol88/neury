@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -17,11 +18,76 @@ export const QUICK_SUGGESTIONS = [
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
+const MAX_HISTORY_MESSAGES = 20; // Keep last 20 messages for context
 
 export const useAiAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  // Load conversation history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_conversations')
+          .select('id, messages')
+          .eq('user_role', 'admin')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error loading conversation:', error);
+          return;
+        }
+
+        if (data) {
+          setConversationId(data.id);
+          const storedMessages = data.messages as unknown as Message[];
+          if (Array.isArray(storedMessages) && storedMessages.length > 0) {
+            // Load only last N messages to keep context manageable
+            setMessages(storedMessages.slice(-MAX_HISTORY_MESSAGES));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading conversation history:', err);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  // Save messages to database
+  const saveMessages = useCallback(async (newMessages: Message[]) => {
+    try {
+      // Keep only last N messages
+      const messagesToSave = newMessages.slice(-MAX_HISTORY_MESSAGES);
+
+      if (conversationId) {
+        await supabase
+          .from('ai_conversations')
+          .update({ messages: JSON.parse(JSON.stringify(messagesToSave)) })
+          .eq('id', conversationId);
+      } else {
+        const { data, error } = await supabase
+          .from('ai_conversations')
+          .insert([{ 
+            user_role: 'admin', 
+            messages: JSON.parse(JSON.stringify(messagesToSave))
+          }])
+          .select('id')
+          .single();
+
+        if (!error && data) {
+          setConversationId(data.id);
+        }
+      }
+    } catch (err) {
+      console.error('Error saving conversation:', err);
+    }
+  }, [conversationId]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
@@ -126,6 +192,11 @@ export const useAiAssistant = () => {
           }
         }
       }
+
+      // Save the complete conversation after assistant responds
+      const finalMessages = [...allMessages, { role: 'assistant' as const, content: assistantContent }];
+      await saveMessages(finalMessages);
+
     } catch (err) {
       console.error('AI Assistant error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao comunicar com o assistente';
@@ -145,12 +216,20 @@ export const useAiAssistant = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, saveMessages]);
 
-  const clearMessages = useCallback(() => {
+  const clearMessages = useCallback(async () => {
     setMessages([]);
     setError(null);
-  }, []);
+    
+    // Clear from database too
+    if (conversationId) {
+      await supabase
+        .from('ai_conversations')
+        .update({ messages: [] })
+        .eq('id', conversationId);
+    }
+  }, [conversationId]);
 
   return {
     messages,
