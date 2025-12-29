@@ -5,8 +5,7 @@ import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
-  Phone, Repeat, CalendarRange, Pencil, Loader2, Users, UserPlus,
-  CalendarDays, CalendarCheck
+  Phone, Repeat, CalendarRange, Pencil, Loader2, Users, UserPlus
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import CalendarModal from '@/components/CalendarModal';
@@ -27,7 +26,7 @@ import {
   PositionDialog,
   TypeSelectorModal,
   TodaySummary,
-  FloatingAddButton,
+  FloatingActionMenu,
 } from '@/components/schedule';
 
 import {
@@ -1543,58 +1542,35 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         isLoading={loading}
       />
 
-      {/* Floating Action Buttons - Left side */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3 print:hidden">
-        {/* Go to Today Button */}
-        {showGoToToday && (
-          <button
-            onClick={scrollToToday}
-            style={{ animationDelay: '50ms' }}
-            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white animate-fade-in`}
-            title="Ir para Hoje"
-          >
-            <CalendarCheck size={24} />
-          </button>
-        )}
-        
-        {/* Floating Calendar Button */}
-        <button
-          onClick={() => setShowCalendarModal(true)}
-          style={{ animationDelay: '200ms' }}
-          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r from-red-500 to-red-600 text-white animate-slide-up-bounce"
-          title="Ver Calendário"
-        >
-          <CalendarDays size={26} />
-        </button>
-      </div>
-
-      {/* Floating Add Button - Right side (Admin Only) */}
-      {isAdmin && (
-        <FloatingAddButton
-          themeGradient={themeGradient}
-          onSelectSingle={() => {
-            setEditingId(null);
-            setSelectedClientId('');
-            setActiveTab('single');
-            setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
-            setShowModal(true);
-          }}
-          onSelectFixed={() => {
-            setEditingId(null);
-            setSelectedClientId('');
-            setActiveTab('fixed');
-            setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
-            setShowModal(true);
-          }}
-          onSelectBiWeekly={() => {
-            setEditingId(null);
-            setSelectedClientId('');
-            setActiveTab('biweekly');
-            setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
-            setShowModal(true);
-          }}
-        />
-      )}
+      {/* Floating Action Menu - Left side */}
+      <FloatingActionMenu
+        themeGradient={themeGradient}
+        isAdmin={isAdmin}
+        showGoToToday={showGoToToday}
+        onOpenCalendar={() => setShowCalendarModal(true)}
+        onGoToToday={scrollToToday}
+        onSelectSingle={() => {
+          setEditingId(null);
+          setSelectedClientId('');
+          setActiveTab('single');
+          setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
+          setShowModal(true);
+        }}
+        onSelectFixed={() => {
+          setEditingId(null);
+          setSelectedClientId('');
+          setActiveTab('fixed');
+          setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
+          setShowModal(true);
+        }}
+        onSelectBiWeekly={() => {
+          setEditingId(null);
+          setSelectedClientId('');
+          setActiveTab('biweekly');
+          setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
+          setShowModal(true);
+        }}
+      />
 
       <style>{`
         @keyframes fade-in {

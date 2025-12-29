@@ -1,5 +1,6 @@
 export { default as TaskCard } from './TaskCard';
 export { default as DayCard } from './DayCard';
+export { default as FloatingActionMenu } from './FloatingActionMenu';
 export { default as ScheduleHeader } from './ScheduleHeader';
 export { default as MonthTabs } from './MonthTabs';
 export { default as MonthSummaryBar } from './MonthSummaryBar';
