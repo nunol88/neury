@@ -26,6 +26,8 @@ import {
   UndoBar,
   PositionDialog,
   TypeSelectorModal,
+  TodaySummary,
+  FloatingAddButton,
 } from '@/components/schedule';
 
 import {
@@ -1047,6 +1049,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         />
       </div>
 
+      {/* Today Summary Card - Only show in current month */}
+      {activeMonth === getCurrentMonthKey() && (
+        <div className="max-w-7xl mx-auto px-4 mt-4 print:hidden relative z-0">
+          <TodaySummary
+            tasks={getTasksForMonth(activeMonth).filter(t => {
+              const today = new Date();
+              const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+              return t.date === todayStr;
+            })}
+            onScrollToToday={scrollToToday}
+          />
+        </div>
+      )}
 
       {/* Days Grid */}
       <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
@@ -1528,9 +1543,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         isLoading={loading}
       />
 
-      {/* Floating Action Buttons - Stacked on left */}
+      {/* Floating Action Buttons - Left side */}
       <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3 print:hidden">
-        {/* Go to Today Button (on top) */}
+        {/* Go to Today Button */}
         {showGoToToday && (
           <button
             onClick={scrollToToday}
@@ -1542,23 +1557,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </button>
         )}
         
-        {/* Floating New Button - Admin Only */}
-        {isAdmin && (
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setSelectedClientId('');
-              setShowTypeSelector(true);
-            }}
-            style={{ animationDelay: '100ms' }}
-            className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 bg-gradient-to-r ${themeGradient} text-white animate-slide-up-bounce`}
-            title="Novo Agendamento"
-          >
-            <Plus size={28} />
-          </button>
-        )}
-        
-        {/* Floating Calendar Button (below) */}
+        {/* Floating Calendar Button */}
         <button
           onClick={() => setShowCalendarModal(true)}
           style={{ animationDelay: '200ms' }}
@@ -1568,6 +1567,34 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           <CalendarDays size={26} />
         </button>
       </div>
+
+      {/* Floating Add Button - Right side (Admin Only) */}
+      {isAdmin && (
+        <FloatingAddButton
+          themeGradient={themeGradient}
+          onSelectSingle={() => {
+            setEditingId(null);
+            setSelectedClientId('');
+            setActiveTab('single');
+            setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
+            setShowModal(true);
+          }}
+          onSelectFixed={() => {
+            setEditingId(null);
+            setSelectedClientId('');
+            setActiveTab('fixed');
+            setFixedTask(prev => ({ ...prev, client: '', phone: '', notes: '' }));
+            setShowModal(true);
+          }}
+          onSelectBiWeekly={() => {
+            setEditingId(null);
+            setSelectedClientId('');
+            setActiveTab('biweekly');
+            setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
+            setShowModal(true);
+          }}
+        />
+      )}
 
       <style>{`
         @keyframes fade-in {

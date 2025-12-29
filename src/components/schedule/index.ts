@@ -8,3 +8,5 @@ export { default as UndoBar } from './UndoBar';
 export { default as PositionDialog } from './PositionDialog';
 export { default as TypeSelectorModal } from './TypeSelectorModal';
 export { default as GoToTodayButton } from './GoToTodayButton';
+export { default as TodaySummary } from './TodaySummary';
+export { default as FloatingAddButton } from './FloatingAddButton';
