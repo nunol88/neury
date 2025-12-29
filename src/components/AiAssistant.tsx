@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Trash2, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAiAssistant, QUICK_SUGGESTIONS, Message } from '@/hooks/useAiAssistant';
 import { cn } from '@/lib/utils';
+import mayiaAvatar from '@/assets/mayia-avatar.png';
 
 const AiAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,9 +73,11 @@ const AiAssistant: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
+            <img 
+              src={mayiaAvatar} 
+              alt="MayIA" 
+              className="h-8 w-8 rounded-full object-cover"
+            />
             <div>
               <h3 className="font-semibold text-sm">MayIA</h3>
               <p className="text-xs text-muted-foreground">A tua assistente inteligente</p>
@@ -109,9 +112,11 @@ const AiAssistant: React.FC = () => {
             {messages.length === 0 ? (
               <div className="space-y-4">
                 <div className="text-center py-6">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                  </div>
+                  <img 
+                    src={mayiaAvatar} 
+                    alt="MayIA" 
+                    className="h-12 w-12 rounded-full object-cover mx-auto mb-3"
+                  />
                   <h4 className="font-medium mb-1">Olá! Sou a MayIA 👋</h4>
                   <p className="text-sm text-muted-foreground">
                     A tua assistente de agendamentos. Posso ajudar-te com informações sobre clientes, receitas e agenda.
@@ -149,9 +154,11 @@ const AiAssistant: React.FC = () => {
                 ))}
                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-primary animate-pulse" />
-                    </div>
+                    <img 
+                      src={mayiaAvatar} 
+                      alt="MayIA" 
+                      className="h-6 w-6 rounded-full object-cover animate-pulse"
+                    />
                     <span className="text-sm">A pensar...</span>
                   </div>
                 )}
