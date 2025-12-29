@@ -50,7 +50,7 @@ function getHolidaysForYear(year: number): Record<string, Holiday> {
   const corpusChristi = addDays(easter, 60); // Corpo de Deus
   
   const holidays: Record<string, Holiday> = {
-    // Feriados fixos
+    // Feriados fixos nacionais
     [`${year}-01-01`]: { name: 'Ano Novo', emoji: '🎉' },
     [`${year}-04-25`]: { name: 'Dia da Liberdade', emoji: '🇵🇹' },
     [`${year}-05-01`]: { name: 'Dia do Trabalhador', emoji: '💪' },
@@ -61,6 +61,9 @@ function getHolidaysForYear(year: number): Record<string, Holiday> {
     [`${year}-12-01`]: { name: 'Restauração da Independência', emoji: '🇵🇹' },
     [`${year}-12-08`]: { name: 'Imaculada Conceição', emoji: '⛪' },
     [`${year}-12-25`]: { name: 'Natal', emoji: '🎄' },
+    
+    // Feriado municipal de Lisboa
+    [`${year}-06-13`]: { name: 'Santo António', emoji: '🎊' },
     
     // Feriados móveis
     [formatDate(carnival)]: { name: 'Carnaval', emoji: '🎭' },
