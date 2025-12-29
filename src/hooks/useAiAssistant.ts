@@ -8,12 +8,12 @@ export interface Message {
 export const QUICK_SUGGESTIONS = [
   { emoji: '💰', text: 'Quanto ganhei este mês?' },
   { emoji: '📅', text: 'Resumo de amanhã' },
+  { emoji: '✉️', text: 'Escreve uma mensagem para confirmar agendamento' },
+  { emoji: '🧹', text: 'Dicas para limpar vidros sem manchas' },
+  { emoji: '💡', text: 'Como remover gordura da cozinha?' },
+  { emoji: '📝', text: 'Quanto cobrar por um T2?' },
   { emoji: '👥', text: 'Clientes mais frequentes' },
-  { emoji: '📊', text: 'Como foi a minha semana?' },
-  { emoji: '⏳', text: 'Agendamentos pendentes' },
-  { emoji: '🏆', text: 'Qual foi o meu melhor mês?' },
-  { emoji: '📞', text: 'Contactos dos clientes' },
-  { emoji: '🔮', text: 'Previsão para o resto do mês' },
+  { emoji: '🌿', text: 'Produtos naturais para limpeza' },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
