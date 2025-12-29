@@ -27,7 +27,10 @@ import {
   TypeSelectorModal,
   TodaySummary,
   FloatingActionMenu,
+  ConflictAlert,
+  detectConflicts,
 } from '@/components/schedule';
+import type { Conflict } from '@/components/schedule';
 
 import {
   generateMonthsConfig,
@@ -108,6 +111,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   
   // State for calendar modal
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  
+  // State for conflict detection
+  const [currentConflicts, setCurrentConflicts] = useState<Conflict[]>([]);
   
   // State for "Go to Today" button visibility
   const [showGoToToday, setShowGoToToday] = useState(false);
@@ -269,6 +275,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       if (newPrice) updatedTask.price = newPrice;
     }
     setter(updatedTask);
+    
+    // Detect conflicts when date or time changes
+    if (field === 'date' || field === 'startTime' || field === 'endTime') {
+      const allMonthTasks = getTasksForMonth(getMonthKeyFromDate(updatedTask.date) || activeMonth);
+      const conflicts = detectConflicts(
+        { 
+          date: updatedTask.date, 
+          startTime: updatedTask.startTime, 
+          endTime: updatedTask.endTime,
+          id: editingId || undefined
+        },
+        allMonthTasks
+      );
+      setCurrentConflicts(conflicts);
+    }
   };
 
   const handleClientSelect = (clientId: string, setter: any, state: any) => {
@@ -525,6 +546,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       notes: task.notes || '',
       completed: task.completed || false
     });
+    
+    // Check for conflicts when opening edit modal
+    const allMonthTasks = getTasksForMonth(getMonthKeyFromDate(task.date) || activeMonth);
+    const conflicts = detectConflicts(
+      { date: task.date, startTime: task.startTime, endTime: task.endTime, id: task.id },
+      allMonthTasks
+    );
+    setCurrentConflicts(conflicts);
+    
     setShowModal(true);
   };
 
@@ -1109,7 +1139,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                 {editingId ? 'Editar Agendamento' : 'Novo Agendamento'}
               </h3>
               <button 
-                onClick={() => { setShowModal(false); setEditingId(null); }}
+                onClick={() => { setShowModal(false); setEditingId(null); setCurrentConflicts([]); }}
                 className="hover:bg-white/20 p-2 rounded-full transition-colors"
               >
                 <X size={24} />
@@ -1145,6 +1175,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                     <CalendarRange size={14} /> Quinzenal
                   </button>
                 </div>
+              )}
+
+              {/* Conflict Alert */}
+              {activeTab === 'single' && currentConflicts.length > 0 && (
+                <ConflictAlert conflicts={currentConflicts} className="mb-4" />
               )}
 
               {/* Single Task Form */}
@@ -1475,6 +1510,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           onSelectSingle={() => {
             setActiveTab('single');
             setShowTypeSelector(false);
+            setCurrentConflicts([]);
             setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
             setShowModal(true);
           }}
@@ -1553,6 +1589,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           setEditingId(null);
           setSelectedClientId('');
           setActiveTab('single');
+          setCurrentConflicts([]);
           setNewTask(prev => ({ ...prev, client: '', phone: '', notes: '', date: currentMonthDays[0]?.dateString || '' }));
           setShowModal(true);
         }}
