@@ -280,6 +280,11 @@
   .animate-wiggle {
     animation: wiggle 0.4s ease-in-out;
   }
+
+  /* Today highlight pulse */
+  .today-highlight-pulse {
+    animation: todayHighlight 1.5s ease-out;
+  }
 }
 
 @keyframes fadeIn {
@@ -376,4 +381,27 @@
   0% { transform: scale(0.8); opacity: 0.5; }
   50% { transform: scale(1.2); }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes todayHighlight {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+    transform: scale(1);
+  }
+  25% {
+    box-shadow: 0 0 0 15px hsl(var(--primary) / 0.3);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 0 25px hsl(var(--primary) / 0);
+    transform: scale(1);
+  }
+  75% {
+    box-shadow: 0 0 0 10px hsl(var(--primary) / 0.2);
+    transform: scale(1.01);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    transform: scale(1);
+  }
 }
