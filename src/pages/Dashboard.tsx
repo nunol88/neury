@@ -380,8 +380,8 @@ const Dashboard = () => {
         body: tableData,
         startY: startY + 73,
         styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-        alternateRowStyles: { fillColor: [248, 245, 255] },
+        headStyles: { fillColor: [135, 206, 235], textColor: 255 },
+        alternateRowStyles: { fillColor: [240, 248, 255] },
       });
       
       tableEndY = (doc as any).lastAutoTable.finalY;

@@ -936,8 +936,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       body: tableData,
       startY: startY + 12,
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-      alternateRowStyles: { fillColor: [248, 245, 255] },
+      headStyles: { fillColor: [135, 206, 235], textColor: 255 },
+      alternateRowStyles: { fillColor: [240, 248, 255] },
       columnStyles: {
         6: { halign: 'center', fontStyle: 'bold' }
       },
@@ -957,7 +957,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     
     // Summary totals
     doc.setFontSize(10);
-    doc.setTextColor(139, 92, 246);
+    doc.setTextColor(135, 206, 235);
     doc.text(`Total Faturado: €${totalConcluido.toFixed(2)}`, 14, finalY + 10);
     doc.setTextColor(245, 158, 11);
     doc.text(`Total Pendente: €${totalPendente.toFixed(2)}`, 80, finalY + 10);
