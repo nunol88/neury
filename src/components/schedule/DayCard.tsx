@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import TaskCard from './TaskCard';
 import { CalendarPlus, Sparkles, Star, Trophy } from 'lucide-react';
+import { getHoliday } from '@/utils/portugueseHolidays';
 
 interface DayInfo {
   dateObject: Date;
@@ -52,6 +53,9 @@ const DayCard: React.FC<DayCardProps> = ({
   
   // Check if date is in the past
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
+  
+  // Check if day is a holiday
+  const holiday = getHoliday(dayObj.dateString);
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
@@ -164,7 +168,15 @@ const DayCard: React.FC<DayCardProps> = ({
               </span>
             )}
           </h2>
-          <span className="text-xs text-muted-foreground font-semibold tracking-wide">{dayObj.formatted}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-semibold tracking-wide">{dayObj.formatted}</span>
+            {holiday && (
+              <span className="flex items-center gap-1 text-[10px] bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 px-1.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">
+                <span>{holiday.emoji}</span>
+                <span className="font-medium hidden sm:inline">{holiday.name}</span>
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center gap-2 relative z-10">
