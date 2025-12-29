@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Calendar, Sparkles } from 'lucide-react';
+import { Calendar, Sparkles, Clock } from 'lucide-react';
 import { MonthConfig, getThemeGradient } from '@/utils/monthConfig';
 
 interface MonthTabsProps {
@@ -16,6 +16,22 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
   const tabsRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+
+  // Get current month key
+  const getCurrentMonthKey = (): string | null => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    for (const [key, config] of Object.entries(monthsConfig)) {
+      if (config.year === year && config.monthIndex === month) {
+        return key;
+      }
+    }
+    return null;
+  };
+
+  const currentMonthKey = getCurrentMonthKey();
 
   // Group months by year
   const monthsByYear: Record<number, Array<{ key: string; config: MonthConfig }>> = {};
@@ -71,6 +87,8 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
               </span>
               {monthsByYear[year].map(({ key, config }) => {
                 const isActive = activeMonth === key;
+                const isCurrentMonth = key === currentMonthKey;
+                
                 return (
                   <button
                     key={key}
@@ -80,13 +98,27 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
                       ${isActive
                         ? 'text-primary transform -translate-y-0.5'
                         : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                      }`}
+                      }
+                      ${isCurrentMonth && !isActive ? 'text-success' : ''}
+                    `}
                   >
+                    {/* Current month indicator dot */}
+                    {isCurrentMonth && (
+                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 flex items-center gap-1">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                        </span>
+                      </span>
+                    )}
+                    
                     <Calendar 
                       size={14} 
                       className={`transition-all duration-300 ${
-                        isActive ? 'text-primary animate-pulse' : 'group-hover:scale-110'
-                      }`}
+                        isActive ? 'text-primary animate-pulse' : ''
+                      } ${
+                        isCurrentMonth && !isActive ? 'text-success' : ''
+                      } group-hover:scale-110`}
                     />
                     <span className="relative">
                       {config.label.split(' ')[0]}
@@ -98,9 +130,21 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
                       )}
                     </span>
                     
+                    {/* Current month badge */}
+                    {isCurrentMonth && !isActive && (
+                      <span className="ml-1 flex items-center gap-0.5 text-[9px] bg-success/20 text-success px-1.5 py-0.5 rounded-full border border-success/30">
+                        <Clock size={8} />
+                        Atual
+                      </span>
+                    )}
+                    
                     {/* Hover glow effect */}
                     {!isActive && (
-                      <div className="absolute inset-0 rounded-t-xl bg-gradient-to-t from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className={`absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                        isCurrentMonth 
+                          ? 'bg-gradient-to-t from-success/0 to-success/10' 
+                          : 'bg-gradient-to-t from-primary/0 to-primary/5'
+                      }`} />
                     )}
                   </button>
                 );
