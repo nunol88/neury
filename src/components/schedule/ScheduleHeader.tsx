@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
-  LogOut, User, BarChart3, Users, Menu, Sun, Moon 
+  LogOut, User, BarChart3, Users, Menu, Sun, Moon, Settings2 
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
@@ -32,6 +39,16 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
+  const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   return (
     <div className="sticky-header px-4 py-2 print:hidden">
@@ -110,6 +127,55 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
                     <Users size={16} className="mr-1" />
                     Clientes
                   </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 opacity-40 hover:opacity-100 transition-opacity"
+                        title="Configuração da Edge Function"
+                      >
+                        <Settings2 size={16} />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Configuração da Edge Function</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">URL da Edge Function</label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <code className="flex-1 p-2 bg-muted rounded text-xs break-all">
+                              {edgeFunctionUrl}
+                            </code>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(edgeFunctionUrl, 'url')}
+                            >
+                              {copied === 'url' ? 'Copiado!' : 'Copiar'}
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">API Key (Anon)</label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <code className="flex-1 p-2 bg-muted rounded text-xs break-all">
+                              {apiKey}
+                            </code>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(apiKey, 'key')}
+                            >
+                              {copied === 'key' ? 'Copiado!' : 'Copiar'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </>
               )}
               <Button variant="outline" size="sm" onClick={onSignOut}>
