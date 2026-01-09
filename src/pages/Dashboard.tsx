@@ -25,6 +25,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
+import { ExportSiteButton } from '@/components/ExportSiteButton';
 import {
   BarChart,
   Bar,
@@ -570,7 +571,7 @@ recommend short-term decisions and define one primary focus for improvement.
                   className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/30 hover:border-purple-500/50"
                 >
                   <Brain size={16} className="mr-1 text-purple-500" />
-                  <span className="hidden sm:inline">Exportar contexto para IA</span>
+                  <span className="hidden sm:inline">Contexto IA</span>
                   <span className="sm:hidden">IA</span>
                 </Button>
               </DialogTrigger>
@@ -609,6 +610,8 @@ recommend short-term decisions and define one primary focus for improvement.
                 </div>
               </DialogContent>
             </Dialog>
+            
+            <ExportSiteButton />
           </div>
           
           {/* Year Selector */}
