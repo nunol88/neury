@@ -318,7 +318,7 @@ export const AiInsightsWidget: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="text-primary" size={20} />
-          <h2 className="text-lg font-semibold">Insights Inteligentes</h2>
+          <h2 className="text-lg font-semibold">MayIA</h2>
         </div>
         <Button 
           variant="ghost" 
