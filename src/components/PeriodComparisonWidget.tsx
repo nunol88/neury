@@ -54,8 +54,20 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   const [periodBQuarter, setPeriodBQuarter] = useState(Math.floor(currentMonth / 3));
   const [periodBSemester, setPeriodBSemester] = useState(currentMonth < 6 ? 0 : 1);
 
-  // Generate weeks (1-53)
-  const WEEKS = Array.from({ length: 53 }, (_, i) => i + 1);
+  // Generate weeks with date ranges
+  const generateWeeksWithDates = (year: number) => {
+    const weeks: { num: number; label: string }[] = [];
+    for (let w = 1; w <= 53; w++) {
+      const jan1 = new Date(year, 0, 1);
+      const daysToAdd = (w - 1) * 7;
+      const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+      const start = startOfWeek(weekDate, { weekStartsOn: 1 });
+      const end = endOfWeek(weekDate, { weekStartsOn: 1 });
+      const label = `Sem ${w} (${format(start, 'dd/MM')} - ${format(end, 'dd/MM')})`;
+      weeks.push({ num: w, label });
+    }
+    return weeks;
+  };
 
   const getFilteredTasks = (type: PeriodFilter, year: number, month: number, week: number, quarter: number, semester: number) => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
@@ -232,8 +244,8 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
             onChange={(e) => setWeek(Number(e.target.value))}
             className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
           >
-            {WEEKS.map((w) => (
-              <option key={w} value={w}>Sem {w}</option>
+            {generateWeeksWithDates(year).map((w) => (
+              <option key={w.num} value={w.num}>{w.label}</option>
             ))}
           </select>
         )}
