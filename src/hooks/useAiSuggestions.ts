@@ -70,6 +70,25 @@ export interface RevenueForecast {
   horasPendentes: number;
 }
 
+// Types for proximity suggestions
+export interface ProximityClient {
+  nome: string;
+  morada: string;
+}
+
+export interface ProximitySuggestion {
+  clients: ProximityClient[];
+  zona: string;
+  sugestao: string;
+  priority: 'high' | 'medium';
+}
+
+export interface ProximitySuggestionsResponse {
+  suggestions: ProximitySuggestion[];
+  distanceAlerts: any[];
+  generatedAt: string;
+}
+
 // Combined insights response
 export interface SmartInsights {
   conflicts: Conflict[];
@@ -180,6 +199,63 @@ export function useAiSuggestions() {
     queryFn: async (): Promise<AiSuggestion[]> => [],
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 2,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Proximity suggestions hook
+const fetchProximitySuggestions = async (): Promise<ProximitySuggestionsResponse> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    return {
+      suggestions: [],
+      distanceAlerts: [],
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ mode: 'proximity_suggestions' }),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      console.warn('Session expired, returning empty suggestions');
+      return {
+        suggestions: [],
+        distanceAlerts: [],
+        generatedAt: new Date().toISOString(),
+      };
+    }
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Erro ao obter sugestões de proximidade');
+  }
+
+  const data = await response.json();
+  
+  if (data.error) {
+    throw new Error(data.error);
+  }
+
+  return data;
+};
+
+export function useProximitySuggestions() {
+  return useQuery({
+    queryKey: ['proximity-suggestions'],
+    queryFn: fetchProximitySuggestions,
+    staleTime: 1000 * 60 * 30, // 30 minutes
+    gcTime: 1000 * 60 * 60, // 1 hour
     retry: 1,
     refetchOnWindowFocus: false,
   });
