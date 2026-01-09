@@ -114,24 +114,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="absolute -top-1 -right-1 z-10">
-                <div className={`rounded-full p-1.5 shadow-lg animate-scale-in flex items-center gap-0.5 ${
-                  task.completedByRole === 'admin' 
-                    ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground ring-2 ring-primary/30' 
-                    : 'bg-gradient-to-br from-success to-success/80 text-success-foreground ring-2 ring-success/30'
-                }`}>
-                  {task.completedByRole === 'admin' ? (
+                {task.completedByRole === 'admin' ? (
+                  <div className="rounded-full p-1.5 shadow-lg animate-scale-in flex items-center gap-0.5 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground ring-2 ring-primary/30">
                     <Shield size={10} strokeWidth={3} />
-                  ) : (
+                    <Check size={8} strokeWidth={3} />
+                  </div>
+                ) : task.completedByRole === 'neury' ? (
+                  <div className="rounded-full p-1.5 shadow-lg animate-scale-in flex items-center gap-0.5 bg-gradient-to-br from-success to-success/80 text-success-foreground ring-2 ring-success/30">
                     <User size={10} strokeWidth={3} />
-                  )}
-                  <Check size={8} strokeWidth={3} />
-                </div>
+                    <Check size={8} strokeWidth={3} />
+                  </div>
+                ) : (
+                  <div className="rounded-full p-1.5 shadow-lg animate-scale-in bg-gradient-to-br from-success to-success/80 text-success-foreground ring-2 ring-success/30">
+                    <Check size={10} strokeWidth={3} />
+                  </div>
+                )}
               </div>
             </TooltipTrigger>
             <TooltipContent side="left" className="text-xs">
               {task.completedByRole === 'admin' 
                 ? 'Confirmado pelo Admin' 
-                : 'Marcado pela Neury'}
+                : task.completedByRole === 'neury'
+                  ? 'Marcado pela Neury'
+                  : 'Concluído'}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
