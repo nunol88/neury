@@ -9,7 +9,7 @@ import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
 import {
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
-  CalendarDays, CalendarRange, Sun, Moon, Download, Brain, Copy, Check
+  CalendarDays, CalendarRange, Sun, Moon
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,7 +25,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
-import { ExportSiteButton } from '@/components/ExportSiteButton';
+import { ExportDropdown } from '@/components/ExportDropdown';
 import { MayiaCompactWidget } from '@/components/MayiaCompactWidget';
 import {
   BarChart,
@@ -91,9 +91,6 @@ const Dashboard = () => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isScrolled, setIsScrolled] = useState(false);
-  const [aiContextText, setAiContextText] = useState('');
-  const [aiContextCopied, setAiContextCopied] = useState(false);
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   // Handle scroll for sticky header
   React.useEffect(() => {
@@ -409,7 +406,7 @@ const Dashboard = () => {
   };
 
   // Generate AI context for Genspark
-  const generateAiContext = () => {
+  const generateAiContextText = (): string => {
     const periodText = getPeriodDisplay();
     const avgRevenuePerHour = stats.totalHours > 0 ? (stats.totalRevenue / stats.totalHours) : 0;
     
@@ -436,7 +433,7 @@ const Dashboard = () => {
     // Estimated profit (rough estimate: 60% margin)
     const estimatedProfit = stats.totalRevenue * 0.6;
     
-    const context = `--------------------------------
+    return `--------------------------------
 SYSTEM CONTEXT:
 This document represents a factual operational snapshot of a small service business.
 All information below refers to a single time period and should be used as analytical input.
@@ -481,21 +478,8 @@ ANALYSIS OBJECTIVE:
 Evaluate operational efficiency, identify waste,
 recommend short-term decisions and define one primary focus for improvement.
 --------------------------------`;
-
-    setAiContextText(context);
-    setAiDialogOpen(true);
   };
 
-  const copyAiContext = async () => {
-    try {
-      await navigator.clipboard.writeText(aiContextText);
-      setAiContextCopied(true);
-      toast({ title: 'Contexto copiado para Genspark' });
-      setTimeout(() => setAiContextCopied(false), 2000);
-    } catch (err) {
-      toast({ title: 'Erro ao copiar', variant: 'destructive' });
-    }
-  };
 
   if (loadingAgendamentos || loadingClients) {
     return (
@@ -554,65 +538,10 @@ recommend short-term decisions and define one primary focus for improvement.
               <BarChart3 size={24} />
               Dashboard
             </h1>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={exportToPDF}
-            >
-              <Download size={16} className="mr-1" />
-              PDF
-            </Button>
-            
-            <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={generateAiContext}
-                  className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/30 hover:border-purple-500/50"
-                >
-                  <Brain size={16} className="mr-1 text-purple-500" />
-                  <span className="hidden sm:inline">Contexto IA</span>
-                  <span className="sm:hidden">IA</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Brain size={20} className="text-purple-500" />
-                    Contexto para IA (Genspark)
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Reveja e edite o contexto antes de copiar para a Genspark.
-                  </p>
-                  <Textarea 
-                    value={aiContextText}
-                    onChange={(e) => setAiContextText(e.target.value)}
-                    className="min-h-[400px] font-mono text-xs"
-                  />
-                  <Button 
-                    onClick={copyAiContext} 
-                    className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                  >
-                    {aiContextCopied ? (
-                      <>
-                        <Check size={16} className="mr-2" />
-                        Contexto copiado para Genspark
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={16} className="mr-2" />
-                        Copiar para clipboard
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <ExportSiteButton />
+            <ExportDropdown 
+              onExportPDF={exportToPDF}
+              generateAiContext={generateAiContextText}
+            />
           </div>
           
           {/* Year Selector */}
