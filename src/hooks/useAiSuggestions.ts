@@ -84,7 +84,25 @@ const fetchSmartInsights = async (): Promise<SmartInsights> => {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session?.access_token) {
-    throw new Error('Não autenticado');
+    // Return empty data instead of throwing when not authenticated
+    return {
+      conflicts: [],
+      inactiveClients: [],
+      weeklySummary: { breakdown: [], total: { agendamentos: 0, horas: 0, receita: 0, concluidos: 0 } },
+      lastWeekSummary: { agendamentos: 0, horas: 0, receita: 0 },
+      revenueForecast: {
+        mesAtual: '',
+        receitaConfirmada: 0,
+        receitaPendente: 0,
+        previsaoTotal: 0,
+        mesAnterior: 0,
+        comparacao: null,
+        diasRestantes: 0,
+        horasTrabalhadas: 0,
+        horasPendentes: 0,
+      },
+      generatedAt: new Date().toISOString(),
+    };
   }
 
   const response = await fetch(
@@ -100,6 +118,28 @@ const fetchSmartInsights = async (): Promise<SmartInsights> => {
   );
 
   if (!response.ok) {
+    // Handle 401 gracefully - user session expired
+    if (response.status === 401) {
+      console.warn('Session expired, returning empty insights');
+      return {
+        conflicts: [],
+        inactiveClients: [],
+        weeklySummary: { breakdown: [], total: { agendamentos: 0, horas: 0, receita: 0, concluidos: 0 } },
+        lastWeekSummary: { agendamentos: 0, horas: 0, receita: 0 },
+        revenueForecast: {
+          mesAtual: '',
+          receitaConfirmada: 0,
+          receitaPendente: 0,
+          previsaoTotal: 0,
+          mesAnterior: 0,
+          comparacao: null,
+          diasRestantes: 0,
+          horasTrabalhadas: 0,
+          horasPendentes: 0,
+        },
+        generatedAt: new Date().toISOString(),
+      };
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || 'Erro ao obter insights');
   }
