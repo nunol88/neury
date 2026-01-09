@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Task, AllTasks } from '@/hooks/useAgendamentos';
-import { parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, format, getWeek } from 'date-fns';
+import { parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, format, getWeek, setWeek } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { GitCompare, TrendingUp, TrendingDown, Minus, X } from 'lucide-react';
@@ -37,13 +37,14 @@ const ALL_YEARS = generateYears();
 const generateWeeksWithDates = (year: number) => {
   const weeks: { num: number; label: string }[] = [];
   for (let w = 1; w <= 53; w++) {
-    const jan1 = new Date(year, 0, 1);
-    const daysToAdd = (w - 1) * 7;
-    const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-    const start = startOfWeek(weekDate, { weekStartsOn: 1 });
-    const end = endOfWeek(weekDate, { weekStartsOn: 1 });
-    const label = `Sem ${w} (${format(start, 'dd/MM')} - ${format(end, 'dd/MM')})`;
-    weeks.push({ num: w, label });
+    const dateInWeek = setWeek(new Date(year, 0, 4), w, { weekStartsOn: 1, firstWeekContainsDate: 4 });
+    const start = startOfWeek(dateInWeek, { weekStartsOn: 1 });
+    const end = endOfWeek(dateInWeek, { weekStartsOn: 1 });
+    // Only include week if it belongs to this year
+    if (start.getFullYear() === year || end.getFullYear() === year) {
+      const label = `Sem ${w} (${format(start, 'dd/MM')} - ${format(end, 'dd/MM')})`;
+      weeks.push({ num: w, label });
+    }
   }
   return weeks;
 };
@@ -76,12 +77,11 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
 
     switch (type) {
       case 'weekly':
-        // Calculate week start/end from week number
-        const jan1 = new Date(year, 0, 1);
-        const daysToAdd = (week - 1) * 7;
-        const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-        start = startOfWeek(weekDate, { weekStartsOn: 1 });
-        end = endOfWeek(weekDate, { weekStartsOn: 1 });
+        // Calculate week start/end from ISO week number
+        const dateInWeek = setWeek(new Date(year, 0, 4), week, { weekStartsOn: 1, firstWeekContainsDate: 4 });
+        start = startOfWeek(dateInWeek, { weekStartsOn: 1 });
+        end = endOfWeek(dateInWeek, { weekStartsOn: 1 });
+        end.setHours(23, 59, 59, 999);
         break;
       case 'monthly':
         start = startOfMonth(new Date(year, month, 1));
