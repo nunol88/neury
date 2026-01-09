@@ -33,6 +33,21 @@ const generateYears = () => {
 
 const ALL_YEARS = generateYears();
 
+// Generate weeks with date ranges for a given year
+const generateWeeksWithDates = (year: number) => {
+  const weeks: { num: number; label: string }[] = [];
+  for (let w = 1; w <= 53; w++) {
+    const jan1 = new Date(year, 0, 1);
+    const daysToAdd = (w - 1) * 7;
+    const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    const start = startOfWeek(weekDate, { weekStartsOn: 1 });
+    const end = endOfWeek(weekDate, { weekStartsOn: 1 });
+    const label = `Sem ${w} (${format(start, 'dd/MM')} - ${format(end, 'dd/MM')})`;
+    weeks.push({ num: w, label });
+  }
+  return weeks;
+};
+
 export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWidgetProps) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
@@ -53,21 +68,6 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   const [periodBWeek, setPeriodBWeek] = useState(currentWeek);
   const [periodBQuarter, setPeriodBQuarter] = useState(Math.floor(currentMonth / 3));
   const [periodBSemester, setPeriodBSemester] = useState(currentMonth < 6 ? 0 : 1);
-
-  // Generate weeks with date ranges
-  const generateWeeksWithDates = (year: number) => {
-    const weeks: { num: number; label: string }[] = [];
-    for (let w = 1; w <= 53; w++) {
-      const jan1 = new Date(year, 0, 1);
-      const daysToAdd = (w - 1) * 7;
-      const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-      const start = startOfWeek(weekDate, { weekStartsOn: 1 });
-      const end = endOfWeek(weekDate, { weekStartsOn: 1 });
-      const label = `Sem ${w} (${format(start, 'dd/MM')} - ${format(end, 'dd/MM')})`;
-      weeks.push({ num: w, label });
-    }
-    return weeks;
-  };
 
   const getFilteredTasks = (type: PeriodFilter, year: number, month: number, week: number, quarter: number, semester: number) => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
