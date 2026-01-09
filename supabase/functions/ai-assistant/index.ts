@@ -80,6 +80,183 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // ============ AI SUMMARY MODE (Lovable AI) ============
+    if (mode === "ai_summary") {
+      console.log("AI Summary mode activated");
+      
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      // Get start of current week (Monday)
+      const startOfWeek = new Date(today);
+      const dayOfWeek = today.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(today.getDate() - diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      // Get end of current week (Sunday)
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      // Get last week
+      const startOfLastWeek = new Date(startOfWeek);
+      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+      const endOfLastWeek = new Date(startOfWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+      endOfLastWeek.setHours(23, 59, 59, 999);
+      
+      // Get next 7 days for conflicts
+      const next7Days = new Date(today);
+      next7Days.setDate(next7Days.getDate() + 7);
+      
+      // Fetch data
+      const [
+        { data: thisWeekAgendamentos },
+        { data: lastWeekAgendamentos },
+        { data: upcomingAgendamentos },
+        { data: clients }
+      ] = await Promise.all([
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfWeek.toISOString()).lte("data_inicio", endOfWeek.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfLastWeek.toISOString()).lte("data_inicio", endOfLastWeek.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", todayStr).lte("data_inicio", next7Days.toISOString()).eq("status", "agendado"),
+        supabaseService.from("clients").select("*")
+      ]);
+
+      // Helper functions
+      const getPrice = (a: any): number => {
+        try {
+          if (a.descricao) {
+            const desc = JSON.parse(a.descricao);
+            return parseFloat(desc.price) || parseFloat(desc.preco) || 0;
+          }
+        } catch {}
+        return 0;
+      };
+
+      const getHours = (a: any): number => {
+        const inicio = new Date(a.data_inicio);
+        const fim = new Date(a.data_fim);
+        return (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+      };
+
+      // Calculate stats
+      const thisWeekStats = {
+        count: (thisWeekAgendamentos || []).length,
+        revenue: (thisWeekAgendamentos || []).filter(a => a.status === "concluido").reduce((sum, a) => sum + getPrice(a), 0),
+        hours: (thisWeekAgendamentos || []).reduce((sum, a) => sum + getHours(a), 0),
+      };
+
+      const lastWeekStats = {
+        count: (lastWeekAgendamentos || []).length,
+        revenue: (lastWeekAgendamentos || []).filter(a => a.status === "concluido").reduce((sum, a) => sum + getPrice(a), 0),
+        hours: (lastWeekAgendamentos || []).reduce((sum, a) => sum + getHours(a), 0),
+      };
+
+      // Count conflicts
+      const sortedUpcoming = [...(upcomingAgendamentos || [])].sort(
+        (a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime()
+      );
+      
+      let conflictCount = 0;
+      for (let i = 0; i < sortedUpcoming.length - 1; i++) {
+        const currentEnd = new Date(sortedUpcoming[i].data_fim);
+        const nextStart = new Date(sortedUpcoming[i + 1].data_inicio);
+        if (currentEnd > nextStart) conflictCount++;
+      }
+
+      // Find inactive clients (no booking in last 21 days)
+      const past60Days = new Date(today);
+      past60Days.setDate(past60Days.getDate() - 60);
+      
+      const { data: recentAgendamentos } = await supabaseService
+        .from("agendamentos")
+        .select("cliente_nome, data_inicio")
+        .gte("data_inicio", past60Days.toISOString());
+
+      const clientLastBooking: Record<string, Date> = {};
+      (recentAgendamentos || []).forEach(a => {
+        const clientName = a.cliente_nome.toLowerCase().trim();
+        const date = new Date(a.data_inicio);
+        if (!clientLastBooking[clientName] || date > clientLastBooking[clientName]) {
+          clientLastBooking[clientName] = date;
+        }
+      });
+
+      const clientsWithFutureBookings = new Set(
+        (upcomingAgendamentos || []).map(a => a.cliente_nome.toLowerCase().trim())
+      );
+
+      const inactiveThreshold = new Date(today);
+      inactiveThreshold.setDate(inactiveThreshold.getDate() - 21);
+
+      const inactiveClients: string[] = [];
+      (clients || []).forEach(client => {
+        const clientName = client.nome.toLowerCase().trim();
+        const lastBooking = clientLastBooking[clientName];
+        const hasFutureBooking = clientsWithFutureBookings.has(clientName);
+        
+        if (lastBooking && lastBooking < inactiveThreshold && !hasFutureBooking) {
+          const daysSince = Math.floor((today.getTime() - lastBooking.getTime()) / (1000 * 60 * 60 * 24));
+          inactiveClients.push(`${client.nome} (${daysSince} dias)`);
+        }
+      });
+
+      // Build context for AI
+      const contextPrompt = `Gera um resumo conciso e amigável da semana de trabalho em 2-3 frases curtas.
+
+DADOS DA SEMANA:
+- Esta semana: ${thisWeekStats.count} agendamentos, ${Math.round(thisWeekStats.hours)}h, ${thisWeekStats.revenue.toFixed(0)}€
+- Semana passada: ${lastWeekStats.count} agendamentos, ${Math.round(lastWeekStats.hours)}h, ${lastWeekStats.revenue.toFixed(0)}€
+- Conflitos nos próximos 7 dias: ${conflictCount}
+- Clientes inativos (21+ dias): ${inactiveClients.length > 0 ? inactiveClients.slice(0, 3).join(', ') : 'nenhum'}
+
+REGRAS:
+- Máximo 3 frases curtas
+- Usa emojis (1-2)
+- Menciona a comparação com semana anterior se relevante
+- Se há conflitos, alerta brevemente
+- Se há clientes inativos, menciona apenas o mais urgente
+- Linguagem casual e positiva
+- Português de Portugal`;
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "user", content: contextPrompt }
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("AI summary generation failed:", response.status);
+        return new Response(
+          JSON.stringify({ 
+            summary: `Esta semana tens ${thisWeekStats.count} agendamentos. ${conflictCount > 0 ? `⚠️ Atenção: ${conflictCount} conflito(s) de horário.` : ''} ${inactiveClients.length > 0 ? `Considera contactar ${inactiveClients[0]}.` : ''}`,
+            generatedAt: new Date().toISOString()
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const aiData = await response.json();
+      const summary = aiData.choices?.[0]?.message?.content || "Resumo não disponível.";
+
+      return new Response(
+        JSON.stringify({
+          summary: summary.trim(),
+          generatedAt: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ============ SMART INSIGHTS MODE ============
     if (mode === "smart_insights") {
       console.log("Smart insights mode activated");
@@ -98,6 +275,13 @@ serve(async (req) => {
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
+      
+      // Get last week for comparison
+      const startOfLastWeek = new Date(startOfWeek);
+      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+      const endOfLastWeek = new Date(startOfWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+      endOfLastWeek.setHours(23, 59, 59, 999);
       
       // Get last 60 days for inactive clients analysis
       const past60Days = new Date(today);
@@ -119,6 +303,7 @@ serve(async (req) => {
       const [
         { data: allAgendamentos },
         { data: thisWeekAgendamentos },
+        { data: lastWeekAgendamentos },
         { data: thisMonthAgendamentos },
         { data: lastMonthAgendamentos },
         { data: upcomingAgendamentos },
@@ -126,6 +311,7 @@ serve(async (req) => {
       ] = await Promise.all([
         supabaseService.from("agendamentos").select("*").gte("data_inicio", past60Days.toISOString()),
         supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfWeek.toISOString()).lte("data_inicio", endOfWeek.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfLastWeek.toISOString()).lte("data_inicio", endOfLastWeek.toISOString()),
         supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfMonth.toISOString()).lte("data_inicio", endOfMonth.toISOString()),
         supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfLastMonth.toISOString()).lte("data_inicio", endOfLastMonth.toISOString()),
         supabaseService.from("agendamentos").select("*").gte("data_inicio", todayStr).lte("data_inicio", next7Days.toISOString()).eq("status", "agendado"),
@@ -168,12 +354,14 @@ serve(async (req) => {
           conflicts.push({
             type: "overlap",
             agendamento1: {
+              id: current.id,
               cliente: current.cliente_nome,
               data: current.data_inicio.split('T')[0],
               horaInicio: new Date(current.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
               horaFim: new Date(current.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             },
             agendamento2: {
+              id: next.id,
               cliente: next.cliente_nome,
               data: next.data_inicio.split('T')[0],
               horaInicio: new Date(next.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
@@ -190,12 +378,14 @@ serve(async (req) => {
           conflicts.push({
             type: "tight_schedule",
             agendamento1: {
+              id: current.id,
               cliente: current.cliente_nome,
               data: current.data_inicio.split('T')[0],
               horaInicio: new Date(current.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
               horaFim: new Date(current.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
             },
             agendamento2: {
+              id: next.id,
               cliente: next.cliente_nome,
               data: next.data_inicio.split('T')[0],
               horaInicio: new Date(next.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
@@ -237,6 +427,7 @@ serve(async (req) => {
         if (lastBooking && lastBooking < inactiveThreshold && !hasFutureBooking) {
           const daysSince = Math.floor((today.getTime() - lastBooking.getTime()) / (1000 * 60 * 60 * 24));
           inactiveClients.push({
+            id: client.id,
             nome: client.nome,
             telefone: client.telefone,
             ultimoAgendamento: lastBooking.toISOString().split('T')[0],
@@ -278,6 +469,13 @@ serve(async (req) => {
         horas: Math.round(weekBreakdown.reduce((sum, d) => sum + d.horas, 0) * 10) / 10,
         receita: weekBreakdown.reduce((sum, d) => sum + d.receita, 0),
         concluidos: (thisWeekAgendamentos || []).filter(a => a.status === "concluido").length,
+      };
+
+      // ===== 3.5 LAST WEEK COMPARISON =====
+      const lastWeekTotal = {
+        agendamentos: (lastWeekAgendamentos || []).length,
+        horas: Math.round((lastWeekAgendamentos || []).reduce((sum, a) => sum + getHours(a), 0) * 10) / 10,
+        receita: (lastWeekAgendamentos || []).filter(a => a.status === "concluido").reduce((sum, a) => sum + getPrice(a), 0),
       };
 
       // ===== 4. REVENUE FORECAST =====
@@ -331,6 +529,7 @@ serve(async (req) => {
             breakdown: weekBreakdown,
             total: weekTotal
           },
+          lastWeekSummary: lastWeekTotal,
           revenueForecast: revenueForcast,
           generatedAt: new Date().toISOString()
         }),

@@ -74,7 +74,7 @@ const ConflictsSection: React.FC<{ conflicts: Conflict[] }> = ({ conflicts }) =>
   );
 };
 
-// Inactive Clients Section
+// Inactive Clients Section with Quick Actions
 const InactiveClientsSection: React.FC<{ clients: InactiveClient[] }> = ({ clients }) => {
   if (clients.length === 0) {
     return (
@@ -84,6 +84,13 @@ const InactiveClientsSection: React.FC<{ clients: InactiveClient[] }> = ({ clien
       </div>
     );
   }
+
+  const getWhatsAppLink = (phone: string, clientName: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fullPhone = cleanPhone.startsWith('351') ? cleanPhone : `351${cleanPhone}`;
+    const message = encodeURIComponent(`Olá ${clientName}! 👋 Espero que esteja tudo bem. Queria saber se gostaria de agendar uma limpeza em breve. Obrigada!`);
+    return `https://wa.me/${fullPhone}?text=${message}`;
+  };
 
   return (
     <div className="space-y-2">
@@ -110,9 +117,15 @@ const InactiveClientsSection: React.FC<{ clients: InactiveClient[] }> = ({ clien
             </div>
           </div>
           {client.telefone && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-              <a href={`tel:${client.telefone}`}>
-                <Phone size={14} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-7 text-xs gap-1 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 dark:border-emerald-800 dark:text-emerald-300"
+              asChild
+            >
+              <a href={getWhatsAppLink(client.telefone, client.nome)} target="_blank" rel="noopener noreferrer">
+                <Phone size={12} />
+                WhatsApp
               </a>
             </Button>
           )}

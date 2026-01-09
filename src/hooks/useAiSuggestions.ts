@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Types for conflicts
 export interface ConflictAgendamento {
+  id?: string;
   cliente: string;
   data: string;
   horaInicio: string;
@@ -17,8 +18,16 @@ export interface Conflict {
   gapMinutes?: number;
 }
 
+// Types for last week comparison
+export interface LastWeekSummary {
+  agendamentos: number;
+  horas: number;
+  receita: number;
+}
+
 // Types for inactive clients
 export interface InactiveClient {
+  id?: string;
   nome: string;
   telefone: string | null;
   ultimoAgendamento: string;
@@ -66,6 +75,7 @@ export interface SmartInsights {
   conflicts: Conflict[];
   inactiveClients: InactiveClient[];
   weeklySummary: WeeklySummary;
+  lastWeekSummary?: LastWeekSummary;
   revenueForecast: RevenueForecast;
   generatedAt: string;
 }
