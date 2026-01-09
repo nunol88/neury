@@ -581,7 +581,6 @@ REGRAS:
       }
 
       // Check for same-day appointments with different zones
-      const distanceAlerts: any[] = [];
       const appointmentsByDay: Record<string, any[]> = {};
       
       (upcomingAgendamentos || []).forEach(a => {
@@ -613,22 +612,58 @@ REGRAS:
         });
       });
 
-      // Build prompt for AI to analyze proximity
+      // Build prompt for AI to analyze proximity AND distance alerts
       const clientsList = clientsWithAddresses
         .map(c => `- ${c.nome}: ${c.morada}`)
         .join('\n');
 
-      const prompt = `Analisa as moradas destes clientes em Lisboa e arredores e identifica grupos de clientes que moram na mesma zona/bairro.
+      // Build same-day appointments info for distance alerts
+      const sameDayAppointments = Object.entries(appointmentsByDay)
+        .filter(([_, apps]) => apps.length >= 2 && apps.some(a => a.address))
+        .map(([date, apps]) => {
+          const formattedDate = new Date(date).toLocaleDateString('pt-PT', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'short' 
+          });
+          return {
+            date,
+            formattedDate,
+            appointments: apps.filter(a => a.address).map(a => `${a.time} - ${a.client} (${a.address})`).join('\n')
+          };
+        })
+        .filter(d => d.appointments.length > 0);
+
+      const sameDayInfo = sameDayAppointments.length > 0
+        ? `\n\nAGENDAMENTOS NO MESMO DIA (verifica distâncias):\n${sameDayAppointments.map(d => 
+            `${d.formattedDate}:\n${d.appointments}`
+          ).join('\n\n')}`
+        : '';
+
+      const prompt = `Analisa as moradas destes clientes em Lisboa e arredores.
+
+TAREFA 1 - SUGESTÕES DE PROXIMIDADE:
+Identifica grupos de clientes que moram na mesma zona/bairro para agendar no mesmo dia.
 
 CLIENTES:
 ${clientsList}
 
-REGRAS:
+REGRAS PROXIMIDADE:
 1. Agrupa clientes que moram no mesmo bairro, freguesia ou zona de Lisboa (máximo 3-4 grupos)
 2. Considera que zonas próximas para transporte público são: mesmo bairro, mesma linha de metro, ou até 10-15 min de distância
 3. Para cada grupo, indica o nome da zona/bairro comum
 4. Apenas inclui grupos com 2+ clientes
 5. Prioridade "high" para clientes muito próximos (mesmo bairro), "medium" para zonas adjacentes
+${sameDayInfo ? `
+TAREFA 2 - ALERTAS DE DESLOCAÇÃO:
+Analisa os agendamentos do mesmo dia e identifica deslocações longas (>30 min de transporte público).
+${sameDayInfo}
+
+REGRAS ALERTAS:
+1. Só alerta se as zonas forem realmente distantes (ex: Cascais→Moscavide, Sintra→Parque das Nações)
+2. Indica tempo estimado de deslocação
+3. Usa severity "high" para >45 min, "medium" para 30-45 min
+4. Não alertes para zonas próximas ou adjacentes` : ''}
 
 Responde APENAS com JSON válido neste formato (sem markdown):
 {
@@ -639,7 +674,19 @@ Responde APENAS com JSON válido neste formato (sem markdown):
       "sugestao": "Frase curta explicando porque agendar juntos",
       "priority": "high"
     }
-  ]
+  ]${sameDayInfo ? `,
+  "distanceAlerts": [
+    {
+      "date": "2026-01-10",
+      "formattedDate": "sexta-feira, 10 jan",
+      "appointments": [
+        {"time": "09:00", "client": "Nome", "zona": "Cascais"},
+        {"time": "14:00", "client": "Nome2", "zona": "Moscavide"}
+      ],
+      "message": "Deslocação longa: Cascais → Moscavide (~50 min de transporte)",
+      "severity": "high"
+    }
+  ]` : ''}
 }`;
 
       try {
@@ -687,7 +734,7 @@ Responde APENAS com JSON válido neste formato (sem markdown):
         }
         cleanContent = cleanContent.trim();
 
-        let aiSuggestions = { suggestions: [] };
+        let aiSuggestions = { suggestions: [], distanceAlerts: [] };
         try {
           aiSuggestions = JSON.parse(cleanContent);
         } catch (e) {
@@ -697,7 +744,7 @@ Responde APENAS com JSON válido neste formato (sem markdown):
         return new Response(
           JSON.stringify({
             suggestions: aiSuggestions.suggestions || [],
-            distanceAlerts,
+            distanceAlerts: aiSuggestions.distanceAlerts || [],
             generatedAt: new Date().toISOString()
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }

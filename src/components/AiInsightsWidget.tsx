@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSmartInsights, useProximitySuggestions, Conflict, InactiveClient, WeekDayBreakdown, ProximitySuggestion } from '@/hooks/useAiSuggestions';
+import { useSmartInsights, useProximitySuggestions, Conflict, InactiveClient, WeekDayBreakdown, ProximitySuggestion, DistanceAlert } from '@/hooks/useAiSuggestions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,8 @@ import {
   CheckCircle2,
   Minus,
   MapPin,
-  Users
+  Users,
+  Route
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -338,6 +339,72 @@ const ProximitySuggestionsSection: React.FC<{
   );
 };
 
+// Distance Alerts Section
+const DistanceAlertsSection: React.FC<{ 
+  alerts: DistanceAlert[];
+  isLoading: boolean;
+}> = ({ alerts, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
+
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 size={16} />
+        <span className="text-sm">Sem deslocações longas previstas</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {alerts.map((alert, idx) => (
+        <div 
+          key={idx}
+          className={`p-3 rounded-lg border ${
+            alert.severity === 'high' 
+              ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800' 
+              : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <Route 
+              size={16} 
+              className={`mt-0.5 ${alert.severity === 'high' ? 'text-red-500' : 'text-amber-500'}`} 
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-muted-foreground capitalize">
+                {alert.formattedDate}
+              </p>
+              <div className="mt-1.5 space-y-1">
+                {alert.appointments.map((apt, aptIdx) => (
+                  <div key={aptIdx} className="flex items-center gap-2 text-sm">
+                    <span className="font-mono text-xs text-muted-foreground">{apt.time}</span>
+                    <span className="font-medium">{apt.client}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {apt.zona}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <p className={`text-xs mt-2 font-medium ${
+                alert.severity === 'high' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+              }`}>
+                ⚠️ {alert.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // Main Widget Component
 export const AiInsightsWidget: React.FC = () => {
   const { data: insights, isLoading, error, refetch, isFetching } = useSmartInsights();
@@ -429,7 +496,7 @@ export const AiInsightsWidget: React.FC = () => {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Conflicts Card */}
         <Card className={`border-border/50 ${hasConflicts ? 'ring-2 ring-red-500/20' : ''}`}>
           <CardHeader className="pb-2">
@@ -498,6 +565,27 @@ export const AiInsightsWidget: React.FC = () => {
           <CardContent>
             <ProximitySuggestionsSection 
               suggestions={proximityData?.suggestions || []} 
+              isLoading={proximityLoading}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Distance Alerts Card */}
+        <Card className={`border-border/50 ${(proximityData?.distanceAlerts?.length ?? 0) > 0 ? 'ring-2 ring-amber-500/20' : ''}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Route size={16} className={(proximityData?.distanceAlerts?.length ?? 0) > 0 ? 'text-amber-500' : 'text-muted-foreground'} />
+              Alertas de Deslocação
+              {(proximityData?.distanceAlerts?.length ?? 0) > 0 && (
+                <Badge variant="secondary" className="ml-auto text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  {proximityData?.distanceAlerts?.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DistanceAlertsSection 
+              alerts={proximityData?.distanceAlerts || []} 
               isLoading={proximityLoading}
             />
           </CardContent>
