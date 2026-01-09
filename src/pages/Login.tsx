@@ -118,14 +118,14 @@ const Login = () => {
         <div className="relative p-8 space-y-6">
           {/* Logo */}
           <div className="flex flex-col items-center space-y-4">
-            <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl opacity-0 animate-fade-in ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
+            <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl animate-fade-in ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
               <img src={logoMayslimpo} alt="MaysLimpo Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
-              <h1 className={`text-2xl font-bold tracking-tight opacity-0 animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+              <h1 className={`text-2xl font-bold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
                 Agenda Neury
               </h1>
-              <div className={`mt-2 flex items-center justify-center gap-2 opacity-0 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
+              <div className={`mt-2 flex items-center justify-center gap-2 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
                 {greeting.icon === 'night' ? (
                   <Moon size={16} className="text-amber-300" />
                 ) : (
@@ -145,7 +145,7 @@ const Login = () => {
               </div>
             )}
             
-            <div className="space-y-2 opacity-0 animate-fade-in animation-delay-300">
+            <div className="space-y-2 animate-fade-in animation-delay-300">
               <Label htmlFor="username" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Utilizador</Label>
               <Input
                 id="username"
@@ -164,7 +164,7 @@ const Login = () => {
               />
             </div>
             
-            <div className="space-y-2 opacity-0 animate-fade-in animation-delay-400">
+            <div className="space-y-2 animate-fade-in animation-delay-400">
               <Label htmlFor="password" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Palavra-passe</Label>
               <div className="relative">
                 <Input
@@ -209,7 +209,7 @@ const Login = () => {
             
             <Button 
               type="submit" 
-              className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 opacity-0 animate-fade-in animation-delay-500 ${
+              className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 ${
                 theme === 'dark'
                   ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                   : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm hover:shadow-lg hover:shadow-white/10'
