@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSmartInsights, useProximitySuggestions } from '@/hooks/useAiSuggestions';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -15,10 +14,11 @@ import {
   UserX, 
   MapPin,
   Route,
-  RefreshCw,
   Sparkles,
   ChevronRight,
-  X
+  Calendar,
+  Clock,
+  Euro
 } from 'lucide-react';
 import mayiaAvatar from '@/assets/mayia-avatar.png';
 import { AiInsightsWidget } from './AiInsightsWidget';
@@ -39,6 +39,12 @@ export const MayiaCompactWidget: React.FC = () => {
   const totalAlerts = conflictsCount + inactiveClientsCount + distanceAlertsCount;
   const totalSuggestions = proximitySuggestionsCount;
   const hasNotifications = totalAlerts > 0 || totalSuggestions > 0;
+
+  // Weekly summary data
+  const weeklyTotal = insights?.weeklySummary?.total;
+  const weeklyAgendamentos = weeklyTotal?.agendamentos ?? 0;
+  const weeklyHoras = weeklyTotal?.horas ?? 0;
+  const weeklyReceita = weeklyTotal?.receita ?? 0;
 
   if (isLoading) {
     return (
@@ -82,20 +88,30 @@ export const MayiaCompactWidget: React.FC = () => {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-bold text-gradient-primary">MayIA</h3>
               <Sparkles size={14} className="text-primary/60" />
             </div>
-            <p className="text-sm text-muted-foreground truncate">
-              {hasNotifications 
-                ? `${totalAlerts > 0 ? `${totalAlerts} alerta${totalAlerts !== 1 ? 's' : ''}` : ''}${totalAlerts > 0 && totalSuggestions > 0 ? ' • ' : ''}${totalSuggestions > 0 ? `${totalSuggestions} sugestão` : ''}`
-                : 'Tudo em ordem! Clica para ver detalhes'
-              }
-            </p>
+            
+            {/* Weekly summary mini stats */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar size={12} className="text-primary/70" />
+                <span className="font-medium text-foreground">{weeklyAgendamentos}</span> esta semana
+              </span>
+              <span className="hidden sm:flex items-center gap-1">
+                <Clock size={12} className="text-primary/70" />
+                <span className="font-medium text-foreground">{weeklyHoras}h</span>
+              </span>
+              <span className="hidden md:flex items-center gap-1">
+                <Euro size={12} className="text-emerald-500" />
+                <span className="font-medium text-emerald-600 dark:text-emerald-400">{weeklyReceita}€</span>
+              </span>
+            </div>
           </div>
 
-          {/* Quick badges */}
-          <div className="hidden sm:flex items-center gap-2">
+          {/* Alert badges */}
+          <div className="hidden lg:flex items-center gap-2">
             {conflictsCount > 0 && (
               <Badge variant="destructive" className="text-xs gap-1">
                 <AlertTriangle size={10} />
@@ -121,6 +137,14 @@ export const MayiaCompactWidget: React.FC = () => {
               </Badge>
             )}
           </div>
+
+          {/* Mobile notification indicator */}
+          {hasNotifications && (
+            <div className="lg:hidden flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground">{totalAlerts + totalSuggestions}</span>
+            </div>
+          )}
 
           {/* Arrow */}
           <ChevronRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
