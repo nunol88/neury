@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { Task, AllTasks } from '@/hooks/useAgendamentos';
-import { parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, format, getWeek } from 'date-fns';
+import { pt } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { GitCompare, TrendingUp, TrendingDown, Minus, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-type PeriodFilter = 'monthly' | 'quarterly' | 'semester' | 'yearly';
+type PeriodFilter = 'weekly' | 'monthly' | 'quarterly' | 'semester' | 'yearly';
 
 interface PeriodComparisonWidgetProps {
   allTasks: AllTasks;
@@ -35,11 +36,13 @@ const ALL_YEARS = generateYears();
 export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWidgetProps) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
+  const currentWeek = getWeek(new Date(), { weekStartsOn: 1 });
 
   // Period A (left)
   const [periodAType, setPeriodAType] = useState<PeriodFilter>('monthly');
   const [periodAYear, setPeriodAYear] = useState(currentYear);
   const [periodAMonth, setPeriodAMonth] = useState(currentMonth);
+  const [periodAWeek, setPeriodAWeek] = useState(currentWeek);
   const [periodAQuarter, setPeriodAQuarter] = useState(Math.floor(currentMonth / 3));
   const [periodASemester, setPeriodASemester] = useState(currentMonth < 6 ? 0 : 1);
 
@@ -47,15 +50,27 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   const [periodBType, setPeriodBType] = useState<PeriodFilter>('monthly');
   const [periodBYear, setPeriodBYear] = useState(currentYear - 1);
   const [periodBMonth, setPeriodBMonth] = useState(currentMonth);
+  const [periodBWeek, setPeriodBWeek] = useState(currentWeek);
   const [periodBQuarter, setPeriodBQuarter] = useState(Math.floor(currentMonth / 3));
   const [periodBSemester, setPeriodBSemester] = useState(currentMonth < 6 ? 0 : 1);
 
-  const getFilteredTasks = (type: PeriodFilter, year: number, month: number, quarter: number, semester: number) => {
+  // Generate weeks (1-53)
+  const WEEKS = Array.from({ length: 53 }, (_, i) => i + 1);
+
+  const getFilteredTasks = (type: PeriodFilter, year: number, month: number, week: number, quarter: number, semester: number) => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
     let start: Date;
     let end: Date;
 
     switch (type) {
+      case 'weekly':
+        // Calculate week start/end from week number
+        const jan1 = new Date(year, 0, 1);
+        const daysToAdd = (week - 1) * 7;
+        const weekDate = new Date(jan1.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+        start = startOfWeek(weekDate, { weekStartsOn: 1 });
+        end = endOfWeek(weekDate, { weekStartsOn: 1 });
+        break;
       case 'monthly':
         start = startOfMonth(new Date(year, month, 1));
         end = endOfMonth(new Date(year, month, 1));
@@ -106,8 +121,10 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
     };
   };
 
-  const getPeriodLabel = (type: PeriodFilter, year: number, month: number, quarter: number, semester: number) => {
+  const getPeriodLabel = (type: PeriodFilter, year: number, month: number, week: number, quarter: number, semester: number) => {
     switch (type) {
+      case 'weekly':
+        return `Sem ${week} de ${year}`;
       case 'monthly':
         return `${MONTH_NAMES[month]} ${year}`;
       case 'quarterly':
@@ -122,17 +139,17 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   };
 
   const statsA = useMemo(() => {
-    const tasks = getFilteredTasks(periodAType, periodAYear, periodAMonth, periodAQuarter, periodASemester);
+    const tasks = getFilteredTasks(periodAType, periodAYear, periodAMonth, periodAWeek, periodAQuarter, periodASemester);
     return calculateStats(tasks);
-  }, [allTasks, periodAType, periodAYear, periodAMonth, periodAQuarter, periodASemester]);
+  }, [allTasks, periodAType, periodAYear, periodAMonth, periodAWeek, periodAQuarter, periodASemester]);
 
   const statsB = useMemo(() => {
-    const tasks = getFilteredTasks(periodBType, periodBYear, periodBMonth, periodBQuarter, periodBSemester);
+    const tasks = getFilteredTasks(periodBType, periodBYear, periodBMonth, periodBWeek, periodBQuarter, periodBSemester);
     return calculateStats(tasks);
-  }, [allTasks, periodBType, periodBYear, periodBMonth, periodBQuarter, periodBSemester]);
+  }, [allTasks, periodBType, periodBYear, periodBMonth, periodBWeek, periodBQuarter, periodBSemester]);
 
-  const labelA = getPeriodLabel(periodAType, periodAYear, periodAMonth, periodAQuarter, periodASemester);
-  const labelB = getPeriodLabel(periodBType, periodBYear, periodBMonth, periodBQuarter, periodBSemester);
+  const labelA = getPeriodLabel(periodAType, periodAYear, periodAMonth, periodAWeek, periodAQuarter, periodASemester);
+  const labelB = getPeriodLabel(periodBType, periodBYear, periodBMonth, periodBWeek, periodBQuarter, periodBSemester);
 
   // Chart data
   const chartData = useMemo(() => [
@@ -162,6 +179,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
     type, setType,
     year, setYear,
     month, setMonth,
+    week, setWeek,
     quarter, setQuarter,
     semester, setSemester,
     label,
@@ -173,6 +191,8 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
     setYear: (v: number) => void;
     month: number;
     setMonth: (v: number) => void;
+    week: number;
+    setWeek: (v: number) => void;
     quarter: number;
     setQuarter: (v: number) => void;
     semester: number;
@@ -191,6 +211,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           onChange={(e) => setType(e.target.value as PeriodFilter)}
           className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
         >
+          <option value="weekly">Semana</option>
           <option value="monthly">Mês</option>
           <option value="quarterly">Trimestre</option>
           <option value="semester">Semestre</option>
@@ -205,6 +226,17 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
+        {type === 'weekly' && (
+          <select
+            value={week}
+            onChange={(e) => setWeek(Number(e.target.value))}
+            className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+          >
+            {WEEKS.map((w) => (
+              <option key={w} value={w}>Sem {w}</option>
+            ))}
+          </select>
+        )}
         {type === 'monthly' && (
           <select
             value={month}
@@ -286,6 +318,8 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           setYear={setPeriodAYear}
           month={periodAMonth}
           setMonth={setPeriodAMonth}
+          week={periodAWeek}
+          setWeek={setPeriodAWeek}
           quarter={periodAQuarter}
           setQuarter={setPeriodAQuarter}
           semester={periodASemester}
@@ -300,6 +334,8 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           setYear={setPeriodBYear}
           month={periodBMonth}
           setMonth={setPeriodBMonth}
+          week={periodBWeek}
+          setWeek={setPeriodBWeek}
           quarter={periodBQuarter}
           setQuarter={setPeriodBQuarter}
           semester={periodBSemester}
