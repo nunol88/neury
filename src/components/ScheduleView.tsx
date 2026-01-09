@@ -814,9 +814,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     }
   };
 
-  const handleToggleStatus = async (id: string, currentlyCompleted: boolean) => {
-    if (!isAdmin) return;
-    await toggleTaskStatus(id, currentlyCompleted);
+  const handleToggleStatus = async (id: string, currentlyCompleted: boolean, userRole?: string) => {
+    await toggleTaskStatus(id, currentlyCompleted, userRole || role || 'user');
   };
 
   const calculateMonthTotal = () => {
@@ -1155,6 +1154,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               dayObj={dayObj}
               tasks={dayTasks}
               isAdmin={isAdmin}
+              userRole={role || 'user'}
               isDarkMode={theme === 'dark'}
               headerBg={headerBg}
               onDragOver={handleDragOver}
