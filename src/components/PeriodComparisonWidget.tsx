@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Task, AllTasks } from '@/hooks/useAgendamentos';
-import { parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, format } from 'date-fns';
-import { pt } from 'date-fns/locale';
+import { parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { GitCompare, TrendingUp, TrendingDown, Minus, X } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-type PeriodFilter = 'weekly' | 'monthly' | 'quarterly' | 'semester' | 'yearly';
+type PeriodFilter = 'monthly' | 'quarterly' | 'semester' | 'yearly';
 
 interface PeriodComparisonWidgetProps {
   allTasks: AllTasks;
@@ -20,6 +20,18 @@ const MONTH_NAMES = [
 const QUARTER_NAMES = ['1º Trim', '2º Trim', '3º Trim', '4º Trim'];
 const SEMESTER_NAMES = ['1º Sem', '2º Sem'];
 
+// Generate years from 2020 to current year + 1
+const generateYears = () => {
+  const currentYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = currentYear + 1; y >= 2020; y--) {
+    years.push(y);
+  }
+  return years;
+};
+
+const ALL_YEARS = generateYears();
+
 export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWidgetProps) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
@@ -31,23 +43,12 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   const [periodAQuarter, setPeriodAQuarter] = useState(Math.floor(currentMonth / 3));
   const [periodASemester, setPeriodASemester] = useState(currentMonth < 6 ? 0 : 1);
 
-  // Period B (right) - defaults to previous month
+  // Period B (right) - defaults to same period last year
   const [periodBType, setPeriodBType] = useState<PeriodFilter>('monthly');
-  const [periodBYear, setPeriodBYear] = useState(currentMonth === 0 ? currentYear - 1 : currentYear);
-  const [periodBMonth, setPeriodBMonth] = useState(currentMonth === 0 ? 11 : currentMonth - 1);
-  const [periodBQuarter, setPeriodBQuarter] = useState(Math.floor(currentMonth / 3) === 0 ? 3 : Math.floor(currentMonth / 3) - 1);
-  const [periodBSemester, setPeriodBSemester] = useState(currentMonth < 6 ? 1 : 0);
-
-  const availableYears = useMemo(() => {
-    const allTasksFlat: Task[] = Object.values(allTasks).flat();
-    const years = new Set<number>();
-    allTasksFlat.forEach(task => {
-      const year = parseISO(task.date).getFullYear();
-      years.add(year);
-    });
-    years.add(currentYear);
-    return Array.from(years).sort((a, b) => b - a);
-  }, [allTasks, currentYear]);
+  const [periodBYear, setPeriodBYear] = useState(currentYear - 1);
+  const [periodBMonth, setPeriodBMonth] = useState(currentMonth);
+  const [periodBQuarter, setPeriodBQuarter] = useState(Math.floor(currentMonth / 3));
+  const [periodBSemester, setPeriodBSemester] = useState(currentMonth < 6 ? 0 : 1);
 
   const getFilteredTasks = (type: PeriodFilter, year: number, month: number, quarter: number, semester: number) => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
@@ -133,6 +134,18 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
   const labelA = getPeriodLabel(periodAType, periodAYear, periodAMonth, periodAQuarter, periodASemester);
   const labelB = getPeriodLabel(periodBType, periodBYear, periodBMonth, periodBQuarter, periodBSemester);
 
+  // Chart data
+  const chartData = useMemo(() => [
+    { name: 'Receita', A: statsA.totalRevenue, B: statsB.totalRevenue },
+    { name: 'Pendente', A: statsA.pendingRevenue, B: statsB.pendingRevenue },
+  ], [statsA, statsB]);
+
+  const chartDataServices = useMemo(() => [
+    { name: 'Serviços', A: statsA.totalAgendamentos, B: statsB.totalAgendamentos },
+    { name: 'Concluídos', A: statsA.concluidos, B: statsB.concluidos },
+    { name: 'Clientes', A: statsA.uniqueClients, B: statsB.uniqueClients },
+  ], [statsA, statsB]);
+
   const getDiffPercent = (a: number, b: number) => {
     if (b === 0) return a > 0 ? 100 : 0;
     return Math.round(((a - b) / b) * 100);
@@ -151,7 +164,8 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
     month, setMonth,
     quarter, setQuarter,
     semester, setSemester,
-    label
+    label,
+    color
   }: {
     type: PeriodFilter;
     setType: (v: PeriodFilter) => void;
@@ -164,14 +178,18 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
     semester: number;
     setSemester: (v: number) => void;
     label: string;
+    color: string;
   }) => (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+      <div className="flex items-center gap-2">
+        <div className={`w-3 h-3 rounded-full ${color}`} />
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+      </div>
       <div className="flex flex-wrap gap-1.5">
         <select
           value={type}
           onChange={(e) => setType(e.target.value as PeriodFilter)}
-          className="px-2 py-1 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+          className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
         >
           <option value="monthly">Mês</option>
           <option value="quarterly">Trimestre</option>
@@ -181,9 +199,9 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
         <select
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
-          className="px-2 py-1 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+          className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
         >
-          {availableYears.map((y) => (
+          {ALL_YEARS.map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
@@ -191,7 +209,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-2 py-1 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+            className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
           >
             {MONTH_NAMES.map((m, i) => (
               <option key={i} value={i}>{m.slice(0, 3)}</option>
@@ -202,7 +220,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           <select
             value={quarter}
             onChange={(e) => setQuarter(Number(e.target.value))}
-            className="px-2 py-1 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+            className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
           >
             {QUARTER_NAMES.map((q, i) => (
               <option key={i} value={i}>{q}</option>
@@ -213,7 +231,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
           <select
             value={semester}
             onChange={(e) => setSemester(Number(e.target.value))}
-            className="px-2 py-1 rounded text-xs font-medium bg-secondary border border-border text-foreground"
+            className="px-2 py-1.5 rounded text-xs font-medium bg-secondary border border-border text-foreground"
           >
             {SEMESTER_NAMES.map((s, i) => (
               <option key={i} value={i}>{s}</option>
@@ -258,9 +276,10 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
       </div>
 
       {/* Period Selectors */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <PeriodSelector
           label="Período A"
+          color="bg-emerald-500"
           type={periodAType}
           setType={setPeriodAType}
           year={periodAYear}
@@ -274,6 +293,7 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
         />
         <PeriodSelector
           label="Período B"
+          color="bg-blue-500"
           type={periodBType}
           setType={setPeriodBType}
           year={periodBYear}
@@ -287,14 +307,76 @@ export function PeriodComparisonWidget({ allTasks, onClose }: PeriodComparisonWi
         />
       </div>
 
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {/* Revenue Chart */}
+        <div className="bg-secondary/30 rounded-lg p-3">
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Receitas (€)</p>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} barGap={8}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: number) => [`€${value.toFixed(2)}`, '']}
+                />
+                <Legend 
+                  formatter={(value) => value === 'A' ? labelA : labelB}
+                  wrapperStyle={{ fontSize: '10px' }}
+                />
+                <Bar dataKey="A" name="A" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="B" name="B" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Services Chart */}
+        <div className="bg-secondary/30 rounded-lg p-3">
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Serviços</p>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartDataServices} barGap={8}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend 
+                  formatter={(value) => value === 'A' ? labelA : labelB}
+                  wrapperStyle={{ fontSize: '10px' }}
+                />
+                <Bar dataKey="A" name="A" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="B" name="B" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* Comparison Headers */}
       <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-2">
-        <div className="text-right">
-          <span className="text-xs font-medium text-primary">{labelA}</span>
+        <div className="text-right flex items-center justify-end gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-xs font-medium text-foreground">{labelA}</span>
         </div>
-        <div className="w-16" />
-        <div className="text-left">
-          <span className="text-xs font-medium text-primary">{labelB}</span>
+        <div className="w-20" />
+        <div className="text-left flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-xs font-medium text-foreground">{labelB}</span>
         </div>
       </div>
 
