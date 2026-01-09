@@ -83,9 +83,24 @@ export interface ProximitySuggestion {
   priority: 'high' | 'medium';
 }
 
+// Types for distance alerts
+export interface DistanceAlertAppointment {
+  time: string;
+  client: string;
+  zona: string;
+}
+
+export interface DistanceAlert {
+  date: string;
+  formattedDate: string;
+  appointments: DistanceAlertAppointment[];
+  message: string;
+  severity: 'high' | 'medium';
+}
+
 export interface ProximitySuggestionsResponse {
   suggestions: ProximitySuggestion[];
-  distanceAlerts: any[];
+  distanceAlerts: DistanceAlert[];
   generatedAt: string;
 }
 
