@@ -90,7 +90,21 @@ const Dashboard = () => {
   const { clients, loading: loadingClients } = useClients();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const MONTH_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  // Reset month when year changes (if the selected month doesn't make sense)
+  React.useEffect(() => {
+    const now = new Date();
+    if (selectedYear === now.getFullYear() && selectedMonth > now.getMonth()) {
+      setSelectedMonth(now.getMonth());
+    }
+  }, [selectedYear, selectedMonth]);
 
   // Handle scroll for sticky header
   React.useEffect(() => {
@@ -125,7 +139,9 @@ const Dashboard = () => {
   const filteredTasks = useMemo(() => {
     const allTasksFlat: Task[] = Object.values(allTasks).flat();
     const now = new Date();
-    const referenceDate = new Date(selectedYear, now.getMonth(), now.getDate());
+    // Use selectedMonth for monthly/quarterly filters
+    const refMonth = (periodFilter === 'monthly' || periodFilter === 'quarterly') ? selectedMonth : now.getMonth();
+    const referenceDate = new Date(selectedYear, refMonth, now.getDate());
 
     if (periodFilter === 'all') {
       // Filter by year only when "all" is selected
@@ -149,11 +165,11 @@ const Dashboard = () => {
         end = endOfWeek(referenceDate, { weekStartsOn: 1 });
         break;
       case 'monthly':
-        start = startOfMonth(referenceDate);
-        end = endOfMonth(referenceDate);
+        start = startOfMonth(new Date(selectedYear, selectedMonth, 1));
+        end = endOfMonth(new Date(selectedYear, selectedMonth, 1));
         break;
       case 'quarterly':
-        const currentQuarter = Math.floor(referenceDate.getMonth() / 3);
+        const currentQuarter = Math.floor(selectedMonth / 3);
         start = new Date(selectedYear, currentQuarter * 3, 1);
         end = new Date(selectedYear, currentQuarter * 3 + 3, 0, 23, 59, 59, 999);
         break;
@@ -174,7 +190,7 @@ const Dashboard = () => {
       const taskDate = parseISO(task.date);
       return isWithinInterval(taskDate, { start, end });
     });
-  }, [allTasks, periodFilter, selectedYear]);
+  }, [allTasks, periodFilter, selectedYear, selectedMonth]);
 
   // Calculate statistics based on filtered tasks
   const stats = useMemo(() => {
@@ -323,7 +339,7 @@ const Dashboard = () => {
   // Get period display text
   const getPeriodDisplay = () => {
     const now = new Date();
-    const refMonth = now.getMonth();
+    const refMonth = (periodFilter === 'monthly' || periodFilter === 'quarterly') ? selectedMonth : now.getMonth();
     switch (periodFilter) {
       case 'daily':
         return format(new Date(selectedYear, refMonth, now.getDate()), "EEEE, d 'de' MMMM", { locale: pt });
@@ -333,9 +349,9 @@ const Dashboard = () => {
         const weekEnd = endOfWeek(refDate, { weekStartsOn: 1 });
         return `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
       case 'monthly':
-        return format(new Date(selectedYear, refMonth, 1), "MMMM 'de' yyyy", { locale: pt });
+        return format(new Date(selectedYear, selectedMonth, 1), "MMMM 'de' yyyy", { locale: pt });
       case 'quarterly':
-        const currentQuarter = Math.floor(refMonth / 3) + 1;
+        const currentQuarter = Math.floor(selectedMonth / 3) + 1;
         return `${currentQuarter}º Trimestre de ${selectedYear}`;
       case 'semester':
         const currentSemester = refMonth < 6 ? 1 : 2;
@@ -557,6 +573,21 @@ recommend short-term decisions and define one primary focus for improvement.
                 </option>
               ))}
             </select>
+            
+            {/* Month Selector - visible for monthly and quarterly */}
+            {(periodFilter === 'monthly' || periodFilter === 'quarterly') && (
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {MONTH_NAMES.map((month, index) => (
+                  <option key={index} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           
           {/* Period Filter Buttons */}
