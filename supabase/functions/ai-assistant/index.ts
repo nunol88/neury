@@ -36,10 +36,10 @@ serve(async (req) => {
       },
     });
 
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    // Verify user authentication using getClaims (more reliable than getUser)
+    const { data: claimsData, error: authError } = await supabaseAuth.auth.getClaims(token);
 
-    if (authError || !user) {
+    if (authError || !claimsData?.claims) {
       console.error("Auth verification failed:", authError?.message);
       return new Response(
         JSON.stringify({ error: "Sessão inválida. Por favor, faça login novamente." }),
@@ -47,12 +47,14 @@ serve(async (req) => {
       );
     }
 
+    const userId = claimsData.claims.sub as string;
+
     // Check user role using service role client to bypass RLS
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
     const { data: roleData, error: roleError } = await supabaseService
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (roleError || !roleData) {
@@ -65,7 +67,7 @@ serve(async (req) => {
 
     // Allow both admin and neury roles to access the AI assistant
     if (roleData.role !== "admin" && roleData.role !== "neury") {
-      console.error("Insufficient permissions for user:", user.id, "role:", roleData.role);
+      console.error("Insufficient permissions for user:", userId, "role:", roleData.role);
       return new Response(
         JSON.stringify({ error: "Acesso restrito" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
