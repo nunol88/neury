@@ -72,15 +72,156 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
-    
-    if (!messages || !Array.isArray(messages)) {
-      throw new Error("Messages array is required");
-    }
+    const body = await req.json();
+    const { messages, mode } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // ============ PROACTIVE ANALYSIS MODE ============
+    if (mode === "proactive_analysis") {
+      console.log("Proactive analysis mode activated");
+      
+      const today = new Date();
+      const past45Days = new Date(today);
+      past45Days.setDate(past45Days.getDate() - 45);
+      
+      const next7Days = new Date(today);
+      next7Days.setDate(next7Days.getDate() + 7);
+
+      // Fetch appointments from last 45 days
+      const { data: historyAgendamentos, error: historyError } = await supabaseService
+        .from("agendamentos")
+        .select("*")
+        .gte("data_inicio", past45Days.toISOString())
+        .lte("data_inicio", today.toISOString())
+        .order("data_inicio", { ascending: true });
+
+      if (historyError) {
+        console.error("Error fetching history:", historyError);
+        throw new Error("Erro ao buscar histórico de agendamentos");
+      }
+
+      // Fetch appointments for next 7 days
+      const { data: upcomingAgendamentos, error: upcomingError } = await supabaseService
+        .from("agendamentos")
+        .select("*")
+        .gte("data_inicio", today.toISOString())
+        .lte("data_inicio", next7Days.toISOString())
+        .order("data_inicio", { ascending: true });
+
+      if (upcomingError) {
+        console.error("Error fetching upcoming:", upcomingError);
+        throw new Error("Erro ao buscar agendamentos futuros");
+      }
+
+      console.log(`Found ${historyAgendamentos?.length || 0} history appointments and ${upcomingAgendamentos?.length || 0} upcoming`);
+
+      // Format data for AI
+      const historyData = (historyAgendamentos || []).map(a => ({
+        cliente: a.cliente_nome,
+        data: a.data_inicio.split('T')[0],
+        diaSemana: new Date(a.data_inicio).toLocaleDateString('pt-PT', { weekday: 'long' }),
+        hora: new Date(a.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+        status: a.status,
+      }));
+
+      const upcomingData = (upcomingAgendamentos || []).map(a => ({
+        cliente: a.cliente_nome,
+        data: a.data_inicio.split('T')[0],
+        diaSemana: new Date(a.data_inicio).toLocaleDateString('pt-PT', { weekday: 'long' }),
+        hora: new Date(a.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      }));
+
+      const proactiveSystemPrompt = `És um assistente inteligente de agendamento. Analisa o histórico JSON fornecido.
+Identifica padrões de clientes (ex: Clientes que vêm todas as semanas no mesmo dia, como 'Casa Pablo' ou 'Evoé').
+Verifica se esses clientes regulares TÊM agendamento na lista de 'próximos 7 dias'.
+Se um cliente regular NÃO tiver agendamento futuro, gera um objeto de sugestão.
+
+Data de hoje: ${today.toISOString().split('T')[0]}
+
+HISTÓRICO DOS ÚLTIMOS 45 DIAS:
+${JSON.stringify(historyData, null, 2)}
+
+PRÓXIMOS 7 DIAS:
+${JSON.stringify(upcomingData, null, 2)}
+
+Retorna APENAS um array JSON válido (sem markdown, sem \`\`\`) neste formato:
+[
+  {
+    "type": "missing_booking",
+    "clientName": "Nome do Cliente",
+    "suggestedDate": "YYYY-MM-DD",
+    "suggestedTime": "HH:MM",
+    "confidence": 0.9,
+    "reason": "O cliente costuma agendar à segunda-feira."
+  }
+]
+
+Se não houver sugestões, retorna um array vazio: []`;
+
+      // Call AI for proactive analysis (non-streaming)
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: proactiveSystemPrompt },
+            { role: "user", content: "Analisa os dados e gera sugestões de agendamentos em falta." },
+          ],
+          stream: false,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        if (aiResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente mais tarde." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (aiResponse.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "Créditos insuficientes." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await aiResponse.text();
+        console.error("AI gateway error:", aiResponse.status, errorText);
+        throw new Error("Erro ao comunicar com a IA");
+      }
+
+      const aiData = await aiResponse.json();
+      const content = aiData.choices?.[0]?.message?.content || "[]";
+      
+      console.log("AI response content:", content);
+
+      // Parse the JSON response
+      let suggestions = [];
+      try {
+        // Remove any markdown code blocks if present
+        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        suggestions = JSON.parse(cleanContent);
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError, "Content:", content);
+        suggestions = [];
+      }
+
+      return new Response(
+        JSON.stringify({ suggestions }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============ REGULAR CHAT MODE ============
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error("Messages array is required");
     }
 
     // Now use service client to fetch data (user is verified as admin)
