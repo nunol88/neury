@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { 
-  LogOut, User, BarChart3, Users, Menu, Sun, Moon, Settings2 
+  LogOut, User, BarChart3, Users, Menu, Sun, Moon, Settings2, Euro 
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
@@ -99,6 +99,10 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
                       <Users size={16} className="mr-2" />
                       Clientes
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/admin/pagamentos')}>
+                      <Euro size={16} className="mr-2" />
+                      Pagamentos
+                    </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuItem onClick={onSignOut}>
@@ -127,9 +131,17 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
                     <Users size={16} className="mr-1" />
                     Clientes
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate('/admin/pagamentos')}
+                  >
+                    <Euro size={16} className="mr-1" />
+                    Pagamentos
+                  </Button>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button 
+                      <Button
                         variant="ghost" 
                         size="icon"
                         className="h-8 w-8 opacity-40 hover:opacity-100 transition-opacity"
