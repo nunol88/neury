@@ -26,6 +26,7 @@ import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 import { ExportDropdown } from '@/components/ExportDropdown';
+import { ExportAiContextButton } from '@/components/ExportAiContextButton';
 import { MayiaCompactWidget } from '@/components/MayiaCompactWidget';
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
 import {
@@ -589,6 +590,10 @@ recommend short-term decisions and define one primary focus for improvement.
             <ExportDropdown 
               onExportPDF={exportToPDF}
               generateAiContext={generateAiContextText}
+            />
+            <ExportAiContextButton 
+              allTasks={allTasks}
+              clients={clients}
             />
           </div>
           
