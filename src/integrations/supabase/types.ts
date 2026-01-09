@@ -150,6 +150,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_status_only_update: { Args: never; Returns: boolean }
     }
     Enums: {
       agendamento_status: "agendado" | "concluido" | "cancelado"

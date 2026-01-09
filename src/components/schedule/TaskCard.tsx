@@ -237,20 +237,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </button>
           )}
           
-          {/* Always visible complete button for admin */}
-          {isAdmin && (
-            <button
-              onClick={handleToggleStatus}
-              className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
-                task.completed
-                  ? 'bg-success/20 hover:bg-success/30 text-success'
-                  : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success border border-border/50'
-              }`}
-              title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
-            >
-              <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
-            </button>
-          )}
+          {/* Complete button - visible for all users */}
+          <button
+            onClick={handleToggleStatus}
+            className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
+              task.completed
+                ? 'bg-success/20 hover:bg-success/30 text-success'
+                : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success border border-border/50'
+            }`}
+            title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
+          >
+            <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
+          </button>
           
           {/* Edit and Delete - reveal on hover */}
           {isAdmin && (
