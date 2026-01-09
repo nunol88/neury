@@ -80,141 +80,270 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // ============ PROACTIVE ANALYSIS MODE ============
-    if (mode === "proactive_analysis") {
-      console.log("Proactive analysis mode activated");
+    // ============ SMART INSIGHTS MODE ============
+    if (mode === "smart_insights") {
+      console.log("Smart insights mode activated");
       
       const today = new Date();
-      const past45Days = new Date(today);
-      past45Days.setDate(past45Days.getDate() - 45);
+      const todayStr = today.toISOString().split('T')[0];
       
+      // Get start of current week (Monday)
+      const startOfWeek = new Date(today);
+      const dayOfWeek = today.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(today.getDate() - diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      // Get end of current week (Sunday)
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      // Get last 60 days for inactive clients analysis
+      const past60Days = new Date(today);
+      past60Days.setDate(past60Days.getDate() - 60);
+      
+      // Get next 7 days for conflicts
       const next7Days = new Date(today);
       next7Days.setDate(next7Days.getDate() + 7);
 
-      // Fetch appointments from last 45 days
-      const { data: historyAgendamentos, error: historyError } = await supabaseService
-        .from("agendamentos")
-        .select("*")
-        .gte("data_inicio", past45Days.toISOString())
-        .lte("data_inicio", today.toISOString())
-        .order("data_inicio", { ascending: true });
+      // Get start/end of current month
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      // Get last month for comparison
+      const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
 
-      if (historyError) {
-        console.error("Error fetching history:", historyError);
-        throw new Error("Erro ao buscar histórico de agendamentos");
+      // Fetch all necessary data in parallel
+      const [
+        { data: allAgendamentos },
+        { data: thisWeekAgendamentos },
+        { data: thisMonthAgendamentos },
+        { data: lastMonthAgendamentos },
+        { data: upcomingAgendamentos },
+        { data: clients }
+      ] = await Promise.all([
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", past60Days.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfWeek.toISOString()).lte("data_inicio", endOfWeek.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfMonth.toISOString()).lte("data_inicio", endOfMonth.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", startOfLastMonth.toISOString()).lte("data_inicio", endOfLastMonth.toISOString()),
+        supabaseService.from("agendamentos").select("*").gte("data_inicio", todayStr).lte("data_inicio", next7Days.toISOString()).eq("status", "agendado"),
+        supabaseService.from("clients").select("*")
+      ]);
+
+      // Helper function to parse price from description
+      const getPrice = (agendamento: any): number => {
+        try {
+          if (agendamento.descricao) {
+            const desc = JSON.parse(agendamento.descricao);
+            return parseFloat(desc.price) || parseFloat(desc.preco) || 0;
+          }
+        } catch {}
+        return 0;
+      };
+
+      // Helper function to get hours from agendamento
+      const getHours = (agendamento: any): number => {
+        const inicio = new Date(agendamento.data_inicio);
+        const fim = new Date(agendamento.data_fim);
+        return (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+      };
+
+      // ===== 1. CONFLICTS DETECTION =====
+      const conflicts: any[] = [];
+      const sortedUpcoming = [...(upcomingAgendamentos || [])].sort(
+        (a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime()
+      );
+      
+      for (let i = 0; i < sortedUpcoming.length - 1; i++) {
+        const current = sortedUpcoming[i];
+        const next = sortedUpcoming[i + 1];
+        
+        const currentEnd = new Date(current.data_fim);
+        const nextStart = new Date(next.data_inicio);
+        
+        // Check for overlap
+        if (currentEnd > nextStart) {
+          conflicts.push({
+            type: "overlap",
+            agendamento1: {
+              cliente: current.cliente_nome,
+              data: current.data_inicio.split('T')[0],
+              horaInicio: new Date(current.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+              horaFim: new Date(current.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            },
+            agendamento2: {
+              cliente: next.cliente_nome,
+              data: next.data_inicio.split('T')[0],
+              horaInicio: new Date(next.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+              horaFim: new Date(next.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            },
+            severity: "high"
+          });
+        }
+        // Check for too tight schedule (less than 30 min gap on same day)
+        else if (
+          current.data_inicio.split('T')[0] === next.data_inicio.split('T')[0] &&
+          (nextStart.getTime() - currentEnd.getTime()) < 30 * 60 * 1000
+        ) {
+          conflicts.push({
+            type: "tight_schedule",
+            agendamento1: {
+              cliente: current.cliente_nome,
+              data: current.data_inicio.split('T')[0],
+              horaInicio: new Date(current.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+              horaFim: new Date(current.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            },
+            agendamento2: {
+              cliente: next.cliente_nome,
+              data: next.data_inicio.split('T')[0],
+              horaInicio: new Date(next.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+              horaFim: new Date(next.data_fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+            },
+            gapMinutes: Math.round((nextStart.getTime() - currentEnd.getTime()) / (1000 * 60)),
+            severity: "medium"
+          });
+        }
       }
 
-      // Fetch appointments for next 7 days
-      const { data: upcomingAgendamentos, error: upcomingError } = await supabaseService
-        .from("agendamentos")
-        .select("*")
-        .gte("data_inicio", today.toISOString())
-        .lte("data_inicio", next7Days.toISOString())
-        .order("data_inicio", { ascending: true });
-
-      if (upcomingError) {
-        console.error("Error fetching upcoming:", upcomingError);
-        throw new Error("Erro ao buscar agendamentos futuros");
-      }
-
-      console.log(`Found ${historyAgendamentos?.length || 0} history appointments and ${upcomingAgendamentos?.length || 0} upcoming`);
-
-      // Format data for AI
-      const historyData = (historyAgendamentos || []).map(a => ({
-        cliente: a.cliente_nome,
-        data: a.data_inicio.split('T')[0],
-        diaSemana: new Date(a.data_inicio).toLocaleDateString('pt-PT', { weekday: 'long' }),
-        hora: new Date(a.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-        status: a.status,
-      }));
-
-      const upcomingData = (upcomingAgendamentos || []).map(a => ({
-        cliente: a.cliente_nome,
-        data: a.data_inicio.split('T')[0],
-        diaSemana: new Date(a.data_inicio).toLocaleDateString('pt-PT', { weekday: 'long' }),
-        hora: new Date(a.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-      }));
-
-      const proactiveSystemPrompt = `És um assistente inteligente de agendamento. Analisa o histórico JSON fornecido.
-Identifica padrões de clientes (ex: Clientes que vêm todas as semanas no mesmo dia, como 'Casa Pablo' ou 'Evoé').
-Verifica se esses clientes regulares TÊM agendamento na lista de 'próximos 7 dias'.
-Se um cliente regular NÃO tiver agendamento futuro, gera um objeto de sugestão.
-
-Data de hoje: ${today.toISOString().split('T')[0]}
-
-HISTÓRICO DOS ÚLTIMOS 45 DIAS:
-${JSON.stringify(historyData, null, 2)}
-
-PRÓXIMOS 7 DIAS:
-${JSON.stringify(upcomingData, null, 2)}
-
-Retorna APENAS um array JSON válido (sem markdown, sem \`\`\`) neste formato:
-[
-  {
-    "type": "missing_booking",
-    "clientName": "Nome do Cliente",
-    "suggestedDate": "YYYY-MM-DD",
-    "suggestedTime": "HH:MM",
-    "confidence": 0.9,
-    "reason": "O cliente costuma agendar à segunda-feira."
-  }
-]
-
-Se não houver sugestões, retorna um array vazio: []`;
-
-      // Call AI for proactive analysis (non-streaming)
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: proactiveSystemPrompt },
-            { role: "user", content: "Analisa os dados e gera sugestões de agendamentos em falta." },
-          ],
-          stream: false,
-        }),
+      // ===== 2. INACTIVE CLIENTS =====
+      const clientLastBooking: Record<string, Date> = {};
+      
+      // Find last booking for each client
+      (allAgendamentos || []).forEach(a => {
+        const clientName = a.cliente_nome.toLowerCase().trim();
+        const date = new Date(a.data_inicio);
+        if (!clientLastBooking[clientName] || date > clientLastBooking[clientName]) {
+          clientLastBooking[clientName] = date;
+        }
       });
 
-      if (!aiResponse.ok) {
-        if (aiResponse.status === 429) {
-          return new Response(
-            JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente mais tarde." }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        if (aiResponse.status === 402) {
-          return new Response(
-            JSON.stringify({ error: "Créditos insuficientes." }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        const errorText = await aiResponse.text();
-        console.error("AI gateway error:", aiResponse.status, errorText);
-        throw new Error("Erro ao comunicar com a IA");
-      }
+      // Get clients with future bookings
+      const clientsWithFutureBookings = new Set(
+        (upcomingAgendamentos || []).map(a => a.cliente_nome.toLowerCase().trim())
+      );
 
-      const aiData = await aiResponse.json();
-      const content = aiData.choices?.[0]?.message?.content || "[]";
+      // Find inactive clients (no booking in last 21 days and no future booking)
+      const inactiveClients: any[] = [];
+      const inactiveThreshold = new Date(today);
+      inactiveThreshold.setDate(inactiveThreshold.getDate() - 21);
+
+      (clients || []).forEach(client => {
+        const clientName = client.nome.toLowerCase().trim();
+        const lastBooking = clientLastBooking[clientName];
+        const hasFutureBooking = clientsWithFutureBookings.has(clientName);
+        
+        if (lastBooking && lastBooking < inactiveThreshold && !hasFutureBooking) {
+          const daysSince = Math.floor((today.getTime() - lastBooking.getTime()) / (1000 * 60 * 60 * 24));
+          inactiveClients.push({
+            nome: client.nome,
+            telefone: client.telefone,
+            ultimoAgendamento: lastBooking.toISOString().split('T')[0],
+            diasSemAgendar: daysSince,
+            priority: daysSince > 30 ? "high" : "medium"
+          });
+        }
+      });
+
+      // Sort by days since last booking (descending)
+      inactiveClients.sort((a, b) => b.diasSemAgendar - a.diasSemAgendar);
+
+      // ===== 3. WEEKLY SUMMARY =====
+      const weekDays = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
+      const weekBreakdown = weekDays.map((day, idx) => {
+        const dayDate = new Date(startOfWeek);
+        dayDate.setDate(startOfWeek.getDate() + idx);
+        const dayStr = dayDate.toISOString().split('T')[0];
+        
+        const dayAgendamentos = (thisWeekAgendamentos || []).filter(
+          a => a.data_inicio.split('T')[0] === dayStr
+        );
+        
+        const totalHours = dayAgendamentos.reduce((sum, a) => sum + getHours(a), 0);
+        const totalRevenue = dayAgendamentos.reduce((sum, a) => sum + getPrice(a), 0);
+        
+        return {
+          dia: day,
+          data: dayStr,
+          agendamentos: dayAgendamentos.length,
+          horas: Math.round(totalHours * 10) / 10,
+          receita: totalRevenue,
+          isPast: dayDate < today
+        };
+      });
+
+      const weekTotal = {
+        agendamentos: (thisWeekAgendamentos || []).length,
+        horas: Math.round(weekBreakdown.reduce((sum, d) => sum + d.horas, 0) * 10) / 10,
+        receita: weekBreakdown.reduce((sum, d) => sum + d.receita, 0),
+        concluidos: (thisWeekAgendamentos || []).filter(a => a.status === "concluido").length,
+      };
+
+      // ===== 4. REVENUE FORECAST =====
+      // This month calculations
+      const thisMonthConcluidos = (thisMonthAgendamentos || []).filter(a => a.status === "concluido");
+      const thisMonthPendentes = (thisMonthAgendamentos || []).filter(a => a.status === "agendado");
       
-      console.log("AI response content:", content);
+      const receitaConfirmada = thisMonthConcluidos.reduce((sum, a) => sum + getPrice(a), 0);
+      const receitaPendente = thisMonthPendentes.reduce((sum, a) => sum + getPrice(a), 0);
+      
+      // Last month calculations for comparison
+      const lastMonthReceita = (lastMonthAgendamentos || [])
+        .filter(a => a.status === "concluido")
+        .reduce((sum, a) => sum + getPrice(a), 0);
+      
+      // Calculate days passed and remaining
+      const diasPassados = today.getDate();
+      const diasNoMes = endOfMonth.getDate();
+      const diasRestantes = diasNoMes - diasPassados;
+      
+      // Average daily revenue this month
+      const mediaDiaria = diasPassados > 0 ? receitaConfirmada / diasPassados : 0;
+      
+      // Projection: confirmed + pending + (average daily * remaining days without bookings)
+      const diasComAgendamentos = new Set(
+        thisMonthPendentes.map(a => a.data_inicio.split('T')[0])
+      ).size;
+      const diasSemAgendamentos = Math.max(0, diasRestantes - diasComAgendamentos);
+      const projecaoExtrapolada = receitaConfirmada + receitaPendente + (mediaDiaria * diasSemAgendamentos * 0.5);
 
-      // Parse the JSON response
-      let suggestions = [];
-      try {
-        // Remove any markdown code blocks if present
-        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        suggestions = JSON.parse(cleanContent);
-      } catch (parseError) {
-        console.error("Failed to parse AI response:", parseError, "Content:", content);
-        suggestions = [];
-      }
+      const revenueForcast = {
+        mesAtual: today.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }),
+        receitaConfirmada: Math.round(receitaConfirmada * 100) / 100,
+        receitaPendente: Math.round(receitaPendente * 100) / 100,
+        previsaoTotal: Math.round(projecaoExtrapolada * 100) / 100,
+        mesAnterior: Math.round(lastMonthReceita * 100) / 100,
+        comparacao: lastMonthReceita > 0 
+          ? Math.round(((projecaoExtrapolada - lastMonthReceita) / lastMonthReceita) * 100) 
+          : null,
+        diasRestantes,
+        horasTrabalhadas: Math.round(thisMonthConcluidos.reduce((sum, a) => sum + getHours(a), 0) * 10) / 10,
+        horasPendentes: Math.round(thisMonthPendentes.reduce((sum, a) => sum + getHours(a), 0) * 10) / 10,
+      };
 
+      // Return all insights
       return new Response(
-        JSON.stringify({ suggestions }),
+        JSON.stringify({
+          conflicts,
+          inactiveClients: inactiveClients.slice(0, 5), // Top 5
+          weeklySummary: {
+            breakdown: weekBreakdown,
+            total: weekTotal
+          },
+          revenueForecast: revenueForcast,
+          generatedAt: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============ PROACTIVE ANALYSIS MODE (Legacy - kept for compatibility) ============
+    if (mode === "proactive_analysis") {
+      // Redirect to smart_insights for backwards compatibility
+      console.log("Redirecting proactive_analysis to smart_insights");
+      return new Response(
+        JSON.stringify({ suggestions: [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -473,7 +602,7 @@ INSTRUÇÕES:
   } catch (error) {
     console.error("AI Assistant error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro interno do servidor" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
