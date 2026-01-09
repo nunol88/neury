@@ -91,6 +91,9 @@ const Dashboard = () => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3));
+  const [selectedSemester, setSelectedSemester] = useState<number>(new Date().getMonth() < 6 ? 0 : 1);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const MONTH_NAMES = [
@@ -98,7 +101,33 @@ const Dashboard = () => {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
-  // Reset month when year changes (if the selected month doesn't make sense)
+  const QUARTER_NAMES = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+  const SEMESTER_NAMES = ['1º Semestre', '2º Semestre'];
+
+  // Generate weeks for selected month
+  const weeksInMonth = useMemo(() => {
+    const firstDay = new Date(selectedYear, selectedMonth, 1);
+    const lastDay = endOfMonth(firstDay);
+    const weeks: { label: string; start: Date; end: Date }[] = [];
+    
+    let currentStart = startOfWeek(firstDay, { weekStartsOn: 1 });
+    let weekNum = 1;
+    
+    while (currentStart <= lastDay) {
+      const currentEnd = endOfWeek(currentStart, { weekStartsOn: 1 });
+      weeks.push({
+        label: `Semana ${weekNum} (${format(currentStart, 'dd/MM')} - ${format(currentEnd, 'dd/MM')})`,
+        start: currentStart,
+        end: currentEnd
+      });
+      currentStart = new Date(currentEnd.getTime() + 1);
+      weekNum++;
+    }
+    
+    return weeks;
+  }, [selectedYear, selectedMonth]);
+
+  // Reset selectors when year changes
   React.useEffect(() => {
     const now = new Date();
     if (selectedYear === now.getFullYear() && selectedMonth > now.getMonth()) {
@@ -161,22 +190,25 @@ const Dashboard = () => {
         end = endOfDay(referenceDate);
         break;
       case 'weekly':
-        start = startOfWeek(referenceDate, { weekStartsOn: 1 });
-        end = endOfWeek(referenceDate, { weekStartsOn: 1 });
+        if (weeksInMonth[selectedWeek - 1]) {
+          start = weeksInMonth[selectedWeek - 1].start;
+          end = weeksInMonth[selectedWeek - 1].end;
+        } else {
+          start = startOfWeek(referenceDate, { weekStartsOn: 1 });
+          end = endOfWeek(referenceDate, { weekStartsOn: 1 });
+        }
         break;
       case 'monthly':
         start = startOfMonth(new Date(selectedYear, selectedMonth, 1));
         end = endOfMonth(new Date(selectedYear, selectedMonth, 1));
         break;
       case 'quarterly':
-        const currentQuarter = Math.floor(selectedMonth / 3);
-        start = new Date(selectedYear, currentQuarter * 3, 1);
-        end = new Date(selectedYear, currentQuarter * 3 + 3, 0, 23, 59, 59, 999);
+        start = new Date(selectedYear, selectedQuarter * 3, 1);
+        end = new Date(selectedYear, selectedQuarter * 3 + 3, 0, 23, 59, 59, 999);
         break;
       case 'semester':
-        const currentSemester = referenceDate.getMonth() < 6 ? 0 : 1;
-        start = new Date(selectedYear, currentSemester * 6, 1);
-        end = new Date(selectedYear, currentSemester * 6 + 6, 0, 23, 59, 59, 999);
+        start = new Date(selectedYear, selectedSemester * 6, 1);
+        end = new Date(selectedYear, selectedSemester * 6 + 6, 0, 23, 59, 59, 999);
         break;
       case 'yearly':
         start = new Date(selectedYear, 0, 1);
@@ -190,7 +222,7 @@ const Dashboard = () => {
       const taskDate = parseISO(task.date);
       return isWithinInterval(taskDate, { start, end });
     });
-  }, [allTasks, periodFilter, selectedYear, selectedMonth]);
+  }, [allTasks, periodFilter, selectedYear, selectedMonth, selectedWeek, selectedQuarter, selectedSemester, weeksInMonth]);
 
   // Calculate statistics based on filtered tasks
   const stats = useMemo(() => {
@@ -339,23 +371,21 @@ const Dashboard = () => {
   // Get period display text
   const getPeriodDisplay = () => {
     const now = new Date();
-    const refMonth = (periodFilter === 'monthly' || periodFilter === 'quarterly') ? selectedMonth : now.getMonth();
     switch (periodFilter) {
       case 'daily':
-        return format(new Date(selectedYear, refMonth, now.getDate()), "EEEE, d 'de' MMMM", { locale: pt });
+        return format(new Date(selectedYear, selectedMonth, now.getDate()), "EEEE, d 'de' MMMM", { locale: pt });
       case 'weekly':
-        const refDate = new Date(selectedYear, refMonth, now.getDate());
-        const weekStart = startOfWeek(refDate, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(refDate, { weekStartsOn: 1 });
-        return `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`;
+        if (weeksInMonth[selectedWeek - 1]) {
+          const { start, end } = weeksInMonth[selectedWeek - 1];
+          return `${format(start, 'dd/MM')} - ${format(end, 'dd/MM/yyyy')}`;
+        }
+        return `Semana ${selectedWeek} de ${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
       case 'monthly':
         return format(new Date(selectedYear, selectedMonth, 1), "MMMM 'de' yyyy", { locale: pt });
       case 'quarterly':
-        const currentQuarter = Math.floor(selectedMonth / 3) + 1;
-        return `${currentQuarter}º Trimestre de ${selectedYear}`;
+        return `${selectedQuarter + 1}º Trimestre de ${selectedYear}`;
       case 'semester':
-        const currentSemester = refMonth < 6 ? 1 : 2;
-        return `${currentSemester}º Semestre de ${selectedYear}`;
+        return `${selectedSemester + 1}º Semestre de ${selectedYear}`;
       case 'yearly':
         return `${selectedYear}`;
       case 'all':
@@ -574,16 +604,64 @@ recommend short-term decisions and define one primary focus for improvement.
               ))}
             </select>
             
-            {/* Month Selector - visible for monthly and quarterly */}
-            {(periodFilter === 'monthly' || periodFilter === 'quarterly') && (
+            {/* Month Selector - visible for monthly and weekly */}
+            {(periodFilter === 'monthly' || periodFilter === 'weekly') && (
               <select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                onChange={(e) => {
+                  setSelectedMonth(Number(e.target.value));
+                  setSelectedWeek(1);
+                }}
                 className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {MONTH_NAMES.map((month, index) => (
                   <option key={index} value={index}>
                     {month}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Week Selector - visible for weekly */}
+            {periodFilter === 'weekly' && (
+              <select
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {weeksInMonth.map((week, index) => (
+                  <option key={index} value={index + 1}>
+                    {week.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Quarter Selector - visible for quarterly */}
+            {periodFilter === 'quarterly' && (
+              <select
+                value={selectedQuarter}
+                onChange={(e) => setSelectedQuarter(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {QUARTER_NAMES.map((quarter, index) => (
+                  <option key={index} value={index}>
+                    {quarter}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Semester Selector - visible for semester */}
+            {periodFilter === 'semester' && (
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {SEMESTER_NAMES.map((semester, index) => (
+                  <option key={index} value={index}>
+                    {semester}
                   </option>
                 ))}
               </select>
