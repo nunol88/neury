@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           cliente_contacto: string | null
           cliente_nome: string
+          completed_by: string | null
+          completed_by_role: string | null
           created_at: string
           data_fim: string
           data_inicio: string
@@ -31,6 +33,8 @@ export type Database = {
         Insert: {
           cliente_contacto?: string | null
           cliente_nome: string
+          completed_by?: string | null
+          completed_by_role?: string | null
           created_at?: string
           data_fim: string
           data_inicio: string
@@ -44,6 +48,8 @@ export type Database = {
         Update: {
           cliente_contacto?: string | null
           cliente_nome?: string
+          completed_by?: string | null
+          completed_by_role?: string | null
           created_at?: string
           data_fim?: string
           data_inicio?: string

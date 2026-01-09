@@ -28,6 +28,7 @@ export interface Task {
   price: string;
   notes: string;
   completed: boolean;
+  completedByRole?: string | null;
 }
 
 export interface AllTasks {
@@ -142,7 +143,8 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
     pricePerHour: parsedData.pricePerHour || '7',
     price: parsedData.price || '0',
     notes: parsedData.notes || '',
-    completed: row.status === 'concluido'
+    completed: row.status === 'concluido',
+    completedByRole: (row as any).completed_by_role || null
   };
 };
 
@@ -366,15 +368,20 @@ export const useAgendamentos = () => {
     }
   };
 
-  const toggleTaskStatus = async (id: string, currentlyCompleted: boolean): Promise<boolean> => {
+  const toggleTaskStatus = async (id: string, currentlyCompleted: boolean, userRole?: string): Promise<boolean> => {
     // Store original state for potential rollback
     const originalTasks = { ...allTasks };
+    const roleToSave = currentlyCompleted ? null : (userRole || 'user');
     
     // Optimistically update state
     setAllTasks(prev => {
       const newState = { ...prev };
       (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
-        newState[key] = prev[key].map(t => t.id === id ? { ...t, completed: !currentlyCompleted } : t);
+        newState[key] = prev[key].map(t => t.id === id ? { 
+          ...t, 
+          completed: !currentlyCompleted,
+          completedByRole: roleToSave
+        } : t);
       });
       return newState;
     });
@@ -382,9 +389,16 @@ export const useAgendamentos = () => {
     try {
       const newStatus = currentlyCompleted ? 'agendado' : 'concluido';
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('agendamentos')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          completed_by: currentlyCompleted ? null : user?.id,
+          completed_by_role: roleToSave
+        })
         .eq('id', id);
 
       if (error) throw error;

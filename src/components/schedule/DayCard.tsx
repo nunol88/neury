@@ -16,6 +16,7 @@ interface DayCardProps {
   dayObj: DayInfo;
   tasks: Task[];
   isAdmin: boolean;
+  userRole?: string;
   isDarkMode: boolean;
   headerBg: string;
   onDragOver: (e: React.DragEvent) => void;
@@ -23,7 +24,7 @@ interface DayCardProps {
   onDragStart: (e: React.DragEvent, task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
-  onToggleStatus: (id: string, completed: boolean) => void;
+  onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   animationDelay?: number;
 }
 
@@ -31,6 +32,7 @@ const DayCard: React.FC<DayCardProps> = ({
   dayObj,
   tasks,
   isAdmin,
+  userRole = 'user',
   isDarkMode,
   headerBg,
   onDragOver,
@@ -225,6 +227,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 key={task.id}
                 task={task}
                 isAdmin={isAdmin}
+                userRole={userRole}
                 onDragStart={onDragStart}
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}

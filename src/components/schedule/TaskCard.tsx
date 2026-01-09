@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 interface TaskCardProps {
   task: Task;
   isAdmin: boolean;
+  userRole?: string;
   onDragStart: (e: React.DragEvent, task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  onToggleStatus: (id: string, completed: boolean) => void;
+  onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   animationDelay?: number;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   isAdmin,
+  userRole = 'user',
   onDragStart,
   onEdit,
   onDelete,
@@ -38,7 +41,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 800);
     }
-    onToggleStatus(task.id, task.completed);
+    onToggleStatus(task.id, task.completed, userRole);
   };
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -105,13 +108,33 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       )}
 
-      {/* Completed seal */}
+      {/* Completed seal - different style based on who completed */}
       {task.completed && (
-        <div className="absolute -top-1 -right-1 z-10">
-          <div className="bg-success text-success-foreground rounded-full p-1.5 shadow-lg animate-scale-in">
-            <Check size={10} strokeWidth={3} />
-          </div>
-        </div>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute -top-1 -right-1 z-10">
+                <div className={`rounded-full p-1.5 shadow-lg animate-scale-in flex items-center gap-0.5 ${
+                  task.completedByRole === 'admin' 
+                    ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground ring-2 ring-primary/30' 
+                    : 'bg-gradient-to-br from-success to-success/80 text-success-foreground ring-2 ring-success/30'
+                }`}>
+                  {task.completedByRole === 'admin' ? (
+                    <Shield size={10} strokeWidth={3} />
+                  ) : (
+                    <User size={10} strokeWidth={3} />
+                  )}
+                  <Check size={8} strokeWidth={3} />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs">
+              {task.completedByRole === 'admin' 
+                ? 'Confirmado pelo Admin' 
+                : 'Marcado pela Neury'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Confetti animation */}
