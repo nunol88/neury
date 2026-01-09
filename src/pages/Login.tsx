@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
-import { ExportSiteButton } from '@/components/ExportSiteButton';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -72,17 +71,14 @@ const Login = () => {
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
-      {/* Export and Theme buttons */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        <ExportSiteButton />
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-        >
-          {theme === 'dark' ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-white" />}
-        </button>
-      </div>
+      {/* Theme toggle button */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+        title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+      >
+        {theme === 'dark' ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-white" />}
+      </button>
 
       {/* Animated background orbs - only show in light mode */}
       {theme !== 'dark' && (

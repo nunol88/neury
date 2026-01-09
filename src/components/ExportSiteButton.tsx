@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, FileJson, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const PROJECT_STRUCTURE = `
 # Estrutura do Projeto - Agenda Neury
@@ -184,12 +191,25 @@ const FEATURES_DOC = `
 
 export function ExportSiteButton() {
   const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState<'structure' | 'data' | null>(null);
 
-  const exportSite = async () => {
+  const downloadFile = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportStructure = async () => {
     setIsExporting(true);
+    setExportType('structure');
     
     try {
-      // Fetch current data stats
       const { count: agendamentosCount } = await supabase
         .from('agendamentos')
         .select('*', { count: 'exact', head: true });
@@ -206,7 +226,6 @@ export function ExportSiteButton() {
 - Data de Exportação: ${new Date().toLocaleString('pt-PT')}
 `;
 
-      // Combine all documentation
       const fullExport = `${PROJECT_STRUCTURE}
 ${DATABASE_SCHEMA}
 ${FEATURES_DOC}
@@ -217,37 +236,138 @@ Exportado de: Agenda Neury
 Plataforma: Lovable.dev
 `;
 
-      // Create and download file
-      const blob = new Blob([fullExport], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `agenda-neury-export-${new Date().toISOString().split('T')[0]}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadFile(
+        fullExport, 
+        `agenda-neury-estrutura-${new Date().toISOString().split('T')[0]}.md`,
+        'text/markdown'
+      );
+      
+      toast.success('Estrutura exportada com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar estrutura');
     } finally {
       setIsExporting(false);
+      setExportType(null);
     }
   };
 
+  const exportData = async () => {
+    setIsExporting(true);
+    setExportType('data');
+    
+    try {
+      // Fetch all data
+      const [agendamentosRes, clientsRes] = await Promise.all([
+        supabase.from('agendamentos').select('*').order('data_inicio', { ascending: false }),
+        supabase.from('clients').select('*').order('nome')
+      ]);
+
+      if (agendamentosRes.error) throw agendamentosRes.error;
+      if (clientsRes.error) throw clientsRes.error;
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        exportedAtFormatted: new Date().toLocaleString('pt-PT'),
+        summary: {
+          totalAgendamentos: agendamentosRes.data?.length || 0,
+          totalClientes: clientsRes.data?.length || 0,
+          agendamentosPorStatus: {
+            agendado: agendamentosRes.data?.filter(a => a.status === 'agendado').length || 0,
+            concluido: agendamentosRes.data?.filter(a => a.status === 'concluido').length || 0,
+            cancelado: agendamentosRes.data?.filter(a => a.status === 'cancelado').length || 0,
+          },
+          pagamentos: {
+            pagos: agendamentosRes.data?.filter(a => a.pago).length || 0,
+            pendentes: agendamentosRes.data?.filter(a => !a.pago && a.status === 'concluido').length || 0,
+          }
+        },
+        agendamentos: agendamentosRes.data?.map(a => ({
+          id: a.id,
+          cliente: a.cliente_nome,
+          contacto: a.cliente_contacto,
+          dataInicio: a.data_inicio,
+          dataFim: a.data_fim,
+          descricao: a.descricao ? JSON.parse(a.descricao) : null,
+          status: a.status,
+          pago: a.pago,
+          dataPagamento: a.data_pagamento,
+          criadoEm: a.created_at,
+          atualizadoEm: a.updated_at,
+        })),
+        clientes: clientsRes.data?.map(c => ({
+          id: c.id,
+          nome: c.nome,
+          telefone: c.telefone,
+          morada: c.morada,
+          precoHora: c.preco_hora,
+          notas: c.notas,
+          criadoEm: c.created_at,
+          atualizadoEm: c.updated_at,
+        })),
+      };
+
+      downloadFile(
+        JSON.stringify(exportData, null, 2),
+        `agenda-neury-dados-${new Date().toISOString().split('T')[0]}.json`,
+        'application/json'
+      );
+      
+      toast.success('Dados exportados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar dados:', error);
+      toast.error('Erro ao exportar dados');
+    } finally {
+      setIsExporting(false);
+      setExportType(null);
+    }
+  };
+
+  const exportAll = async () => {
+    await exportStructure();
+    await exportData();
+  };
+
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={exportSite}
-      disabled={isExporting}
-      className="gap-2"
-    >
-      {isExporting ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Download className="h-4 w-4" />
-      )}
-      Exportar para IA
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isExporting}
+          className="gap-2"
+        >
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          Exportar para IA
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={exportStructure} disabled={isExporting}>
+          <FileText className="h-4 w-4 mr-2" />
+          <div className="flex flex-col">
+            <span>Estrutura do Projeto</span>
+            <span className="text-xs text-muted-foreground">Schema, rotas, componentes (.md)</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={exportData} disabled={isExporting}>
+          <FileJson className="h-4 w-4 mr-2" />
+          <div className="flex flex-col">
+            <span>Dados Completos</span>
+            <span className="text-xs text-muted-foreground">Agendamentos e clientes (.json)</span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={exportAll} disabled={isExporting}>
+          <Download className="h-4 w-4 mr-2" />
+          <div className="flex flex-col">
+            <span>Exportar Tudo</span>
+            <span className="text-xs text-muted-foreground">Estrutura + Dados</span>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
