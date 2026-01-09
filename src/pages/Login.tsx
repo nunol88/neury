@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle, Mail, Phone, User } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+
+const APP_VERSION = '1.0.0';
 
 const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
@@ -28,18 +31,24 @@ const Login = () => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [shake, setShake] = useState(false);
   const [rememberUser, setRememberUser] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
   const greeting = getGreeting();
 
-  // Load remembered user on mount
+  // Load remembered user on mount and auto-focus password
   useEffect(() => {
     const remembered = localStorage.getItem(REMEMBER_USER_KEY);
     if (remembered) {
       setUsername(remembered);
       setRememberUser(true);
+      // Auto-focus password field when user is remembered
+      setTimeout(() => {
+        passwordInputRef.current?.focus();
+      }, 100);
     }
   }, []);
 
@@ -188,6 +197,7 @@ const Login = () => {
               <Label htmlFor="password" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Palavra-passe</Label>
               <div className="relative">
                 <Input
+                  ref={passwordInputRef}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
@@ -258,12 +268,74 @@ const Login = () => {
                   A entrar...
                 </>
               ) : (
-                'Entrar'
+              'Entrar'
               )}
             </Button>
+            
+            {/* Help link */}
+            <button
+              type="button"
+              onClick={() => setShowHelpModal(true)}
+              className={`w-full flex items-center justify-center gap-1.5 text-sm transition-colors animate-fade-in animation-delay-600 ${
+                theme === 'dark' 
+                  ? 'text-muted-foreground hover:text-foreground' 
+                  : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              <HelpCircle size={14} />
+              <span>Precisa de ajuda?</span>
+            </button>
           </form>
+          
+          {/* App version */}
+          <div className={`text-center text-xs animate-fade-in animation-delay-700 ${
+            theme === 'dark' ? 'text-muted-foreground/50' : 'text-white/30'
+          }`}>
+            Agenda Neury v{APP_VERSION}
+          </div>
         </div>
       </div>
+      
+      {/* Help Modal */}
+      <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
+        <DialogContent className={`max-w-sm ${theme === 'dark' ? '' : 'bg-slate-900/95 border-white/20 text-white'}`}>
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 ${theme === 'dark' ? '' : 'text-white'}`}>
+              <HelpCircle size={20} />
+              Ajuda de Acesso
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-2">
+            {/* Users info */}
+            <div className={`p-3 rounded-xl ${theme === 'dark' ? 'bg-muted' : 'bg-white/10'}`}>
+              <div className={`flex items-center gap-2 mb-2 font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+                <User size={16} />
+                <span>Utilizadores Disponíveis</span>
+              </div>
+              <ul className={`text-sm space-y-1 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
+                <li>• <strong>admin</strong> — Acesso completo</li>
+                <li>• <strong>neury</strong> — Agenda pessoal</li>
+              </ul>
+            </div>
+            
+            {/* Contact info */}
+            <div className="space-y-2">
+              <p className={`text-sm ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
+                Se tiver problemas de acesso, contacte o administrador:
+              </p>
+              <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+                <Mail size={14} />
+                <span>suporte@mayslimpo.pt</span>
+              </div>
+              <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+                <Phone size={14} />
+                <span>+351 912 345 678</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
