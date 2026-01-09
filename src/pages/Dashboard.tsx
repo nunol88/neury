@@ -26,7 +26,7 @@ import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 import { ExportSiteButton } from '@/components/ExportSiteButton';
-import { AiInsightsWidget } from '@/components/AiInsightsWidget';
+import { MayiaCompactWidget } from '@/components/MayiaCompactWidget';
 import {
   BarChart,
   Bar,
@@ -659,9 +659,9 @@ recommend short-term decisions and define one primary focus for improvement.
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
-        {/* AI Insights Widget */}
+        {/* MayIA Compact Widget */}
         <div className="mb-8">
-          <AiInsightsWidget />
+          <MayiaCompactWidget />
         </div>
 
         {/* Hero Stats Cards with Glassmorphism */}

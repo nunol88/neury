@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   AlertTriangle, 
   UserX, 
@@ -16,18 +15,14 @@ import {
   Phone,
   Clock,
   Euro,
-  ChevronRight,
-  Sparkles,
   AlertCircle,
   CheckCircle2,
-  Minus,
   MapPin,
   Users,
   Route
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import mayiaAvatar from '@/assets/mayia-avatar.png';
 
 // Conflicts Section
 const ConflictsSection: React.FC<{ conflicts: Conflict[] }> = ({ conflicts }) => {
@@ -458,41 +453,21 @@ export const AiInsightsWidget: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header with gradient background */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 p-4 border border-primary/20">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
-        
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar className="h-10 w-10 ring-2 ring-primary/30 shadow-glow-primary">
-                <AvatarImage src={mayiaAvatar} alt="MayIA" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-semibold">MI</AvatarFallback>
-              </Avatar>
-              {/* Online indicator */}
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gradient-primary">MayIA</h2>
-              <p className="text-xs text-muted-foreground">Assistente Inteligente</p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              refetch();
-              refetchProximity();
-            }}
-            disabled={isFetching || proximityLoading}
-            className="bg-background/50 hover:bg-background/80 border-primary/20 hover:border-primary/40 transition-all"
-          >
-            <RefreshCw size={14} className={`mr-2 ${isFetching || proximityLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-        </div>
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => {
+            refetch();
+            refetchProximity();
+          }}
+          disabled={isFetching || proximityLoading}
+          className="bg-background/50 hover:bg-background/80 border-primary/20 hover:border-primary/40 transition-all"
+        >
+          <RefreshCw size={14} className={`mr-2 ${isFetching || proximityLoading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </div>
 
       {/* Cards Grid */}
