@@ -10,6 +10,7 @@ import AdminAgendamentos from "./pages/AdminAgendamentos";
 import NeuryAgendamentos from "./pages/NeuryAgendamentos";
 import ClientesAdmin from "./pages/ClientesAdmin";
 import Dashboard from "./pages/Dashboard";
+import Pagamentos from "./pages/Pagamentos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/pagamentos" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Pagamentos />
                 </ProtectedRoute>
               } 
             />

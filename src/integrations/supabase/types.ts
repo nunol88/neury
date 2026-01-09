@@ -21,8 +21,10 @@ export type Database = {
           created_at: string
           data_fim: string
           data_inicio: string
+          data_pagamento: string | null
           descricao: string | null
           id: string
+          pago: boolean
           status: Database["public"]["Enums"]["agendamento_status"]
           updated_at: string
         }
@@ -32,8 +34,10 @@ export type Database = {
           created_at?: string
           data_fim: string
           data_inicio: string
+          data_pagamento?: string | null
           descricao?: string | null
           id?: string
+          pago?: boolean
           status?: Database["public"]["Enums"]["agendamento_status"]
           updated_at?: string
         }
@@ -43,8 +47,10 @@ export type Database = {
           created_at?: string
           data_fim?: string
           data_inicio?: string
+          data_pagamento?: string | null
           descricao?: string | null
           id?: string
+          pago?: boolean
           status?: Database["public"]["Enums"]["agendamento_status"]
           updated_at?: string
         }
