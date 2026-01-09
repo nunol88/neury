@@ -1,221 +1,390 @@
 import React from 'react';
-import { useAiSuggestions, AiSuggestion } from '@/hooks/useAiSuggestions';
+import { useSmartInsights, Conflict, InactiveClient, WeekDayBreakdown } from '@/hooks/useAiSuggestions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { 
-  Sparkles, 
-  Calendar, 
-  Clock, 
-  User, 
-  AlertCircle, 
+  AlertTriangle, 
+  UserX, 
+  Calendar,
+  TrendingUp,
+  TrendingDown,
   RefreshCw,
-  Lightbulb,
-  TrendingUp
+  Phone,
+  Clock,
+  Euro,
+  ChevronRight,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Minus
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
-interface SuggestionCardProps {
-  suggestion: AiSuggestion;
-  onSchedule: (suggestion: AiSuggestion) => void;
-}
-
-const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onSchedule }) => {
-  const formattedDate = format(parseISO(suggestion.suggestedDate), "EEEE, d 'de' MMMM", { locale: pt });
-  const confidencePercent = Math.round(suggestion.confidence * 100);
-  
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30';
-    if (confidence >= 0.6) return 'bg-amber-500/20 text-amber-600 border-amber-500/30';
-    return 'bg-gray-500/20 text-gray-600 border-gray-500/30';
-  };
+// Conflicts Section
+const ConflictsSection: React.FC<{ conflicts: Conflict[] }> = ({ conflicts }) => {
+  if (conflicts.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 size={16} />
+        <span className="text-sm">Sem conflitos nos próximos 7 dias</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="group relative p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/50 to-violet-50/50 dark:from-indigo-950/30 dark:to-violet-950/30 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
-      {/* Confidence badge */}
-      <Badge 
-        variant="outline" 
-        className={`absolute top-3 right-3 text-xs ${getConfidenceColor(suggestion.confidence)}`}
-      >
-        {confidencePercent}% certeza
-      </Badge>
-
-      {/* Client name */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-1.5 rounded-lg bg-indigo-500/10">
-          <User size={14} className="text-indigo-600 dark:text-indigo-400" />
+    <div className="space-y-2">
+      {conflicts.map((conflict, idx) => (
+        <div 
+          key={idx}
+          className={`p-3 rounded-lg border ${
+            conflict.severity === 'high' 
+              ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800' 
+              : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle 
+              size={16} 
+              className={conflict.severity === 'high' ? 'text-red-500 mt-0.5' : 'text-amber-500 mt-0.5'} 
+            />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-foreground">
+                {conflict.type === 'overlap' ? 'Sobreposição' : 'Horário apertado'}
+              </p>
+              <p className="text-muted-foreground">
+                <span className="font-medium">{conflict.agendamento1.cliente}</span>
+                {' '}({conflict.agendamento1.horaInicio}-{conflict.agendamento1.horaFim})
+                {' '}↔{' '}
+                <span className="font-medium">{conflict.agendamento2.cliente}</span>
+                {' '}({conflict.agendamento2.horaInicio}-{conflict.agendamento2.horaFim})
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {format(parseISO(conflict.agendamento1.data), "EEEE, d 'de' MMM", { locale: pt })}
+                {conflict.gapMinutes !== undefined && ` • Apenas ${conflict.gapMinutes} min entre serviços`}
+              </p>
+            </div>
+          </div>
         </div>
-        <span className="font-semibold text-foreground">{suggestion.clientName}</span>
-      </div>
-
-      {/* Date and time */}
-      <div className="flex flex-wrap gap-3 mb-3 text-sm text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <Calendar size={14} className="text-violet-500" />
-          <span className="capitalize">{formattedDate}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Clock size={14} className="text-violet-500" />
-          <span>{suggestion.suggestedTime}</span>
-        </div>
-      </div>
-
-      {/* Reason */}
-      <p className="text-sm text-muted-foreground mb-4 italic">
-        "{suggestion.reason}"
-      </p>
-
-      {/* Action button */}
-      <Button 
-        size="sm" 
-        onClick={() => onSchedule(suggestion)}
-        className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md hover:shadow-lg transition-all"
-      >
-        <Calendar size={14} className="mr-2" />
-        Agendar
-      </Button>
+      ))}
     </div>
   );
 };
 
-export const AiInsightsWidget: React.FC = () => {
-  const { data: suggestions, isLoading, error, refetch, isFetching } = useAiSuggestions();
+// Inactive Clients Section
+const InactiveClientsSection: React.FC<{ clients: InactiveClient[] }> = ({ clients }) => {
+  if (clients.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 size={16} />
+        <span className="text-sm">Todos os clientes estão ativos</span>
+      </div>
+    );
+  }
 
-  const handleSchedule = (suggestion: AiSuggestion) => {
-    console.log('Agendar sugestão:', {
-      clientName: suggestion.clientName,
-      date: suggestion.suggestedDate,
-      time: suggestion.suggestedTime,
-      reason: suggestion.reason,
-    });
-    // TODO: Futuramente vai abrir o modal de agendamento
-  };
+  return (
+    <div className="space-y-2">
+      {clients.map((client, idx) => (
+        <div 
+          key={idx}
+          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full ${
+              client.priority === 'high' 
+                ? 'bg-red-100 dark:bg-red-900/30' 
+                : 'bg-amber-100 dark:bg-amber-900/30'
+            }`}>
+              <UserX size={14} className={
+                client.priority === 'high' ? 'text-red-600' : 'text-amber-600'
+              } />
+            </div>
+            <div>
+              <p className="font-medium text-sm">{client.nome}</p>
+              <p className="text-xs text-muted-foreground">
+                Há {client.diasSemAgendar} dias sem agendar
+              </p>
+            </div>
+          </div>
+          {client.telefone && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <a href={`tel:${client.telefone}`}>
+                <Phone size={14} />
+              </a>
+            </Button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Weekly Summary Section
+const WeeklySummarySection: React.FC<{ breakdown: WeekDayBreakdown[], total: { agendamentos: number; horas: number; receita: number; concluidos: number } }> = ({ breakdown, total }) => {
+  const maxHours = Math.max(...breakdown.map(d => d.horas), 1);
+  
+  return (
+    <div className="space-y-4">
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {breakdown.map((day, idx) => (
+          <div 
+            key={idx}
+            className={`text-center p-2 rounded-lg transition-colors ${
+              day.isPast 
+                ? 'bg-muted/30' 
+                : day.agendamentos > 0 
+                  ? 'bg-primary/10 border border-primary/20' 
+                  : 'bg-muted/50'
+            }`}
+          >
+            <p className="text-[10px] uppercase text-muted-foreground font-medium">
+              {day.dia.slice(0, 3)}
+            </p>
+            <p className={`text-lg font-bold ${day.agendamentos > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+              {day.agendamentos}
+            </p>
+            {day.horas > 0 && (
+              <p className="text-[10px] text-muted-foreground">{day.horas}h</p>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      {/* Weekly totals */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="text-center p-3 rounded-lg bg-muted/50">
+          <Calendar size={16} className="mx-auto mb-1 text-muted-foreground" />
+          <p className="text-xl font-bold">{total.agendamentos}</p>
+          <p className="text-xs text-muted-foreground">Agendamentos</p>
+        </div>
+        <div className="text-center p-3 rounded-lg bg-muted/50">
+          <Clock size={16} className="mx-auto mb-1 text-muted-foreground" />
+          <p className="text-xl font-bold">{total.horas}h</p>
+          <p className="text-xs text-muted-foreground">Horas</p>
+        </div>
+        <div className="text-center p-3 rounded-lg bg-muted/50">
+          <Euro size={16} className="mx-auto mb-1 text-muted-foreground" />
+          <p className="text-xl font-bold">{total.receita}€</p>
+          <p className="text-xs text-muted-foreground">Receita</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Revenue Forecast Section
+const RevenueForecastSection: React.FC<{ forecast: {
+  mesAtual: string;
+  receitaConfirmada: number;
+  receitaPendente: number;
+  previsaoTotal: number;
+  mesAnterior: number;
+  comparacao: number | null;
+  diasRestantes: number;
+  horasTrabalhadas: number;
+  horasPendentes: number;
+} }> = ({ forecast }) => {
+  const progressPercent = forecast.previsaoTotal > 0 
+    ? (forecast.receitaConfirmada / forecast.previsaoTotal) * 100 
+    : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Main forecast */}
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground capitalize">{forecast.mesAtual}</p>
+        <p className="text-3xl font-bold text-primary">{forecast.previsaoTotal.toFixed(0)}€</p>
+        <p className="text-xs text-muted-foreground">Previsão total</p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Confirmado: {forecast.receitaConfirmada.toFixed(0)}€</span>
+          <span>Pendente: {forecast.receitaPendente.toFixed(0)}€</span>
+        </div>
+        <Progress value={progressPercent} className="h-2" />
+      </div>
+
+      {/* Comparison with last month */}
+      {forecast.mesAnterior > 0 && forecast.comparacao !== null && (
+        <div className={`flex items-center justify-center gap-2 p-2 rounded-lg ${
+          forecast.comparacao >= 0 
+            ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600' 
+            : 'bg-red-50 dark:bg-red-950/30 text-red-600'
+        }`}>
+          {forecast.comparacao >= 0 ? (
+            <TrendingUp size={16} />
+          ) : (
+            <TrendingDown size={16} />
+          )}
+          <span className="text-sm font-medium">
+            {forecast.comparacao >= 0 ? '+' : ''}{forecast.comparacao}% vs mês anterior
+          </span>
+        </div>
+      )}
+
+      {/* Hours breakdown */}
+      <div className="grid grid-cols-2 gap-3 text-center">
+        <div className="p-2 rounded-lg bg-muted/50">
+          <p className="text-lg font-bold">{forecast.horasTrabalhadas}h</p>
+          <p className="text-xs text-muted-foreground">Trabalhadas</p>
+        </div>
+        <div className="p-2 rounded-lg bg-muted/50">
+          <p className="text-lg font-bold">{forecast.horasPendentes}h</p>
+          <p className="text-xs text-muted-foreground">Agendadas</p>
+        </div>
+      </div>
+
+      {forecast.diasRestantes > 0 && (
+        <p className="text-center text-xs text-muted-foreground">
+          {forecast.diasRestantes} dias restantes no mês
+        </p>
+      )}
+    </div>
+  );
+};
+
+// Main Widget Component
+export const AiInsightsWidget: React.FC = () => {
+  const { data: insights, isLoading, error, refetch, isFetching } = useSmartInsights();
 
   // Loading state
   if (isLoading) {
     return (
-      <Card className="border-indigo-200/50 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="text-indigo-500" size={20} />
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              IA Proativa
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="border-border/50">
+            <CardHeader className="pb-2">
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <Card className="border-red-200/50 dark:border-red-500/20 bg-gradient-to-br from-red-50/30 to-orange-50/30 dark:from-red-950/20 dark:to-orange-950/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+      <Card className="border-red-200/50 dark:border-red-800/50 bg-red-50/50 dark:bg-red-950/20">
+        <CardContent className="py-6">
+          <div className="flex items-center gap-3">
             <AlertCircle className="text-red-500" size={20} />
-            <span className="text-red-600 dark:text-red-400">Erro na IA Proativa</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            {error instanceof Error ? error.message : 'Erro ao carregar sugestões'}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw size={14} className="mr-2" />
-            Tentar novamente
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Empty state
-  if (!suggestions || suggestions.length === 0) {
-    return (
-      <Card className="border-indigo-200/50 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/20">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Sparkles className="text-indigo-500" size={20} />
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                IA Proativa
-              </span>
-            </CardTitle>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="h-8 w-8"
-            >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
+            <div className="flex-1">
+              <p className="font-medium text-red-600 dark:text-red-400">Erro ao carregar insights</p>
+              <p className="text-sm text-muted-foreground">
+                {error instanceof Error ? error.message : 'Erro desconhecido'}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw size={14} className="mr-2" />
+              Tentar novamente
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="p-3 rounded-full bg-emerald-500/10 mb-3">
-              <TrendingUp size={24} className="text-emerald-500" />
-            </div>
-            <p className="font-medium text-foreground mb-1">Tudo em dia!</p>
-            <p className="text-sm text-muted-foreground">
-              Todos os clientes regulares têm agendamentos nos próximos 7 dias.
-            </p>
-          </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Success state with suggestions
+  if (!insights) return null;
+
+  const hasConflicts = insights.conflicts.length > 0;
+  const hasInactiveClients = insights.inactiveClients.length > 0;
+
   return (
-    <Card className="border-indigo-200/50 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/20 dark:to-violet-950/20 shadow-lg shadow-indigo-500/5">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="text-indigo-500" size={20} />
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              IA Proativa
-            </span>
-            <Badge variant="secondary" className="ml-2 bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
-              {suggestions.length} {suggestions.length === 1 ? 'sugestão' : 'sugestões'}
-            </Badge>
-          </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-8 w-8"
-          >
-            <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
-          </Button>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="text-primary" size={20} />
+          <h2 className="text-lg font-semibold">Insights Inteligentes</h2>
         </div>
-        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-          <Lightbulb size={14} className="text-amber-500" />
-          Clientes regulares que podem precisar de agendamento
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {suggestions.map((suggestion, index) => (
-            <SuggestionCard 
-              key={`${suggestion.clientName}-${suggestion.suggestedDate}-${index}`}
-              suggestion={suggestion}
-              onSchedule={handleSchedule}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw size={14} className={`mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Conflicts Card */}
+        <Card className={`border-border/50 ${hasConflicts ? 'ring-2 ring-red-500/20' : ''}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle size={16} className={hasConflicts ? 'text-red-500' : 'text-muted-foreground'} />
+              Conflitos
+              {hasConflicts && (
+                <Badge variant="destructive" className="ml-auto text-xs">
+                  {insights.conflicts.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConflictsSection conflicts={insights.conflicts} />
+          </CardContent>
+        </Card>
+
+        {/* Inactive Clients Card */}
+        <Card className={`border-border/50 ${hasInactiveClients ? 'ring-2 ring-amber-500/20' : ''}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <UserX size={16} className={hasInactiveClients ? 'text-amber-500' : 'text-muted-foreground'} />
+              Clientes Inativos
+              {hasInactiveClients && (
+                <Badge variant="secondary" className="ml-auto text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  {insights.inactiveClients.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InactiveClientsSection clients={insights.inactiveClients} />
+          </CardContent>
+        </Card>
+
+        {/* Weekly Summary Card */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar size={16} className="text-muted-foreground" />
+              Esta Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WeeklySummarySection 
+              breakdown={insights.weeklySummary.breakdown} 
+              total={insights.weeklySummary.total}
             />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+
+        {/* Revenue Forecast Card */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp size={16} className="text-muted-foreground" />
+              Previsão de Faturação
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RevenueForecastSection forecast={insights.revenueForecast} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
