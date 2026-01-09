@@ -9,8 +9,16 @@ import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
 import {
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
-  CalendarDays, CalendarRange, Sun, Moon, Download
+  CalendarDays, CalendarRange, Sun, Moon, Download, Brain, Copy, Check
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
@@ -81,6 +89,9 @@ const Dashboard = () => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isScrolled, setIsScrolled] = useState(false);
+  const [aiContextText, setAiContextText] = useState('');
+  const [aiContextCopied, setAiContextCopied] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   // Handle scroll for sticky header
   React.useEffect(() => {
@@ -395,6 +406,95 @@ const Dashboard = () => {
     toast({ title: 'PDF exportado com sucesso' });
   };
 
+  // Generate AI context for Genspark
+  const generateAiContext = () => {
+    const periodText = getPeriodDisplay();
+    const avgRevenuePerHour = stats.totalHours > 0 ? (stats.totalRevenue / stats.totalHours) : 0;
+    
+    // Calculate workload intensity
+    let workloadIntensity = 'low';
+    if (stats.totalHours > 100) workloadIntensity = 'high';
+    else if (stats.totalHours > 50) workloadIntensity = 'medium';
+    
+    // Find highest/lowest efficiency clients
+    const clientEfficiency = stats.topClients.map(c => ({
+      name: c.name,
+      efficiency: c.count > 0 ? c.total / c.count : 0,
+      totalRevenue: c.total,
+      count: c.count
+    })).sort((a, b) => b.efficiency - a.efficiency);
+    
+    const highestEfficiencyClient = clientEfficiency[0];
+    const lowestEfficiencyClient = clientEfficiency[clientEfficiency.length - 1];
+    
+    // Detect patterns
+    const highEffortLowReturn = clientEfficiency.filter(c => c.count > 2 && c.efficiency < avgRevenuePerHour * 0.7);
+    const highEfficiencyPatterns = clientEfficiency.filter(c => c.efficiency > avgRevenuePerHour * 1.3);
+    
+    // Estimated profit (rough estimate: 60% margin)
+    const estimatedProfit = stats.totalRevenue * 0.6;
+    
+    const context = `--------------------------------
+SYSTEM CONTEXT:
+This document represents a factual operational snapshot of a small service business.
+All information below refers to a single time period and should be used as analytical input.
+
+BUSINESS CONTEXT:
+- Business type: On-site cleaning service business
+- Primary goal: Efficiency, profitability and workload balance
+
+TIMEFRAME:
+- Period: ${periodText}
+
+CORE METRICS:
+- Total working hours: ${stats.totalHours.toFixed(1)}h
+- Total revenue: €${stats.totalRevenue.toFixed(2)}
+- Estimated profit: €${estimatedProfit.toFixed(2)} (assuming 60% margin)
+- Average revenue per hour: €${avgRevenuePerHour.toFixed(2)}/h
+- Workload intensity: ${workloadIntensity}
+
+CLIENT PERFORMANCE:
+- Highest efficiency client (time × value): ${highestEfficiencyClient ? `${highestEfficiencyClient.name} (€${highestEfficiencyClient.efficiency.toFixed(2)}/service, ${highestEfficiencyClient.count} services)` : 'N/A'}
+- Lowest efficiency client: ${lowestEfficiencyClient && lowestEfficiencyClient !== highestEfficiencyClient ? `${lowestEfficiencyClient.name} (€${lowestEfficiencyClient.efficiency.toFixed(2)}/service, ${lowestEfficiencyClient.count} services)` : 'N/A'}
+- Clients generating friction or overload: ${highEffortLowReturn.length > 0 ? highEffortLowReturn.map(c => c.name).join(', ') : 'None detected'}
+- Client-related signals: ${stats.uniqueClients} active clients in period, ${stats.topClients.length} in top revenue ranking
+
+OPERATIONS:
+- Total services delivered: ${stats.concluidos} completed, ${stats.pendentes} pending
+- Most frequent service types: Cleaning services (primary business)
+- Long or inefficient travel events: Data not available
+- Operational incidents or delays: ${stats.pendentes > stats.concluidos ? 'High pending ratio detected' : 'Normal operations'}
+
+PATTERNS & SIGNALS:
+- High effort / low return patterns: ${highEffortLowReturn.length > 0 ? `${highEffortLowReturn.length} clients below average efficiency` : 'None detected'}
+- High efficiency patterns: ${highEfficiencyPatterns.length > 0 ? `${highEfficiencyPatterns.length} clients above average efficiency (${highEfficiencyPatterns.map(c => c.name).join(', ')})` : 'None detected'}
+- Constraints or risks detected: ${stats.completionRate < 70 ? 'Low completion rate - potential capacity or scheduling issues' : 'No major constraints detected'}
+
+HUMAN FACTORS:
+- Physical fatigue level: ${workloadIntensity === 'high' ? 'Elevated (high workload)' : workloadIntensity === 'medium' ? 'Moderate' : 'Normal'}
+- Mental load level: ${stats.pendentes > 10 ? 'Elevated (multiple pending tasks)' : 'Normal'}
+- Qualitative observations not captured by metrics: User input required
+
+ANALYSIS OBJECTIVE:
+Evaluate operational efficiency, identify waste,
+recommend short-term decisions and define one primary focus for improvement.
+--------------------------------`;
+
+    setAiContextText(context);
+    setAiDialogOpen(true);
+  };
+
+  const copyAiContext = async () => {
+    try {
+      await navigator.clipboard.writeText(aiContextText);
+      setAiContextCopied(true);
+      toast({ title: 'Contexto copiado para Genspark' });
+      setTimeout(() => setAiContextCopied(false), 2000);
+    } catch (err) {
+      toast({ title: 'Erro ao copiar', variant: 'destructive' });
+    }
+  };
+
   if (loadingAgendamentos || loadingClients) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -458,8 +558,57 @@ const Dashboard = () => {
               onClick={exportToPDF}
             >
               <Download size={16} className="mr-1" />
-              Exportar PDF
+              PDF
             </Button>
+            
+            <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={generateAiContext}
+                  className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/30 hover:border-purple-500/50"
+                >
+                  <Brain size={16} className="mr-1 text-purple-500" />
+                  <span className="hidden sm:inline">Exportar contexto para IA</span>
+                  <span className="sm:hidden">IA</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Brain size={20} className="text-purple-500" />
+                    Contexto para IA (Genspark)
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Reveja e edite o contexto antes de copiar para a Genspark.
+                  </p>
+                  <Textarea 
+                    value={aiContextText}
+                    onChange={(e) => setAiContextText(e.target.value)}
+                    className="min-h-[400px] font-mono text-xs"
+                  />
+                  <Button 
+                    onClick={copyAiContext} 
+                    className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  >
+                    {aiContextCopied ? (
+                      <>
+                        <Check size={16} className="mr-2" />
+                        Contexto copiado para Genspark
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={16} className="mr-2" />
+                        Copiar para clipboard
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           {/* Year Selector */}
