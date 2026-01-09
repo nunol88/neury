@@ -324,14 +324,22 @@ const Login = () => {
               <p className={`text-sm ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
                 Se tiver problemas de acesso, contacte o administrador:
               </p>
-              <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+              <a 
+                href="mailto:mayslimpo@gmail.com" 
+                className={`flex items-center gap-2 text-sm transition-colors ${theme === 'dark' ? 'text-foreground hover:text-primary' : 'text-white hover:text-white/80'}`}
+              >
                 <Mail size={14} />
-                <span>suporte@mayslimpo.pt</span>
-              </div>
-              <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+                <span>mayslimpo@gmail.com</span>
+              </a>
+              <a 
+                href="https://wa.me/351933474736" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={`flex items-center gap-2 text-sm transition-colors ${theme === 'dark' ? 'text-foreground hover:text-primary' : 'text-white hover:text-white/80'}`}
+              >
                 <Phone size={14} />
-                <span>+351 912 345 678</span>
-              </div>
+                <span>933 474 736 (WhatsApp)</span>
+              </a>
             </div>
           </div>
         </DialogContent>
