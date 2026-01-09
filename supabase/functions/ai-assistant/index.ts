@@ -36,10 +36,10 @@ serve(async (req) => {
       },
     });
 
-    // Verify user authentication using getClaims (more reliable than getUser)
-    const { data: claimsData, error: authError } = await supabaseAuth.auth.getClaims(token);
+    // Verify user authentication using getUser (relies on the auth header)
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
 
-    if (authError || !claimsData?.claims) {
+    if (authError || !user) {
       console.error("Auth verification failed:", authError?.message);
       return new Response(
         JSON.stringify({ error: "Sessão inválida. Por favor, faça login novamente." }),
@@ -47,7 +47,7 @@ serve(async (req) => {
       );
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
 
     // Check user role using service role client to bypass RLS
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
