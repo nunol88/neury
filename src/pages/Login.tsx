@@ -5,19 +5,30 @@ import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
+import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return { text: 'Bom dia', icon: 'morning' };
+  if (hour >= 12 && hour < 19) return { text: 'Boa tarde', icon: 'afternoon' };
+  return { text: 'Boa noite', icon: 'night' };
+};
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+  const [shake, setShake] = useState(false);
   const { theme, toggleTheme } = useTheme();
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
+  const greeting = getGreeting();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -30,6 +41,10 @@ const Login = () => {
     }
   }, [user, role, loading, navigate]);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    setCapsLockOn(e.getModifierState('CapsLock'));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -41,6 +56,9 @@ const Login = () => {
       const { error } = await signIn(email, password);
       
       if (error) {
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+        
         if (error.message.includes('Invalid login credentials')) {
           setError('Utilizador ou palavra-passe incorretos.');
         } else {
@@ -51,6 +69,8 @@ const Login = () => {
       
       toast.success('Sessão iniciada com sucesso!');
     } catch (err) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);
@@ -90,7 +110,7 @@ const Login = () => {
       )}
 
       {/* Glass card */}
-      <div className="relative w-full max-w-md animate-fade-in">
+      <div className={`relative w-full max-w-md ${shake ? 'animate-shake' : ''}`}>
         <div className={`absolute inset-0 backdrop-blur-xl rounded-3xl ${theme === 'dark' ? 'bg-card' : 'bg-white/10'}`} />
         <div className={`absolute inset-0 rounded-3xl ${theme === 'dark' ? 'bg-gradient-to-br from-card via-card to-card' : 'bg-gradient-to-br from-white/20 via-white/5 to-transparent'}`} />
         <div className={`absolute inset-[1px] rounded-3xl border ${theme === 'dark' ? 'border-border' : 'border-white/20'}`} />
@@ -98,14 +118,21 @@ const Login = () => {
         <div className="relative p-8 space-y-6">
           {/* Logo */}
           <div className="flex flex-col items-center space-y-4">
-            <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
+            <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl opacity-0 animate-fade-in ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
               <img src={logoMayslimpo} alt="MaysLimpo Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
-              <h1 className={`text-2xl font-bold tracking-tight ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>Agenda Neury</h1>
-              <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/60'}`}>
-                Introduza as suas credenciais para aceder
-              </p>
+              <h1 className={`text-2xl font-bold tracking-tight opacity-0 animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+                Agenda Neury
+              </h1>
+              <div className={`mt-2 flex items-center justify-center gap-2 opacity-0 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
+                {greeting.icon === 'night' ? (
+                  <Moon size={16} className="text-amber-300" />
+                ) : (
+                  <Sun size={16} className="text-amber-400" />
+                )}
+                <span className="text-sm font-medium">{greeting.text}! Bem-vindo de volta.</span>
+              </div>
             </div>
           </div>
 
@@ -118,7 +145,7 @@ const Login = () => {
               </div>
             )}
             
-            <div className="space-y-2">
+            <div className="space-y-2 opacity-0 animate-fade-in animation-delay-300">
               <Label htmlFor="username" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Utilizador</Label>
               <Input
                 id="username"
@@ -137,28 +164,52 @@ const Login = () => {
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 opacity-0 animate-fade-in animation-delay-400">
               <Label htmlFor="password" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Palavra-passe</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className={`h-12 rounded-xl backdrop-blur-sm ${
-                  theme === 'dark' 
-                    ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
-                    : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
-                }`}
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyDown}
+                  required
+                  disabled={isLoading}
+                  className={`h-12 rounded-xl backdrop-blur-sm pr-12 ${
+                    theme === 'dark' 
+                      ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
+                      : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
+                  }`}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
+                    theme === 'dark' 
+                      ? 'text-muted-foreground hover:text-foreground' 
+                      : 'text-white/50 hover:text-white/80'
+                  }`}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              
+              {/* Caps Lock indicator */}
+              {capsLockOn && (
+                <div className="flex items-center gap-1.5 text-amber-500 animate-fade-in">
+                  <AlertTriangle size={14} />
+                  <span className="text-xs font-medium">Caps Lock está ativo</span>
+                </div>
+              )}
             </div>
             
             <Button 
               type="submit" 
-              className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 ${
+              className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 opacity-0 animate-fade-in animation-delay-500 ${
                 theme === 'dark'
                   ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                   : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm hover:shadow-lg hover:shadow-white/10'
