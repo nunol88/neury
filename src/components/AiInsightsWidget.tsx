@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   AlertTriangle, 
   UserX, 
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import mayiaAvatar from '@/assets/mayia-avatar.png';
 
 // Conflicts Section
 const ConflictsSection: React.FC<{ conflicts: Conflict[] }> = ({ conflicts }) => {
@@ -317,7 +319,10 @@ export const AiInsightsWidget: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="text-primary" size={20} />
+          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+            <AvatarImage src={mayiaAvatar} alt="MayIA" />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">MI</AvatarFallback>
+          </Avatar>
           <h2 className="text-lg font-semibold">MayIA</h2>
         </div>
         <Button 
