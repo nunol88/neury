@@ -9,7 +9,7 @@ import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
 import {
   ArrowLeft, TrendingUp, Users, Calendar, Euro, 
   CheckCircle, Clock, BarChart3, Loader2, LogOut,
-  CalendarDays, CalendarRange, Sun, Moon
+  CalendarDays, CalendarRange, Sun, Moon, GitCompare
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,6 +27,7 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 import { ExportDropdown } from '@/components/ExportDropdown';
 import { MayiaCompactWidget } from '@/components/MayiaCompactWidget';
+import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
 import {
   BarChart,
   Bar,
@@ -94,6 +95,7 @@ const Dashboard = () => {
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3));
   const [selectedSemester, setSelectedSemester] = useState<number>(new Date().getMonth() < 6 ? 0 : 1);
+  const [showComparison, setShowComparison] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const MONTH_NAMES = [
@@ -688,8 +690,29 @@ recommend short-term decisions and define one primary focus for improvement.
                 {PERIOD_LABELS[period]}
               </button>
             ))}
+            
+            {/* Compare Button */}
+            <button
+              onClick={() => setShowComparison(!showComparison)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                showComparison
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
+              }`}
+            >
+              <GitCompare size={14} />
+              Comparar
+            </button>
           </div>
         </div>
+
+        {/* Period Comparison Widget */}
+        {showComparison && (
+          <PeriodComparisonWidget 
+            allTasks={allTasks} 
+            onClose={() => setShowComparison(false)} 
+          />
+        )}
 
         {/* Period Display */}
         <div className="mb-6 text-center">
