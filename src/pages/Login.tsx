@@ -5,9 +5,12 @@ import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+
+const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -24,11 +27,21 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [shake, setShake] = useState(false);
+  const [rememberUser, setRememberUser] = useState(false);
   const { theme, toggleTheme } = useTheme();
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
   const greeting = getGreeting();
+
+  // Load remembered user on mount
+  useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBER_USER_KEY);
+    if (remembered) {
+      setUsername(remembered);
+      setRememberUser(true);
+    }
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -65,6 +78,13 @@ const Login = () => {
           setError('Erro ao iniciar sessão. Tente novamente.');
         }
         return;
+      }
+      
+      // Save or remove remembered user based on checkbox
+      if (rememberUser) {
+        localStorage.setItem(REMEMBER_USER_KEY, username.trim());
+      } else {
+        localStorage.removeItem(REMEMBER_USER_KEY);
       }
       
       toast.success('Sessão iniciada com sucesso!');
@@ -205,6 +225,22 @@ const Login = () => {
                   <span className="text-xs font-medium">Caps Lock está ativo</span>
                 </div>
               )}
+            </div>
+            
+            {/* Remember user checkbox */}
+            <div className="flex items-center space-x-2 animate-fade-in animation-delay-400">
+              <Checkbox 
+                id="remember" 
+                checked={rememberUser}
+                onCheckedChange={(checked) => setRememberUser(checked === true)}
+                className={theme === 'dark' ? '' : 'border-white/40 data-[state=checked]:bg-white/20 data-[state=checked]:border-white/40'}
+              />
+              <label 
+                htmlFor="remember" 
+                className={`text-sm cursor-pointer select-none ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}
+              >
+                Lembrar utilizador
+              </label>
             </div>
             
             <Button 
