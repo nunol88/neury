@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSmartInsights, Conflict, InactiveClient, WeekDayBreakdown } from '@/hooks/useAiSuggestions';
+import { useSmartInsights, useProximitySuggestions, Conflict, InactiveClient, WeekDayBreakdown, ProximitySuggestion } from '@/hooks/useAiSuggestions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,9 @@ import {
   Sparkles,
   AlertCircle,
   CheckCircle2,
-  Minus
+  Minus,
+  MapPin,
+  Users
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -264,9 +266,82 @@ const RevenueForecastSection: React.FC<{ forecast: {
   );
 };
 
+// Proximity Suggestions Section
+const ProximitySuggestionsSection: React.FC<{ 
+  suggestions: ProximitySuggestion[];
+  isLoading: boolean;
+}> = ({ suggestions, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
+
+  if (suggestions.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <MapPin size={16} />
+        <span className="text-sm">Sem sugestões de agrupamento por proximidade</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {suggestions.map((suggestion, idx) => (
+        <div 
+          key={idx}
+          className={`p-3 rounded-lg border ${
+            suggestion.priority === 'high' 
+              ? 'bg-primary/5 border-primary/20' 
+              : 'bg-muted/50 border-border'
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <div className={`p-1.5 rounded-full ${
+              suggestion.priority === 'high' 
+                ? 'bg-primary/10' 
+                : 'bg-muted'
+            }`}>
+              <MapPin size={14} className={
+                suggestion.priority === 'high' ? 'text-primary' : 'text-muted-foreground'
+              } />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs">
+                  {suggestion.zona}
+                </Badge>
+                {suggestion.priority === 'high' && (
+                  <Badge className="text-xs bg-primary/10 text-primary hover:bg-primary/20">
+                    Muito próximos
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1 mt-2 text-sm font-medium">
+                <Users size={12} className="text-muted-foreground" />
+                <span className="text-foreground">
+                  {suggestion.clients.map(c => c.nome).join(' + ')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {suggestion.sugestao}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // Main Widget Component
 export const AiInsightsWidget: React.FC = () => {
   const { data: insights, isLoading, error, refetch, isFetching } = useSmartInsights();
+  const { data: proximityData, isLoading: proximityLoading, refetch: refetchProximity } = useProximitySuggestions();
 
   // Loading state
   if (isLoading) {
@@ -340,18 +415,21 @@ export const AiInsightsWidget: React.FC = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => refetch()}
-            disabled={isFetching}
+            onClick={() => {
+              refetch();
+              refetchProximity();
+            }}
+            disabled={isFetching || proximityLoading}
             className="bg-background/50 hover:bg-background/80 border-primary/20 hover:border-primary/40 transition-all"
           >
-            <RefreshCw size={14} className={`mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw size={14} className={`mr-2 ${isFetching || proximityLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
         </div>
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Conflicts Card */}
         <Card className={`border-border/50 ${hasConflicts ? 'ring-2 ring-red-500/20' : ''}`}>
           <CardHeader className="pb-2">
@@ -400,6 +478,27 @@ export const AiInsightsWidget: React.FC = () => {
             <WeeklySummarySection 
               breakdown={insights.weeklySummary.breakdown} 
               total={insights.weeklySummary.total}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Proximity Suggestions Card */}
+        <Card className={`border-border/50 ${(proximityData?.suggestions?.length ?? 0) > 0 ? 'ring-2 ring-primary/20' : ''}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MapPin size={16} className={(proximityData?.suggestions?.length ?? 0) > 0 ? 'text-primary' : 'text-muted-foreground'} />
+              Sugestões de Proximidade
+              {(proximityData?.suggestions?.length ?? 0) > 0 && (
+                <Badge variant="secondary" className="ml-auto text-xs bg-primary/10 text-primary">
+                  {proximityData?.suggestions?.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProximitySuggestionsSection 
+              suggestions={proximityData?.suggestions || []} 
+              isLoading={proximityLoading}
             />
           </CardContent>
         </Card>

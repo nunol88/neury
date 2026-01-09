@@ -539,6 +539,182 @@ REGRAS:
       );
     }
 
+    // ============ PROXIMITY SUGGESTIONS MODE ============
+    if (mode === "proximity_suggestions") {
+      console.log("Proximity suggestions mode activated");
+      
+      const today = new Date();
+      const next14Days = new Date(today);
+      next14Days.setDate(next14Days.getDate() + 14);
+
+      // Fetch clients with addresses and upcoming appointments
+      const [
+        { data: clients },
+        { data: upcomingAgendamentos }
+      ] = await Promise.all([
+        supabaseService.from("clients").select("*").not("morada", "is", null),
+        supabaseService.from("agendamentos").select("*")
+          .gte("data_inicio", today.toISOString())
+          .lte("data_inicio", next14Days.toISOString())
+          .eq("status", "agendado")
+          .order("data_inicio", { ascending: true })
+      ]);
+
+      // Build client addresses list for AI analysis
+      const clientsWithAddresses = (clients || [])
+        .filter(c => c.morada && c.morada.trim().length > 0)
+        .map(c => ({
+          nome: c.nome,
+          morada: c.morada,
+          telefone: c.telefone
+        }));
+
+      if (clientsWithAddresses.length < 2) {
+        return new Response(
+          JSON.stringify({
+            suggestions: [],
+            distanceAlerts: [],
+            message: "Não há clientes suficientes com morada para análise de proximidade"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check for same-day appointments with different zones
+      const distanceAlerts: any[] = [];
+      const appointmentsByDay: Record<string, any[]> = {};
+      
+      (upcomingAgendamentos || []).forEach(a => {
+        const day = a.data_inicio.split('T')[0];
+        if (!appointmentsByDay[day]) appointmentsByDay[day] = [];
+        
+        // Try to get address from description
+        let morada = "";
+        try {
+          if (a.descricao) {
+            const desc = JSON.parse(a.descricao);
+            morada = desc.address || desc.morada || "";
+          }
+        } catch {}
+        
+        // If no address in description, try to find from clients
+        if (!morada) {
+          const client = clientsWithAddresses.find(
+            c => c.nome.toLowerCase().trim() === a.cliente_nome.toLowerCase().trim()
+          );
+          if (client) morada = client.morada;
+        }
+        
+        appointmentsByDay[day].push({
+          id: a.id,
+          time: new Date(a.data_inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+          client: a.cliente_nome,
+          address: morada
+        });
+      });
+
+      // Build prompt for AI to analyze proximity
+      const clientsList = clientsWithAddresses
+        .map(c => `- ${c.nome}: ${c.morada}`)
+        .join('\n');
+
+      const prompt = `Analisa as moradas destes clientes em Lisboa e arredores e identifica grupos de clientes que moram na mesma zona/bairro.
+
+CLIENTES:
+${clientsList}
+
+REGRAS:
+1. Agrupa clientes que moram no mesmo bairro, freguesia ou zona de Lisboa (máximo 3-4 grupos)
+2. Considera que zonas próximas para transporte público são: mesmo bairro, mesma linha de metro, ou até 10-15 min de distância
+3. Para cada grupo, indica o nome da zona/bairro comum
+4. Apenas inclui grupos com 2+ clientes
+5. Prioridade "high" para clientes muito próximos (mesmo bairro), "medium" para zonas adjacentes
+
+Responde APENAS com JSON válido neste formato (sem markdown):
+{
+  "suggestions": [
+    {
+      "clients": [{"nome": "Nome1", "morada": "Morada1"}, {"nome": "Nome2", "morada": "Morada2"}],
+      "zona": "Nome da Zona",
+      "sugestao": "Frase curta explicando porque agendar juntos",
+      "priority": "high"
+    }
+  ]
+}`;
+
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "Limite de pedidos excedido. Tente novamente em alguns minutos." }),
+              { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          if (response.status === 402) {
+            return new Response(
+              JSON.stringify({ error: "Créditos insuficientes." }),
+              { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          throw new Error(`AI request failed: ${response.status}`);
+        }
+
+        const aiData = await response.json();
+        const aiContent = aiData.choices?.[0]?.message?.content || "{}";
+        
+        // Parse AI response - handle potential markdown wrapping
+        let cleanContent = aiContent.trim();
+        if (cleanContent.startsWith("```json")) {
+          cleanContent = cleanContent.slice(7);
+        }
+        if (cleanContent.startsWith("```")) {
+          cleanContent = cleanContent.slice(3);
+        }
+        if (cleanContent.endsWith("```")) {
+          cleanContent = cleanContent.slice(0, -3);
+        }
+        cleanContent = cleanContent.trim();
+
+        let aiSuggestions = { suggestions: [] };
+        try {
+          aiSuggestions = JSON.parse(cleanContent);
+        } catch (e) {
+          console.error("Failed to parse AI response:", e, cleanContent);
+        }
+
+        return new Response(
+          JSON.stringify({
+            suggestions: aiSuggestions.suggestions || [],
+            distanceAlerts,
+            generatedAt: new Date().toISOString()
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Proximity suggestions error:", error);
+        return new Response(
+          JSON.stringify({
+            suggestions: [],
+            distanceAlerts: [],
+            error: "Erro ao analisar proximidade"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // ============ PROACTIVE ANALYSIS MODE (Legacy - kept for compatibility) ============
     if (mode === "proactive_analysis") {
       // Redirect to smart_insights for backwards compatibility
