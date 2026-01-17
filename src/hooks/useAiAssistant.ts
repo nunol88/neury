@@ -141,6 +141,12 @@ export const useAiAssistant = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 402) {
+          throw new Error('⚠️ Créditos de IA esgotados. Adiciona créditos ao workspace Lovable em Configurações → Workspace → Utilização.');
+        }
+        if (response.status === 429) {
+          throw new Error('⚠️ Limite de pedidos excedido. Aguarda alguns segundos e tenta novamente.');
+        }
         throw new Error(errorData.error || `Erro ${response.status}`);
       }
 
