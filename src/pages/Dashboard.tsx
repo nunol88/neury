@@ -27,7 +27,6 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 import { ExportDropdown } from '@/components/ExportDropdown';
 
-import { MayiaCompactWidget } from '@/components/MayiaCompactWidget';
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
 import {
   BarChart,
@@ -723,10 +722,6 @@ recommend short-term decisions and define one primary focus for improvement.
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
-        {/* MayIA Compact Widget */}
-        <div className="mb-8">
-          <MayiaCompactWidget />
-        </div>
 
         {/* Hero Stats Cards with Glassmorphism */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

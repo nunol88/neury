@@ -36,7 +36,6 @@ const PROJECT_STRUCTURE = `
 ### Componentes Principais (src/components/)
 - ProtectedRoute.tsx - Proteção de rotas por role
 - ScheduleView.tsx - Vista principal de agenda
-- AiAssistant.tsx - Assistente IA integrado
 - CalendarModal.tsx - Modal de calendário
 - NavLink.tsx - Links de navegação
 
@@ -61,7 +60,6 @@ const PROJECT_STRUCTURE = `
 - useClients.ts - CRUD de clientes
 - usePayments.ts - Gestão de pagamentos
 - useClientStats.ts - Estatísticas de clientes
-- useAiAssistant.ts - Integração com IA
 - useTheme.ts - Gestão de tema
 - useMobile.tsx - Deteção de mobile
 - useCountUp.tsx - Animação de contagem
@@ -73,9 +71,6 @@ const PROJECT_STRUCTURE = `
 - monthConfig.ts - Configuração de meses
 - pdfHelpers.ts - Helpers para PDF
 - portugueseHolidays.ts - Feriados portugueses
-
-### Edge Functions (supabase/functions/)
-- ai-assistant/index.ts - Função de assistente IA
 
 ## Rotas da Aplicação
 
@@ -178,12 +173,7 @@ const FEATURES_DOC = `
 - Gráficos de desempenho
 - Resumo mensal
 
-### 6. Assistente IA
-- Chat integrado
-- Ajuda contextual
-- Sugestões rápidas
-
-### 7. PWA
+### 6. PWA
 - Instalável como app
 - Service worker para offline
 - Manifest configurado

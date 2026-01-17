@@ -63,7 +63,6 @@ const PROJECT_STRUCTURE = `
 ### Componentes Principais (src/components/)
 - ProtectedRoute.tsx - Proteção de rotas por role
 - ScheduleView.tsx - Vista principal de agenda
-- AiAssistant.tsx - Assistente IA integrado
 - CalendarModal.tsx - Modal de calendário
 - NavLink.tsx - Links de navegação
 
@@ -72,7 +71,6 @@ const PROJECT_STRUCTURE = `
 - useClients.ts - CRUD de clientes
 - usePayments.ts - Gestão de pagamentos
 - useClientStats.ts - Estatísticas de clientes
-- useAiAssistant.ts - Integração com IA
 - useTheme.ts - Gestão de tema
 `;
 
