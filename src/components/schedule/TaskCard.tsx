@@ -221,13 +221,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   <button
                     onClick={handleTogglePayment}
                     className={`relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
-                      task.pago ? 'ring-2 ring-primary/50' : ''
+                      task.pago ? 'ring-2 ring-violet-500/50' : ''
                     }`}
                   >
                     <div className={`flex items-center gap-1.5 font-bold text-sm px-2.5 py-1.5 border transition-all ${
                       task.pago 
-                        ? 'bg-gradient-to-r from-primary/30 to-primary/20 text-primary border-primary/50' 
-                        : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30 hover:from-primary/20 hover:to-primary/10 hover:text-primary hover:border-primary/30'
+                        ? 'bg-gradient-to-r from-violet-500/30 to-violet-400/20 text-violet-600 dark:text-violet-400 border-violet-500/50' 
+                        : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30 hover:from-violet-500/20 hover:to-violet-400/10 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-500/30'
                     }`}>
                       <Euro size={14} className={task.pago ? 'animate-pulse' : ''} />
                       <span>{task.price}</span>
@@ -244,7 +244,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <div className="relative overflow-hidden rounded-lg">
               <div className={`flex items-center gap-1 font-bold text-sm px-2.5 py-1 border ${
                 task.pago 
-                  ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30' 
+                  ? 'bg-gradient-to-r from-violet-500/20 to-violet-400/10 text-violet-600 dark:text-violet-400 border-violet-500/30' 
                   : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30'
               }`}>
                 <Euro size={12} />
