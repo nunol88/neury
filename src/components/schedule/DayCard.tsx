@@ -25,6 +25,7 @@ interface DayCardProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
+  onTogglePayment?: (id: string, pago: boolean) => void;
   animationDelay?: number;
 }
 
@@ -41,6 +42,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onEditTask,
   onDeleteTask,
   onToggleStatus,
+  onTogglePayment,
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -232,6 +234,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
                 onToggleStatus={onToggleStatus}
+                onTogglePayment={onTogglePayment}
                 animationDelay={index * 50}
               />
             ))}

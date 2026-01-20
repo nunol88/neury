@@ -54,7 +54,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus } = useAgendamentos();
+  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
   
   // Static month configuration matching useAgendamentos
@@ -143,7 +143,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     pricePerHour: '7',
     price: '28.00',
     notes: '',
-    completed: false
+    completed: false,
+    pago: false
   });
 
   const [fixedTask, setFixedTask] = useState({
@@ -156,7 +157,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     pricePerHour: '7',
     price: '21.00',
     notes: '',
-    completed: false
+    completed: false,
+    pago: false
   });
 
   const [biWeeklyTask, setBiWeeklyTask] = useState({
@@ -169,7 +171,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     pricePerHour: '7',
     price: '21.00',
     notes: '',
-    completed: false
+    completed: false,
+    pago: false
   });
 
   // Handle month change - scroll to top or to today
@@ -564,7 +567,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       pricePerHour: task.pricePerHour || '7',
       price: task.price || '',
       notes: task.notes || '',
-      completed: task.completed || false
+      completed: task.completed || false,
+      pago: task.pago || false
     });
     
     // Check for conflicts when opening edit modal
@@ -659,7 +663,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         }
       }
 
-      setNewTask({ ...newTask, client: '', phone: '', address: '', notes: '', completed: false });
+      setNewTask({ ...newTask, client: '', phone: '', address: '', notes: '', completed: false, pago: false });
       setSelectedClientId('');
       setSaveAsClient(false);
       setShowModal(false);
@@ -703,7 +707,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             pricePerHour: fixedTask.pricePerHour,
             price: fixedTask.price,
             notes: fixedTask.notes,
-            completed: fixedTask.completed
+            completed: fixedTask.completed,
+            pago: false
           };
           const result = await addTask(taskData);
           if (result) count++;
@@ -720,7 +725,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
 
       toast({ title: `${count} agendamentos criados em ${activeConfig.label}` });
-      setFixedTask({ ...fixedTask, client: '', phone: '', address: '', notes: '', completed: false });
+      setFixedTask({ ...fixedTask, client: '', phone: '', address: '', notes: '', completed: false, pago: false });
       setSelectedClientId('');
       setShowModal(false);
     } finally {
@@ -770,7 +775,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         pricePerHour: biWeeklyTask.pricePerHour,
         price: biWeeklyTask.price,
         notes: biWeeklyTask.notes,
-        completed: biWeeklyTask.completed
+        completed: biWeeklyTask.completed,
+        pago: false
       });
       if (firstResult) addedCount++;
 
@@ -787,7 +793,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           pricePerHour: biWeeklyTask.pricePerHour,
           price: biWeeklyTask.price,
           notes: biWeeklyTask.notes,
-          completed: biWeeklyTask.completed
+          completed: biWeeklyTask.completed,
+          pago: false
         });
         if (secondResult) addedCount++;
       }
@@ -796,7 +803,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         title: `${addedCount} agendamentos criados`,
         description: 'Verifique as abas dos meses seguintes se necessário'
       });
-      setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', address: '', notes: '', completed: false });
+      setBiWeeklyTask({ ...biWeeklyTask, client: '', phone: '', address: '', notes: '', completed: false, pago: false });
       setSelectedClientId('');
       setShowModal(false);
     } finally {
@@ -900,7 +907,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           pricePerHour: task.pricePerHour,
           price: task.price,
           notes: task.notes,
-          completed: false
+          completed: false,
+          pago: false
         });
 
         if (result) {
@@ -1163,6 +1171,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onEditTask={openEditModal}
               onDeleteTask={handleDelete}
               onToggleStatus={handleToggleStatus}
+              onTogglePayment={togglePaymentStatus}
             />
           );
         })}
