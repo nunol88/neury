@@ -213,51 +213,51 @@ const TaskCard: React.FC<TaskCardProps> = ({
       {/* Footer: Price + Actions */}
       <div className="flex justify-between items-center border-t pt-2 border-dashed border-border/50 mt-1 relative z-10">
         <div className="flex items-center gap-2">
-          {/* Price badge with shimmer effect */}
-          <div className="relative overflow-hidden rounded-lg">
-            <div className={`flex items-center gap-1 font-bold text-sm px-2.5 py-1 border ${
-              task.pago 
-                ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30' 
-                : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30'
-            }`}>
-              <Euro size={12} />
-              {task.price}
-              {task.pago && <Check size={10} className="ml-0.5" />}
-            </div>
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          </div>
-          
-          {/* Hours indicator */}
-          <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-medium">
-            {hours.toFixed(1)}h
-          </span>
-
-          {/* Payment toggle button */}
-          {isAdmin && onTogglePayment && (
+          {/* Price badge - clickable for admin to toggle payment */}
+          {isAdmin && onTogglePayment ? (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleTogglePayment}
-                    className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium transition-all duration-200 hover:scale-105 ${
-                      task.pago
-                        ? 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
-                        : 'bg-muted text-muted-foreground border border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/30'
+                    className={`relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
+                      task.pago ? 'ring-2 ring-primary/50' : ''
                     }`}
                   >
-                    <Banknote size={10} />
-                    <span className="hidden sm:inline">{task.pago ? 'Pago' : 'Pagar'}</span>
+                    <div className={`flex items-center gap-1.5 font-bold text-sm px-2.5 py-1.5 border transition-all ${
+                      task.pago 
+                        ? 'bg-gradient-to-r from-primary/30 to-primary/20 text-primary border-primary/50' 
+                        : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30 hover:from-primary/20 hover:to-primary/10 hover:text-primary hover:border-primary/30'
+                    }`}>
+                      <Euro size={14} className={task.pago ? 'animate-pulse' : ''} />
+                      <span>{task.price}</span>
+                      {task.pago && <Check size={12} className="ml-0.5" />}
+                    </div>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  {task.pago ? 'Marcar como não pago' : 'Marcar como pago'}
+                <TooltipContent side="top" className="text-xs font-medium">
+                  {task.pago ? '✓ Pago - Clique para desmarcar' : 'Clique para marcar como PAGO'}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          ) : (
+            <div className="relative overflow-hidden rounded-lg">
+              <div className={`flex items-center gap-1 font-bold text-sm px-2.5 py-1 border ${
+                task.pago 
+                  ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30' 
+                  : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30'
+              }`}>
+                <Euro size={12} />
+                {task.price}
+                {task.pago && <Check size={10} className="ml-0.5" />}
+              </div>
+            </div>
           )}
           
-          {/* Notes indicator with tooltip */}
+          {/* Hours indicator */}
+          <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-medium">
+            {hours.toFixed(1)}h
+          </span>
           {task.notes && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
