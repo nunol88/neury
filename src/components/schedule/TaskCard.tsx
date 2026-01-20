@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User, Banknote } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -12,6 +12,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
+  onTogglePayment?: (id: string, pago: boolean) => void;
   animationDelay?: number;
 }
 
@@ -23,6 +24,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
   onToggleStatus,
+  onTogglePayment,
   animationDelay = 0,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
@@ -42,6 +44,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
       setTimeout(() => setShowConfetti(false), 800);
     }
     onToggleStatus(task.id, task.completed, userRole);
+  };
+
+  const handleTogglePayment = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onTogglePayment) {
+      onTogglePayment(task.id, task.pago);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -206,9 +215,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <div className="flex items-center gap-2">
           {/* Price badge with shimmer effect */}
           <div className="relative overflow-hidden rounded-lg">
-            <div className="flex items-center gap-1 bg-gradient-to-r from-success/20 to-success/10 text-success font-bold text-sm px-2.5 py-1 border border-success/30">
+            <div className={`flex items-center gap-1 font-bold text-sm px-2.5 py-1 border ${
+              task.pago 
+                ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30' 
+                : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30'
+            }`}>
               <Euro size={12} />
               {task.price}
+              {task.pago && <Check size={10} className="ml-0.5" />}
             </div>
             {/* Shimmer effect */}
             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -218,6 +232,30 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-medium">
             {hours.toFixed(1)}h
           </span>
+
+          {/* Payment toggle button */}
+          {isAdmin && onTogglePayment && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleTogglePayment}
+                    className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium transition-all duration-200 hover:scale-105 ${
+                      task.pago
+                        ? 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
+                        : 'bg-muted text-muted-foreground border border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/30'
+                    }`}
+                  >
+                    <Banknote size={10} />
+                    <span className="hidden sm:inline">{task.pago ? 'Pago' : 'Pagar'}</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {task.pago ? 'Marcar como não pago' : 'Marcar como pago'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           
           {/* Notes indicator with tooltip */}
           {task.notes && (

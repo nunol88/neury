@@ -29,6 +29,8 @@ export interface Task {
   notes: string;
   completed: boolean;
   completedByRole?: string | null;
+  pago: boolean;
+  dataPagamento?: string | null;
 }
 
 export interface AllTasks {
@@ -144,7 +146,9 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
     price: parsedData.price || '0',
     notes: parsedData.notes || '',
     completed: row.status === 'concluido',
-    completedByRole: (row as any).completed_by_role || null
+    completedByRole: row.completed_by_role || null,
+    pago: row.pago || false,
+    dataPagamento: row.data_pagamento || null
   };
 };
 
@@ -438,6 +442,49 @@ export const useAgendamentos = () => {
     return await updateTask(id, taskWithoutId);
   };
 
+  const togglePaymentStatus = async (id: string, currentlyPago: boolean): Promise<boolean> => {
+    // Store original state for potential rollback
+    const originalTasks = { ...allTasks };
+    const now = new Date().toISOString();
+    
+    // Optimistically update state
+    setAllTasks(prev => {
+      const newState = { ...prev };
+      (Object.keys(newState) as (keyof AllTasks)[]).forEach(key => {
+        newState[key] = prev[key].map(t => t.id === id ? { 
+          ...t, 
+          pago: !currentlyPago,
+          dataPagamento: currentlyPago ? null : now
+        } : t);
+      });
+      return newState;
+    });
+
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({ 
+          pago: !currentlyPago,
+          data_pagamento: currentlyPago ? null : now
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return true;
+    } catch (error: any) {
+      console.error('Error toggling payment status:', error);
+      // Revert optimistic update
+      setAllTasks(originalTasks);
+      toast({
+        title: 'Erro ao alterar pagamento',
+        description: error.message,
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
   return {
     allTasks,
     loading,
@@ -445,6 +492,7 @@ export const useAgendamentos = () => {
     updateTask,
     deleteTask,
     toggleTaskStatus,
+    togglePaymentStatus,
     moveTask,
     refetch: fetchAgendamentos
   };
