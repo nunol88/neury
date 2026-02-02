@@ -30,6 +30,7 @@ import {
   FloatingActionMenu,
   ConflictAlert,
   detectConflicts,
+  DeleteMonthDialog,
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
@@ -123,6 +124,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   // State for copy/paste functionality
   const [copiedTask, setCopiedTask] = useState<Task | null>(null);
   const [showPasteDialog, setShowPasteDialog] = useState(false);
+
+  // State for delete month confirmation dialog
+  const [showDeleteMonthDialog, setShowDeleteMonthDialog] = useState(false);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -1002,19 +1006,20 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     return monthKeys[currentIndex - 1];
   };
 
-  // Delete all tasks from current month
-  const handleDeleteMonth = async () => {
+  // Open delete month confirmation dialog
+  const handleDeleteMonth = () => {
     const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
     if (monthTasks.length === 0) {
       toast({ title: 'Mês vazio', description: 'Não há agendamentos para eliminar.' });
       return;
     }
+    setShowDeleteMonthDialog(true);
+  };
 
-    const confirmed = window.confirm(
-      `Tem certeza que deseja eliminar TODOS os ${monthTasks.length} agendamentos de ${activeConfig.label}?\n\nEsta ação pode ser desfeita com o botão Desfazer.`
-    );
-    
-    if (!confirmed) return;
+  // Confirm delete all tasks from current month
+  const confirmDeleteMonth = async () => {
+    setShowDeleteMonthDialog(false);
+    const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
 
     setSaving(true);
     try {
@@ -2095,6 +2100,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         currentMonthLabel={activeConfig?.label || ''}
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
+      />
+
+      {/* Delete Month Confirmation Dialog */}
+      <DeleteMonthDialog
+        open={showDeleteMonthDialog}
+        onClose={() => setShowDeleteMonthDialog(false)}
+        onConfirm={confirmDeleteMonth}
+        monthLabel={activeConfig?.label || ''}
+        taskCount={(allTasks[activeMonth as keyof AllTasks] || []).length}
       />
 
       {/* Paste Date Picker Dialog */}
