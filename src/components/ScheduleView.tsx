@@ -646,7 +646,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           telefone: newTask.phone,
           morada: newTask.address,
           preco_hora: newTask.pricePerHour,
-          notas: ''
+          notas: '',
+          recibo_verde: false
         });
       }
 
