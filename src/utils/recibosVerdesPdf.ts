@@ -16,10 +16,11 @@ export const generateRecibosVerdesPdf = async (
 ) => {
   const doc = new jsPDF();
   const monthName = MONTHS_PT[month];
+  const pdfTitle = 'Gestão Fiscal';
   const subtitle = `${monthName} ${year}`;
 
   // Add professional header
-  await addProfessionalHeader(doc, 'Recibos Verdes', subtitle);
+  await addProfessionalHeader(doc, pdfTitle, subtitle);
 
   let yPos = getContentStartY();
 
@@ -142,5 +143,5 @@ export const generateRecibosVerdesPdf = async (
   await addProfessionalFooter(doc, yPos + 15);
 
   // Save the PDF
-  doc.save(`RecibosVerdes_${monthName}_${year}.pdf`);
+  doc.save(`GestaoFiscal_${monthName}_${year}.pdf`);
 };
