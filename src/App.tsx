@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
 import Login from "./pages/Login";
 import AdminAgendamentos from "./pages/AdminAgendamentos";
 import NeuryAgendamentos from "./pages/NeuryAgendamentos";
@@ -28,7 +29,9 @@ const App = () => (
               path="/admin/agendamentos" 
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminAgendamentos />
+                  <AppLayout>
+                    <AdminAgendamentos />
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -36,7 +39,9 @@ const App = () => (
               path="/neury/agendamentos" 
               element={
                 <ProtectedRoute allowedRoles={['neury']}>
-                  <NeuryAgendamentos />
+                  <AppLayout>
+                    <NeuryAgendamentos />
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -44,7 +49,9 @@ const App = () => (
               path="/admin/clientes" 
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <ClientesAdmin />
+                  <AppLayout>
+                    <ClientesAdmin />
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -52,7 +59,9 @@ const App = () => (
               path="/admin/dashboard" 
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <Dashboard />
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -60,7 +69,9 @@ const App = () => (
               path="/admin/pagamentos" 
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <Pagamentos />
+                  <AppLayout>
+                    <Pagamentos />
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />

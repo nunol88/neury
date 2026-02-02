@@ -541,49 +541,13 @@ recommend short-term decisions and define one primary focus for improvement.
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sticky Header with Blur */}
-      <div className={`sticky-header border-b border-border/50 px-4 py-2 ${isScrolled ? 'scrolled' : ''}`}>
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img 
-              src={logoMayslimpo} 
-              alt="MaysLimpo Logo" 
-              className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
-            />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="capitalize font-medium">{username}</span>
-              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                {role === 'admin' ? 'Administrador' : 'Neury'}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2">
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut size={16} className="mr-1" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </div>
-
+    <div className="bg-background">
       <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Back button and title */}
+        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/admin/agendamentos')}
-            >
-              <ArrowLeft size={16} className="mr-1" />
-              Voltar
-            </Button>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <BarChart3 size={24} />
+              <BarChart3 size={24} className="text-primary" />
               Dashboard
             </h1>
             <ExportDropdown 

@@ -14,3 +14,4 @@ export { default as FloatingAddButton } from './FloatingAddButton';
 export { ConflictAlert, detectConflicts } from './ConflictAlert';
 export type { Conflict } from './ConflictAlert';
 export { default as DeleteMonthDialog } from './DeleteMonthDialog';
+export { default as ScheduleActionsMenu } from './ScheduleActionsMenu';

@@ -19,7 +19,6 @@ import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '
 // Import refactored components
 import {
   DayCard,
-  ScheduleHeader,
   MonthTabs,
   MonthSummaryBar,
   FloatingTotal,
@@ -31,6 +30,7 @@ import {
   ConflictAlert,
   detectConflicts,
   DeleteMonthDialog,
+  ScheduleActionsMenu,
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
@@ -1489,16 +1489,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const previousMonthLabel = previousMonth ? monthsConfig[previousMonth]?.label : null;
 
   return (
-    <div className={`min-h-screen font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
-      {/* User Info Bar */}
-      <ScheduleHeader
-        username={username}
-        roleLabel={roleLabel}
-        isAdmin={isAdmin}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onSignOut={handleSignOut}
-      />
+    <div className={`font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
 
       {/* Month Navigation Tabs */}
       <MonthTabs
@@ -1527,6 +1518,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               <Download size={20} />
               <span className="hidden sm:inline">Exportar PDF</span>
             </button>
+            
+            {/* Actions menu (copy month, delete month) */}
+            {isAdmin && (
+              <div className="bg-white/20 rounded-lg">
+                <ScheduleActionsMenu
+                  canCopyFromPrevious={!!previousMonth}
+                  copyingFromPrevious={copyingFromPrevious}
+                  previousMonthLabel={previousMonthLabel}
+                  currentMonthLabel={activeConfig?.label || ''}
+                  hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
+                  onCopyFromPrevious={handleCopyFromPreviousMonth}
+                  onDeleteMonth={handleDeleteMonth}
+                />
+              </div>
+            )}
           </div>
         </div>
       </header>
