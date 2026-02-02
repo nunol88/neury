@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2 } from 'lucide-react';
+import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2, Trash2 } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   themeGradient: string;
@@ -11,6 +11,8 @@ interface FloatingActionMenuProps {
   canUndo: boolean;
   undoMessage: string | null;
   undoSaving: boolean;
+  currentMonthLabel: string;
+  hasTasksInMonth: boolean;
   onSelectSingle: () => void;
   onSelectFixed: () => void;
   onSelectBiWeekly: () => void;
@@ -18,6 +20,7 @@ interface FloatingActionMenuProps {
   onGoToToday: () => void;
   onCopyFromPrevious: () => void;
   onUndo: () => void;
+  onDeleteMonth: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
@@ -30,6 +33,8 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   canUndo,
   undoMessage,
   undoSaving,
+  currentMonthLabel,
+  hasTasksInMonth,
   onSelectSingle,
   onSelectFixed,
   onSelectBiWeekly,
@@ -37,6 +42,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   onGoToToday,
   onCopyFromPrevious,
   onUndo,
+  onDeleteMonth,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -122,6 +128,22 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                   </div>
                   <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
                     {undoMessage || 'Desfazer'}
+                  </span>
+                </button>
+              )}
+
+              {/* Delete Month - Only show if there are tasks */}
+              {hasTasksInMonth && (
+                <button
+                  onClick={() => handleOptionClick(onDeleteMonth)}
+                  className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in border-2 border-destructive/20 hover:border-destructive/50"
+                  style={{ animationDelay: '175ms' }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <Trash2 size={20} className="text-destructive" />
+                  </div>
+                  <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
+                    Apagar {currentMonthLabel?.split(' ')[0] || 'Mês'}
                   </span>
                 </button>
               )}

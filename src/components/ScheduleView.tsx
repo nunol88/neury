@@ -1002,6 +1002,60 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     return monthKeys[currentIndex - 1];
   };
 
+  // Delete all tasks from current month
+  const handleDeleteMonth = async () => {
+    const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+    if (monthTasks.length === 0) {
+      toast({ title: 'Mês vazio', description: 'Não há agendamentos para eliminar.' });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja eliminar TODOS os ${monthTasks.length} agendamentos de ${activeConfig.label}?\n\nEsta ação pode ser desfeita com o botão Desfazer.`
+    );
+    
+    if (!confirmed) return;
+
+    setSaving(true);
+    try {
+      const deletedTasks: Task[] = [];
+      const deletedIds: string[] = [];
+      
+      for (const task of monthTasks) {
+        const deleted = await deleteTask(task.id);
+        if (deleted) {
+          deletedTasks.push(deleted);
+          deletedIds.push(task.id);
+        }
+      }
+
+      if (deletedIds.length > 0) {
+        // Store deleted tasks for undo
+        addAction({
+          type: 'bulk_create', // We'll use bulk_create type but with stored tasks for restore
+          description: `${deletedIds.length} eliminados de ${activeConfig.label}`,
+          undoData: { 
+            taskIds: deletedIds,
+            previousState: deletedTasks // Store deleted tasks for potential restore
+          }
+        });
+        
+        toast({
+          title: `${deletedIds.length} agendamentos eliminados`,
+          description: `Todos os agendamentos de ${activeConfig.label} foram removidos.`,
+        });
+      }
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao eliminar', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCopyFromPreviousMonth = async () => {
     const previousMonth = getPreviousMonth();
     if (!previousMonth) {
@@ -1043,42 +1097,152 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     try {
       const newTaskIds: string[] = [];
 
+      // Group tasks by client to detect recurrence patterns
+      const tasksByClient: { [client: string]: Task[] } = {};
       for (const task of tasksToClone) {
-        const oldDate = new Date(task.date);
-        const dayOfMonth = oldDate.getUTCDate();
-        const oldDayOfWeek = oldDate.getUTCDay();
-        
-        const matchingDays = currentMonthDays.filter(d => 
-          d.dateObject.getDay() === oldDayOfWeek
-        );
-        
-        let newDateStr = '';
-        if (matchingDays.length > 0) {
-          const weekOfMonth = Math.ceil(dayOfMonth / 7);
-          const targetDay = matchingDays[Math.min(weekOfMonth - 1, matchingDays.length - 1)];
-          newDateStr = targetDay.dateString;
-        } else {
-          newDateStr = currentMonthDays[0]?.dateString || '';
+        const clientKey = task.client.toLowerCase();
+        if (!tasksByClient[clientKey]) {
+          tasksByClient[clientKey] = [];
         }
+        tasksByClient[clientKey].push(task);
+      }
 
-        if (!newDateStr) continue;
+      // Previous month config for calculations
+      const prevMonthConfig = monthsConfig[previousMonth];
+      const prevMonthDays = prevMonthConfig ? generateDaysForMonth(prevMonthConfig) : [];
 
-        const result = await addTask({
-          date: newDateStr,
-          client: task.client,
-          phone: task.phone,
-          startTime: task.startTime,
-          endTime: task.endTime,
-          address: task.address,
-          pricePerHour: task.pricePerHour,
-          price: task.price,
-          notes: task.notes,
-          completed: false,
-          pago: false
-        });
+      for (const clientKey in tasksByClient) {
+        const clientTasks = tasksByClient[clientKey].sort((a, b) => 
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
 
-        if (result) {
-          newTaskIds.push(result.id);
+        // Detect recurrence pattern
+        const pattern = detectRecurrencePattern(clientTasks, prevMonthDays);
+
+        if (pattern.type === 'weekly') {
+          // Weekly: copy to all weeks on the same day of week
+          const dayOfWeek = pattern.dayOfWeek!;
+          const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
+          
+          for (const targetDay of matchingDays) {
+            const templateTask = clientTasks[0];
+            const result = await addTask({
+              date: targetDay.dateString,
+              client: templateTask.client,
+              phone: templateTask.phone,
+              startTime: templateTask.startTime,
+              endTime: templateTask.endTime,
+              address: templateTask.address,
+              pricePerHour: templateTask.pricePerHour,
+              price: templateTask.price,
+              notes: templateTask.notes,
+              completed: false,
+              pago: false
+            });
+            if (result) newTaskIds.push(result.id);
+          }
+        } else if (pattern.type === 'biweekly') {
+          // Bi-weekly: copy to alternating weeks (1st, 3rd OR 2nd, 4th)
+          const dayOfWeek = pattern.dayOfWeek!;
+          const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
+          
+          // Determine which weeks (odd: 1,3 or even: 2,4)
+          const startWeek = pattern.startWeekParity || 'odd';
+          const targetWeekIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
+          
+          for (let i = 0; i < matchingDays.length; i++) {
+            if (targetWeekIndices.includes(i)) {
+              const targetDay = matchingDays[i];
+              const templateTask = clientTasks[0];
+              const result = await addTask({
+                date: targetDay.dateString,
+                client: templateTask.client,
+                phone: templateTask.phone,
+                startTime: templateTask.startTime,
+                endTime: templateTask.endTime,
+                address: templateTask.address,
+                pricePerHour: templateTask.pricePerHour,
+                price: templateTask.price,
+                notes: templateTask.notes,
+                completed: false,
+                pago: false
+              });
+              if (result) newTaskIds.push(result.id);
+            }
+          }
+        } else if (pattern.type === 'monthly') {
+          // Monthly: one per month, try same day of month or same week position
+          const templateTask = clientTasks[0];
+          const oldDate = new Date(templateTask.date);
+          const dayOfMonth = oldDate.getUTCDate();
+          const dayOfWeek = oldDate.getUTCDay();
+          
+          // Try to find same day of month
+          let targetDay = currentMonthDays.find(d => d.dateObject.getDate() === dayOfMonth);
+          
+          // If not found, find same week position (e.g., 2nd Tuesday)
+          if (!targetDay) {
+            const weekOfMonth = Math.ceil(dayOfMonth / 7);
+            const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
+            targetDay = matchingDays[Math.min(weekOfMonth - 1, matchingDays.length - 1)];
+          }
+          
+          if (targetDay) {
+            const result = await addTask({
+              date: targetDay.dateString,
+              client: templateTask.client,
+              phone: templateTask.phone,
+              startTime: templateTask.startTime,
+              endTime: templateTask.endTime,
+              address: templateTask.address,
+              pricePerHour: templateTask.pricePerHour,
+              price: templateTask.price,
+              notes: templateTask.notes,
+              completed: false,
+              pago: false
+            });
+            if (result) newTaskIds.push(result.id);
+          }
+        } else {
+          // Single/unique tasks - copy maintaining relative week position
+          for (const task of clientTasks) {
+            const oldDate = new Date(task.date);
+            const dayOfMonth = oldDate.getUTCDate();
+            const oldDayOfWeek = oldDate.getUTCDay();
+            
+            const matchingDays = currentMonthDays.filter(d => 
+              d.dateObject.getDay() === oldDayOfWeek
+            );
+            
+            let newDateStr = '';
+            if (matchingDays.length > 0) {
+              const weekOfMonth = Math.ceil(dayOfMonth / 7);
+              const targetDay = matchingDays[Math.min(weekOfMonth - 1, matchingDays.length - 1)];
+              newDateStr = targetDay.dateString;
+            } else {
+              newDateStr = currentMonthDays[0]?.dateString || '';
+            }
+
+            if (!newDateStr) continue;
+
+            const result = await addTask({
+              date: newDateStr,
+              client: task.client,
+              phone: task.phone,
+              startTime: task.startTime,
+              endTime: task.endTime,
+              address: task.address,
+              pricePerHour: task.pricePerHour,
+              price: task.price,
+              notes: task.notes,
+              completed: false,
+              pago: false
+            });
+
+            if (result) {
+              newTaskIds.push(result.id);
+            }
+          }
         }
       }
 
@@ -1095,7 +1259,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         setShowUndoBar(true);
         toast({
           title: `${newTaskIds.length} agendamentos copiados`,
-          description: `Dados de ${monthsConfig[previousMonth]?.label || previousMonth} copiados para ${activeConfig.label}`,
+          description: `Padrões de recorrência mantidos de ${monthsConfig[previousMonth]?.label || previousMonth}`,
         });
         
         setTimeout(() => {
@@ -1118,6 +1282,68 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     } finally {
       setCopyingFromPrevious(false);
     }
+  };
+
+  // Helper function to detect recurrence pattern from a client's tasks
+  const detectRecurrencePattern = (
+    tasks: Task[], 
+    monthDays: { dateObject: Date; dateString: string; dayName: string; formatted: string; monthKey: string }[]
+  ): { type: 'weekly' | 'biweekly' | 'monthly' | 'single'; dayOfWeek?: number; startWeekParity?: 'odd' | 'even' } => {
+    if (tasks.length === 0) return { type: 'single' };
+    if (tasks.length === 1) return { type: 'monthly' }; // Single occurrence = monthly
+    
+    // Get all dates
+    const dates = tasks.map(t => new Date(t.date));
+    
+    // Check if all on same day of week
+    const daysOfWeek = dates.map(d => d.getUTCDay());
+    const allSameDayOfWeek = daysOfWeek.every(dow => dow === daysOfWeek[0]);
+    
+    if (!allSameDayOfWeek) {
+      return { type: 'single' }; // Mixed days = treat as single occurrences
+    }
+    
+    const dayOfWeek = daysOfWeek[0];
+    
+    // Count occurrences in the month
+    const possibleWeeksInMonth = monthDays.filter(d => d.dateObject.getDay() === dayOfWeek).length;
+    
+    if (tasks.length >= possibleWeeksInMonth - 1) {
+      // Weekly: tasks appear in most/all weeks
+      return { type: 'weekly', dayOfWeek };
+    } else if (tasks.length >= 2) {
+      // Check for bi-weekly pattern
+      const sortedDates = dates.sort((a, b) => a.getTime() - b.getTime());
+      const weekNumbers = sortedDates.map(d => Math.ceil(d.getUTCDate() / 7));
+      
+      // Check if alternating weeks (1,3 or 2,4)
+      const allOdd = weekNumbers.every(w => w % 2 === 1);
+      const allEven = weekNumbers.every(w => w % 2 === 0);
+      
+      if (allOdd) {
+        return { type: 'biweekly', dayOfWeek, startWeekParity: 'odd' };
+      } else if (allEven) {
+        return { type: 'biweekly', dayOfWeek, startWeekParity: 'even' };
+      }
+      
+      // Check gap between dates (~14 days = biweekly)
+      if (sortedDates.length >= 2) {
+        const gaps: number[] = [];
+        for (let i = 1; i < sortedDates.length; i++) {
+          const gap = (sortedDates[i].getTime() - sortedDates[i-1].getTime()) / (1000 * 60 * 60 * 24);
+          gaps.push(gap);
+        }
+        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        
+        if (avgGap >= 12 && avgGap <= 16) {
+          // Roughly 2 weeks apart = biweekly
+          const firstWeek = weekNumbers[0];
+          return { type: 'biweekly', dayOfWeek, startWeekParity: firstWeek % 2 === 1 ? 'odd' : 'even' };
+        }
+      }
+    }
+    
+    return { type: 'single', dayOfWeek };
   };
 
   const handleUndoCopy = async () => {
@@ -1866,6 +2092,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
           setShowModal(true);
         }}
+        currentMonthLabel={activeConfig?.label || ''}
+        hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
+        onDeleteMonth={handleDeleteMonth}
       />
 
       {/* Paste Date Picker Dialog */}
