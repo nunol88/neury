@@ -1642,8 +1642,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         themeGradient={themeGradient}
         isAdmin={isAdmin}
         showGoToToday={showGoToToday}
+        canCopyFromPrevious={!!previousMonth}
+        copyingFromPrevious={copyingFromPrevious}
+        previousMonthLabel={previousMonthLabel}
         onOpenCalendar={() => setShowCalendarModal(true)}
         onGoToToday={scrollToToday}
+        onCopyFromPrevious={handleCopyFromPreviousMonth}
         onSelectSingle={() => {
           setEditingId(null);
           setSelectedClientId('');

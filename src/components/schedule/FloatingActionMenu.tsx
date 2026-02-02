@@ -1,26 +1,34 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck } from 'lucide-react';
+import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2 } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   themeGradient: string;
   isAdmin: boolean;
   showGoToToday: boolean;
+  canCopyFromPrevious: boolean;
+  copyingFromPrevious: boolean;
+  previousMonthLabel: string | null;
   onSelectSingle: () => void;
   onSelectFixed: () => void;
   onSelectBiWeekly: () => void;
   onOpenCalendar: () => void;
   onGoToToday: () => void;
+  onCopyFromPrevious: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   themeGradient,
   isAdmin,
   showGoToToday,
+  canCopyFromPrevious,
+  copyingFromPrevious,
+  previousMonthLabel,
   onSelectSingle,
   onSelectFixed,
   onSelectBiWeekly,
   onOpenCalendar,
   onGoToToday,
+  onCopyFromPrevious,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -61,10 +69,10 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           <button
             onClick={() => handleOptionClick(onOpenCalendar)}
             className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
-            style={{ animationDelay: '150ms' }}
+            style={{ animationDelay: '200ms' }}
           >
-            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-              <CalendarDays size={20} className="text-red-500" />
+            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+              <CalendarDays size={20} className="text-destructive" />
             </div>
             <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Ver Calendário</span>
           </button>
@@ -72,14 +80,35 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           {/* Admin-only options */}
           {isAdmin && (
             <>
+              {/* Copy from Previous Month */}
+              {canCopyFromPrevious && (
+                <button
+                  onClick={() => handleOptionClick(onCopyFromPrevious)}
+                  disabled={copyingFromPrevious}
+                  className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ animationDelay: '150ms' }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
+                    {copyingFromPrevious ? (
+                      <Loader2 size={20} className="text-success animate-spin" />
+                    ) : (
+                      <Copy size={20} className="text-success" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
+                    {copyingFromPrevious ? 'A copiar...' : `Copiar de ${previousMonthLabel?.split(' ')[0] || 'Anterior'}`}
+                  </span>
+                </button>
+              )}
+
               {/* Bi-Weekly */}
               <button
                 onClick={() => handleOptionClick(onSelectBiWeekly)}
                 className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
                 style={{ animationDelay: '100ms' }}
               >
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <CalendarRange size={20} className="text-amber-500" />
+                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                  <CalendarRange size={20} className="text-accent-foreground" />
                 </div>
                 <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Quinzenal</span>
               </button>
@@ -90,8 +119,8 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                 className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
                 style={{ animationDelay: '50ms' }}
               >
-                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <Repeat size={20} className="text-purple-500" />
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                  <Repeat size={20} className="text-secondary-foreground" />
                 </div>
                 <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Fixo (semanal)</span>
               </button>
