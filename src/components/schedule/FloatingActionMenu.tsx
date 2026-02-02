@@ -100,7 +100,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           <button
             onClick={() => handleOptionClick(onOpenCalendar)}
             className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
-            style={{ animationDelay: '200ms' }}
+            style={{ animationDelay: '100ms' }}
           >
             <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
               <CalendarDays size={20} className="text-destructive" />
@@ -111,72 +111,11 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           {/* Admin-only options */}
           {isAdmin && (
             <>
-              {/* Undo option in menu */}
-              {canUndo && (
-                <button
-                  onClick={() => handleOptionClick(onUndo)}
-                  disabled={undoSaving}
-                  className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in disabled:opacity-50"
-                  style={{ animationDelay: '175ms' }}
-                >
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    {undoSaving ? (
-                      <Loader2 size={20} className="text-muted-foreground animate-spin" />
-                    ) : (
-                      <Undo2 size={20} className="text-muted-foreground" />
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
-                    {undoMessage || 'Desfazer'}
-                  </span>
-                </button>
-              )}
-
-              {/* Delete Month - Always show, disabled if no tasks */}
-              <button
-                onClick={() => hasTasksInMonth && handleOptionClick(onDeleteMonth)}
-                disabled={!hasTasksInMonth}
-                className={`group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all animate-fade-in border-2 ${
-                  hasTasksInMonth 
-                    ? 'hover:scale-105 hover:shadow-xl border-destructive/20 hover:border-destructive/50 cursor-pointer' 
-                    : 'opacity-50 cursor-not-allowed border-muted'
-                }`}
-                style={{ animationDelay: '175ms' }}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${hasTasksInMonth ? 'bg-destructive/20' : 'bg-muted'}`}>
-                  <Trash2 size={20} className={hasTasksInMonth ? 'text-destructive' : 'text-muted-foreground'} />
-                </div>
-                <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
-                  Apagar {currentMonthLabel?.split(' ')[0] || 'Mês'}
-                </span>
-              </button>
-
-              {/* Copy from Previous Month */}
-              {canCopyFromPrevious && (
-                <button
-                  onClick={() => handleOptionClick(onCopyFromPrevious)}
-                  disabled={copyingFromPrevious}
-                  className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ animationDelay: '150ms' }}
-                >
-                  <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
-                    {copyingFromPrevious ? (
-                      <Loader2 size={20} className="text-success animate-spin" />
-                    ) : (
-                      <Copy size={20} className="text-success" />
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
-                    {copyingFromPrevious ? 'A copiar...' : `Copiar de ${previousMonthLabel?.split(' ')[0] || 'Anterior'}`}
-                  </span>
-                </button>
-              )}
-
               {/* Bi-Weekly */}
               <button
                 onClick={() => handleOptionClick(onSelectBiWeekly)}
                 className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
-                style={{ animationDelay: '100ms' }}
+                style={{ animationDelay: '75ms' }}
               >
                 <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
                   <CalendarRange size={20} className="text-accent-foreground" />
