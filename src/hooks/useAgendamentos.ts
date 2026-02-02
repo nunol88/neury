@@ -337,7 +337,17 @@ export const useAgendamentos = () => {
     }
   };
 
-  const deleteTask = async (id: string): Promise<boolean> => {
+  const deleteTask = async (id: string): Promise<Task | null> => {
+    // Find the task before deleting to return it
+    let deletedTask: Task | null = null;
+    for (const monthKey of ALL_MONTH_KEYS) {
+      const found = allTasks[monthKey].find(t => t.id === id);
+      if (found) {
+        deletedTask = found;
+        break;
+      }
+    }
+
     // Store original state for potential rollback
     const originalTasks = { ...allTasks };
     
@@ -358,7 +368,7 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
-      return true;
+      return deletedTask;
     } catch (error: any) {
       console.error('Error deleting agendamento:', error);
       // Revert optimistic update
@@ -368,8 +378,14 @@ export const useAgendamentos = () => {
         description: error.message,
         variant: 'destructive'
       });
-      return false;
+      return null;
     }
+  };
+
+  const restoreTask = async (taskData: Task): Promise<Task | null> => {
+    // Re-create the task (without the original ID, let Supabase generate new one)
+    const { id: _, ...taskWithoutId } = taskData;
+    return await addTask(taskWithoutId);
   };
 
   const toggleTaskStatus = async (id: string, currentlyCompleted: boolean, userRole?: string): Promise<boolean> => {
@@ -491,6 +507,7 @@ export const useAgendamentos = () => {
     addTask,
     updateTask,
     deleteTask,
+    restoreTask,
     toggleTaskStatus,
     togglePaymentStatus,
     moveTask,
