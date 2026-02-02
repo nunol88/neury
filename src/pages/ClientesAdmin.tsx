@@ -292,49 +292,75 @@ const ClientesAdmin = () => {
           </Button>
         </div>
 
-        {/* Month Selector */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <CalendarDays size={18} className="text-primary" />
-            <span className="text-sm font-medium text-foreground">Filtrar por Mês</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
+        {/* Month Selector - Clean grouped by year */}
+        <div className="mb-6 bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} className="text-primary" />
+              <span className="text-sm font-medium text-foreground">Período</span>
+            </div>
             <button
               onClick={() => setSelectedMonth('all')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 selectedMonth === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
             >
-              <Sparkles size={14} />
-              Todos
+              Ver Tudo
             </button>
-            {sortedMonths.map(([key, config]) => {
-              const isSelected = selectedMonth === key;
-              const monthStats = getStatsForMonth(key);
-              const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
+          </div>
+          
+          {/* Years with months */}
+          <div className="space-y-3">
+            {(() => {
+              // Group months by year
+              const byYear: Record<number, Array<[string, typeof monthsConfig[string]]>> = {};
+              sortedMonths.forEach(([key, config]) => {
+                if (!byYear[config.year]) byYear[config.year] = [];
+                byYear[config.year].push([key, config]);
+              });
               
-              return (
-                <button
-                  key={key}
-                  onClick={() => setSelectedMonth(key)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative ${
-                    isSelected
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                      : hasData
-                        ? 'bg-card border border-border text-foreground hover:border-primary/50'
-                        : 'bg-card/50 border border-border/50 text-muted-foreground/50 hover:bg-card hover:text-muted-foreground'
-                  }`}
-                >
-                  <span>{config.label.split(' ')[0]}</span>
-                  <span className="ml-1 text-xs opacity-70">{config.year}</span>
-                  {hasData && !isSelected && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full" />
-                  )}
-                </button>
-              );
-            })}
+              // Sort years descending
+              const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+              
+              return years.map(year => (
+                <div key={year}>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                    {year}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {byYear[year]
+                      .sort((a, b) => a[1].monthIndex - b[1].monthIndex)
+                      .map(([key, config]) => {
+                        const isSelected = selectedMonth === key;
+                        const monthStats = getStatsForMonth(key);
+                        const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
+                        const monthName = config.label.split(' ')[0].slice(0, 3); // Abreviar: Jan, Fev, Mar...
+                        
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setSelectedMonth(key)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all relative ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : hasData
+                                  ? 'bg-secondary text-foreground hover:bg-primary/10'
+                                  : 'bg-muted/50 text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground'
+                            }`}
+                          >
+                            {monthName}
+                            {hasData && !isSelected && (
+                              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-success rounded-full" />
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
