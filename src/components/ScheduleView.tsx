@@ -32,6 +32,7 @@ import {
   detectConflicts,
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
+import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
 
 import {
   generateMonthsConfig,
@@ -118,6 +119,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   
   // State for "Go to Today" button visibility
   const [showGoToToday, setShowGoToToday] = useState(false);
+
+  // State for copy/paste functionality
+  const [copiedTask, setCopiedTask] = useState<Task | null>(null);
+  const [showPasteDialog, setShowPasteDialog] = useState(false);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -922,6 +927,70 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     await toggleTaskStatus(id, currentlyCompleted, userRole || role || 'user');
   };
 
+  // Copy task handler - stores the task and opens the date picker dialog
+  const handleCopyTask = useCallback((task: Task) => {
+    setCopiedTask(task);
+    setShowPasteDialog(true);
+    toast({ 
+      title: 'Agendamento copiado', 
+      description: `Escolha o dia para colar "${task.client}"` 
+    });
+  }, [toast]);
+
+  // Paste task handler - creates a copy of the task on the selected date
+  const handlePasteTask = useCallback(async (targetDate: Date) => {
+    if (!copiedTask) return;
+
+    const formattedDate = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    
+    // Create new task with the same data but different date
+    const newTaskData = {
+      date: formattedDate,
+      client: copiedTask.client,
+      phone: copiedTask.phone || '',
+      startTime: copiedTask.startTime,
+      endTime: copiedTask.endTime,
+      address: copiedTask.address || '',
+      price: copiedTask.price,
+      pricePerHour: copiedTask.pricePerHour || '7',
+      notes: copiedTask.notes || '',
+      completed: false,
+      pago: false,
+    };
+
+    setSaving(true);
+    try {
+      const result = await addTask(newTaskData);
+      if (result) {
+        addAction({
+          type: 'create',
+          description: `Copiado: ${result.client}`,
+          undoData: { taskId: result.id }
+        });
+        toast({ 
+          title: 'Agendamento colado', 
+          description: `"${result.client}" adicionado em ${targetDate.toLocaleDateString('pt-PT')}` 
+        });
+        
+        // Navigate to the target month if different
+        const targetMonthKey = getMonthKeyFromDate(formattedDate);
+        if (targetMonthKey && targetMonthKey !== activeMonth) {
+          setActiveMonth(targetMonthKey);
+        }
+      }
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao colar', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setSaving(false);
+      setShowPasteDialog(false);
+      setCopiedTask(null);
+    }
+  }, [copiedTask, addTask, addAction, toast, getMonthKeyFromDate, activeMonth]);
+
   const calculateMonthTotal = () => {
     const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
     return monthTasks.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
@@ -1277,6 +1346,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onDeleteTask={handleDelete}
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
+              onCopyTask={isAdmin ? handleCopyTask : undefined}
             />
           );
         })}
@@ -1796,6 +1866,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           setBiWeeklyTask(prev => ({ ...prev, client: '', phone: '', notes: '', startDate: currentMonthDays[0]?.dateString || '' }));
           setShowModal(true);
         }}
+      />
+
+      {/* Paste Date Picker Dialog */}
+      <PasteDatePickerDialog
+        open={showPasteDialog}
+        onClose={() => {
+          setShowPasteDialog(false);
+          setCopiedTask(null);
+        }}
+        onSelectDate={handlePasteTask}
+        clientName={copiedTask?.client || ''}
+        themeGradient={themeGradient}
       />
 
       <style>{`

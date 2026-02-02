@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User, Banknote } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User, Banknote, Copy } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -13,6 +13,7 @@ interface TaskCardProps {
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   onTogglePayment?: (id: string, pago: boolean) => void;
+  onCopy?: (task: Task) => void;
   animationDelay?: number;
 }
 
@@ -25,6 +26,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onDelete,
   onToggleStatus,
   onTogglePayment,
+  onCopy,
   animationDelay = 0,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
@@ -316,9 +318,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
           </button>
           
-          {/* Edit and Delete - reveal on hover */}
+          {/* Copy, Edit and Delete - reveal on hover */}
           {isAdmin && (
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+              {onCopy && (
+                <button
+                  onClick={() => onCopy(task)}
+                  className="p-2 hover:bg-success/10 rounded-full transition-all duration-200 hover:scale-110"
+                  title="Copiar para outro dia"
+                >
+                  <Copy size={14} className="text-success" />
+                </button>
+              )}
               <button
                 onClick={() => onEdit(task)}
                 className="p-2 hover:bg-primary/10 rounded-full transition-all duration-200 hover:scale-110"
