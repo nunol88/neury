@@ -34,7 +34,7 @@ const navItems = [
   { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
   { title: 'Clientes', url: '/admin/clientes', icon: Users },
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
-  { title: 'Recibos Verdes', url: '/admin/recibos-verdes', icon: Receipt },
+  { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
 ];
 
 const neurySidebarItems = [

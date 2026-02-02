@@ -63,9 +63,9 @@ const RecibosVerdes: React.FC = () => {
         <div className="flex items-center gap-3">
           <Receipt className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Recibos Verdes</h1>
+            <h1 className="text-2xl font-bold text-foreground">Gestão Fiscal</h1>
             <p className="text-sm text-muted-foreground">
-              Gestão de clientes com contribuições para a Segurança Social
+              Contribuições para a Segurança Social - Trabalhadores Independentes
             </p>
           </div>
         </div>
