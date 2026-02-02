@@ -12,6 +12,7 @@ import NeuryAgendamentos from "./pages/NeuryAgendamentos";
 import ClientesAdmin from "./pages/ClientesAdmin";
 import Dashboard from "./pages/Dashboard";
 import Pagamentos from "./pages/Pagamentos";
+import RecibosVerdes from "./pages/RecibosVerdes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,16 @@ const App = () => (
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AppLayout>
                     <Pagamentos />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/recibos-verdes" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <RecibosVerdes />
                   </AppLayout>
                 </ProtectedRoute>
               } 

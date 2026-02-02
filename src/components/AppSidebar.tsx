@@ -24,7 +24,8 @@ import {
   Euro, 
   LogOut, 
   Sun, 
-  Moon
+  Moon,
+  Receipt
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
@@ -33,6 +34,7 @@ const navItems = [
   { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
   { title: 'Clientes', url: '/admin/clientes', icon: Users },
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
+  { title: 'Recibos Verdes', url: '/admin/recibos-verdes', icon: Receipt },
 ];
 
 const neurySidebarItems = [

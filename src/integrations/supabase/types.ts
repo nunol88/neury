@@ -94,6 +94,7 @@ export type Database = {
           nome: string
           notas: string | null
           preco_hora: string | null
+          recibo_verde: boolean
           telefone: string | null
           updated_at: string
         }
@@ -104,6 +105,7 @@ export type Database = {
           nome: string
           notas?: string | null
           preco_hora?: string | null
+          recibo_verde?: boolean
           telefone?: string | null
           updated_at?: string
         }
@@ -114,6 +116,7 @@ export type Database = {
           nome?: string
           notas?: string | null
           preco_hora?: string | null
+          recibo_verde?: boolean
           telefone?: string | null
           updated_at?: string
         }

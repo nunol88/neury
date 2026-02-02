@@ -9,6 +9,7 @@ export interface Client {
   morada: string;
   preco_hora: string;
   notas: string;
+  recibo_verde: boolean;
 }
 
 export const useClients = () => {
@@ -31,7 +32,8 @@ export const useClients = () => {
         telefone: row.telefone || '',
         morada: row.morada || '',
         preco_hora: row.preco_hora || '7',
-        notas: row.notas || ''
+        notas: row.notas || '',
+        recibo_verde: row.recibo_verde || false
       })));
     } catch (error: any) {
       console.error('Error fetching clients:', error);
@@ -83,7 +85,8 @@ export const useClients = () => {
         telefone: data.telefone || '',
         morada: data.morada || '',
         preco_hora: data.preco_hora || '7',
-        notas: data.notas || ''
+        notas: data.notas || '',
+        recibo_verde: data.recibo_verde || false
       };
 
       setClients(prev => [...prev, newClient].sort((a, b) => a.nome.localeCompare(b.nome)));
