@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
+import { useActionHistory, ActionRecord } from '@/hooks/useActionHistory';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
   Phone, Repeat, CalendarRange, Pencil, Loader2, Users, UserPlus
@@ -54,8 +55,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { allTasks, loading, addTask, updateTask, deleteTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
+  const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
+  const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
   
   // Static month configuration matching useAgendamentos
   const monthsConfig = useMemo(() => generateMonthsConfig(), []);
@@ -86,7 +88,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [copiedTaskIds, setCopiedTaskIds] = useState<string[]>([]);
   const [showUndoBar, setShowUndoBar] = useState(false);
   const [copyingFromPrevious, setCopyingFromPrevious] = useState(false);
-  
   
   // State for undo move functionality
   const [lastMovedTask, setLastMovedTask] = useState<{
@@ -659,6 +660,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
         const result = await addTask(newTask);
         if (result) {
+          addAction({
+            type: 'create',
+            description: `Criado: ${result.client}`,
+            undoData: { taskId: result.id }
+          });
           toast({ title: 'Agendamento criado' });
         }
       }
@@ -813,13 +819,104 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const handleDelete = async (id: string) => {
     if (!isAdmin) return;
+    
+    // Find the task before deleting to store in history
+    let taskToDelete: Task | null = null;
+    for (const monthKey of monthKeys) {
+      const monthTasks = allTasks[monthKey as keyof AllTasks] || [];
+      const found = monthTasks.find(t => t.id === id);
+      if (found) {
+        taskToDelete = found;
+        break;
+      }
+    }
+    
     if (window.confirm('Tem certeza que deseja remover este agendamento?')) {
-      const success = await deleteTask(id);
-      if (success) {
+      const deletedTask = await deleteTask(id);
+      if (deletedTask) {
+        // Add to action history for undo
+        addAction({
+          type: 'delete',
+          description: `Eliminado: ${deletedTask.client}`,
+          undoData: {
+            taskId: id,
+            previousState: deletedTask
+          }
+        });
         toast({ title: 'Agendamento eliminado' });
       }
     }
   };
+
+  // Unified undo handler
+  const handleUndo = useCallback(async () => {
+    const lastAction = getLastAction();
+    if (!lastAction) return;
+
+    setUndoing(true);
+    try {
+      switch (lastAction.type) {
+        case 'delete': {
+          // Restore deleted task
+          if (lastAction.undoData.previousState) {
+            const restored = await restoreTask(lastAction.undoData.previousState);
+            if (restored) {
+              toast({ title: 'Agendamento restaurado', description: lastAction.undoData.previousState.client });
+              removeLastAction();
+            }
+          }
+          break;
+        }
+        case 'create': {
+          // Delete created task
+          if (lastAction.undoData.taskId) {
+            const deleted = await deleteTask(lastAction.undoData.taskId);
+            if (deleted) {
+              toast({ title: 'Criação desfeita' });
+              removeLastAction();
+            }
+          }
+          break;
+        }
+        case 'bulk_create': {
+          // Delete all created tasks
+          if (lastAction.undoData.taskIds && lastAction.undoData.taskIds.length > 0) {
+            const confirmed = window.confirm(`Tem certeza que deseja desfazer? ${lastAction.undoData.taskIds.length} agendamentos serão eliminados.`);
+            if (!confirmed) {
+              setUndoing(false);
+              return;
+            }
+            let deletedCount = 0;
+            for (const taskId of lastAction.undoData.taskIds) {
+              const deleted = await deleteTask(taskId);
+              if (deleted) deletedCount++;
+            }
+            toast({ title: `${deletedCount} agendamentos eliminados`, description: 'Cópia desfeita com sucesso.' });
+            removeLastAction();
+          }
+          break;
+        }
+        case 'update':
+        case 'move': {
+          // Restore previous state
+          if (lastAction.undoData.taskId && lastAction.undoData.previousState) {
+            const { id: _, ...taskWithoutId } = lastAction.undoData.previousState;
+            const success = await updateTask(lastAction.undoData.taskId, taskWithoutId);
+            if (success) {
+              toast({ title: 'Alteração desfeita' });
+              removeLastAction();
+            }
+          }
+          break;
+        }
+      }
+    } catch (error: any) {
+      console.error('Error undoing action:', error);
+      toast({ title: 'Erro ao desfazer', description: error.message, variant: 'destructive' });
+    } finally {
+      setUndoing(false);
+    }
+  }, [getLastAction, removeLastAction, restoreTask, deleteTask, updateTask, toast, setUndoing]);
 
   const handleToggleStatus = async (id: string, currentlyCompleted: boolean, userRole?: string) => {
     await toggleTaskStatus(id, currentlyCompleted, userRole || role || 'user');
@@ -917,6 +1014,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       }
 
       if (newTaskIds.length > 0) {
+        // Add to unified action history
+        addAction({
+          type: 'bulk_create',
+          description: `${newTaskIds.length} copiados de ${monthsConfig[previousMonth]?.label || previousMonth}`,
+          undoData: { taskIds: newTaskIds }
+        });
+        
+        // Also keep old undo bar for backwards compat
         setCopiedTaskIds(newTaskIds);
         setShowUndoBar(true);
         toast({
@@ -1645,20 +1750,25 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         canCopyFromPrevious={!!previousMonth}
         copyingFromPrevious={copyingFromPrevious}
         previousMonthLabel={previousMonthLabel}
-        canUndo={showUndoBar || showMoveUndoBar}
+        canUndo={canUndo || showUndoBar || showMoveUndoBar}
         undoMessage={
-          showMoveUndoBar && lastMovedTask 
-            ? `${lastMovedTask.clientName} movido` 
-            : showUndoBar && copiedTaskIds.length > 0 
-              ? `${copiedTaskIds.length} agendamentos copiados`
-              : null
+          canUndo && getLastAction()
+            ? getLastAction()!.description
+            : showMoveUndoBar && lastMovedTask 
+              ? `${lastMovedTask.clientName} movido` 
+              : showUndoBar && copiedTaskIds.length > 0 
+                ? `${copiedTaskIds.length} agendamentos copiados`
+                : null
         }
-        undoSaving={saving}
+        undoSaving={saving || undoing}
         onOpenCalendar={() => setShowCalendarModal(true)}
         onGoToToday={scrollToToday}
         onCopyFromPrevious={handleCopyFromPreviousMonth}
         onUndo={() => {
-          if (showMoveUndoBar && lastMovedTask) {
+          // Priority: new unified history > move undo > copy undo
+          if (canUndo) {
+            handleUndo();
+          } else if (showMoveUndoBar && lastMovedTask) {
             handleUndoMove();
           } else if (showUndoBar && copiedTaskIds.length > 0) {
             handleUndoCopy();
