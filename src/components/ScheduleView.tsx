@@ -1645,9 +1645,25 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         canCopyFromPrevious={!!previousMonth}
         copyingFromPrevious={copyingFromPrevious}
         previousMonthLabel={previousMonthLabel}
+        canUndo={showUndoBar || showMoveUndoBar}
+        undoMessage={
+          showMoveUndoBar && lastMovedTask 
+            ? `${lastMovedTask.clientName} movido` 
+            : showUndoBar && copiedTaskIds.length > 0 
+              ? `${copiedTaskIds.length} agendamentos copiados`
+              : null
+        }
+        undoSaving={saving}
         onOpenCalendar={() => setShowCalendarModal(true)}
         onGoToToday={scrollToToday}
         onCopyFromPrevious={handleCopyFromPreviousMonth}
+        onUndo={() => {
+          if (showMoveUndoBar && lastMovedTask) {
+            handleUndoMove();
+          } else if (showUndoBar && copiedTaskIds.length > 0) {
+            handleUndoCopy();
+          }
+        }}
         onSelectSingle={() => {
           setEditingId(null);
           setSelectedClientId('');
