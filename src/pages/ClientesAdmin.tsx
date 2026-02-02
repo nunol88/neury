@@ -6,11 +6,12 @@ import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
+import { generateMonthsConfig } from '@/utils/monthConfig';
 import { 
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search
+  Navigation, Search, CalendarDays, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -26,8 +27,27 @@ const ClientesAdmin = () => {
   const { theme, toggleTheme } = useTheme();
   const { clients, loading, addClient, clientExists, refetch } = useClients();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
-  const { clientStats, getClientHistory } = useClientStats(allTasks, clients);
   
+  // Generate months config
+  const monthsConfig = useMemo(() => generateMonthsConfig(), []);
+  
+  const { clientStats, getClientHistory, getStatsForMonth, getMonthsWithData } = useClientStats(allTasks, clients, monthsConfig);
+  
+  // Get current month key
+  const getCurrentMonthKey = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    for (const [key, config] of Object.entries(monthsConfig)) {
+      if (config.year === year && config.monthIndex === month) {
+        return key;
+      }
+    }
+    return 'all';
+  };
+  
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,6 +66,20 @@ const ClientesAdmin = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Get stats for selected month
+  const monthlyStats = useMemo(() => {
+    if (selectedMonth === 'all') return null;
+    return getStatsForMonth(selectedMonth);
+  }, [selectedMonth, getStatsForMonth]);
+
+  // Get active stats based on selection
+  const activeClientStats = useMemo(() => {
+    if (selectedMonth === 'all' || !monthlyStats) {
+      return clientStats;
+    }
+    return monthlyStats.clients;
+  }, [selectedMonth, monthlyStats, clientStats]);
+
   // Filter clients based on search term
   const filteredClients = useMemo(() => {
     if (!searchTerm.trim()) return clients;
@@ -57,6 +91,15 @@ const ClientesAdmin = () => {
       client.notas.toLowerCase().includes(term)
     );
   }, [clients, searchTerm]);
+
+  // Get months for selector (sorted newest first) - must be before any early return
+  const sortedMonths = useMemo(() => {
+    const entries = Object.entries(monthsConfig);
+    return entries.sort((a, b) => {
+      if (a[1].year !== b[1].year) return b[1].year - a[1].year;
+      return b[1].monthIndex - a[1].monthIndex;
+    });
+  }, [monthsConfig]);
 
   const resetForm = () => {
     setFormData({ nome: '', telefone: '', morada: '', preco_hora: '7', notas: '' });
@@ -141,7 +184,7 @@ const ClientesAdmin = () => {
   };
 
   const handleShowHistory = (clientName: string) => {
-    const history = getClientHistory(clientName);
+    const history = getClientHistory(clientName, selectedMonth === 'all' ? null : selectedMonth);
     setSelectedClientHistory({ name: clientName, history });
     setShowHistoryModal(true);
   };
@@ -188,11 +231,13 @@ const ClientesAdmin = () => {
     );
   }
 
-  // Calculate summary stats
+  // Calculate summary stats based on selected month
   const totalClients = clients.length;
-  const activeClients = Object.values(clientStats).filter(s => s.totalAgendamentos > 0).length;
-  const totalRevenue = Object.values(clientStats).reduce((sum, s) => sum + s.totalRevenue, 0);
-  const totalHours = Object.values(clientStats).reduce((sum, s) => sum + s.totalHours, 0);
+  const activeClients = Object.values(activeClientStats).filter(s => s.totalAgendamentos > 0).length;
+  const totalRevenue = monthlyStats?.totals.totalRevenue ?? Object.values(clientStats).reduce((sum, s) => sum + s.totalRevenue, 0);
+  const paidRevenue = monthlyStats?.totals.paidRevenue ?? Object.values(clientStats).reduce((sum, s) => sum + s.paidRevenue, 0);
+  const totalHours = monthlyStats?.totals.totalHours ?? Object.values(clientStats).reduce((sum, s) => sum + s.totalHours, 0);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,6 +292,52 @@ const ClientesAdmin = () => {
           </Button>
         </div>
 
+        {/* Month Selector */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <CalendarDays size={18} className="text-primary" />
+            <span className="text-sm font-medium text-foreground">Filtrar por Mês</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedMonth('all')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                selectedMonth === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/50'
+              }`}
+            >
+              <Sparkles size={14} />
+              Todos
+            </button>
+            {sortedMonths.map(([key, config]) => {
+              const isSelected = selectedMonth === key;
+              const monthStats = getStatsForMonth(key);
+              const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
+              
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMonth(key)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      : hasData
+                        ? 'bg-card border border-border text-foreground hover:border-primary/50'
+                        : 'bg-card/50 border border-border/50 text-muted-foreground/50 hover:bg-card hover:text-muted-foreground'
+                  }`}
+                >
+                  <span>{config.label.split(' ')[0]}</span>
+                  <span className="ml-1 text-xs opacity-70">{config.year}</span>
+                  {hasData && !isSelected && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Summary Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
@@ -255,8 +346,12 @@ const ClientesAdmin = () => {
                 <Users size={18} className="text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Clientes</p>
-                <p className="text-xl font-bold text-primary">{totalClients}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedMonth === 'all' ? 'Total Clientes' : 'Clientes Ativos'}
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  {selectedMonth === 'all' ? totalClients : activeClients}
+                </p>
               </div>
             </div>
           </div>
@@ -266,8 +361,12 @@ const ClientesAdmin = () => {
                 <TrendingUp size={18} className="text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Clientes Ativos</p>
-                <p className="text-xl font-bold text-primary">{activeClients}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedMonth === 'all' ? 'Clientes Ativos' : 'Agendamentos'}
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  {selectedMonth === 'all' ? activeClients : (monthlyStats?.totals.totalAgendamentos || 0)}
+                </p>
               </div>
             </div>
           </div>
@@ -277,8 +376,15 @@ const ClientesAdmin = () => {
                 <Euro size={18} className="text-success" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Faturado</p>
-                <p className="text-xl font-bold text-success">€{totalRevenue.toFixed(0)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {paidRevenue >= totalRevenue ? 'Faturado' : 'Faturado / Pago'}
+                </p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold text-success">€{totalRevenue.toFixed(0)}</span>
+                  {paidRevenue < totalRevenue && (
+                    <span className="text-sm text-violet-500 font-medium">/ €{paidRevenue.toFixed(0)}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -294,6 +400,24 @@ const ClientesAdmin = () => {
             </div>
           </div>
         </div>
+
+        {/* Selected Month Indicator */}
+        {selectedMonth !== 'all' && monthlyStats && (
+          <div className="mb-4 p-3 bg-primary/10 rounded-xl border border-primary/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="text-primary" />
+              <span className="text-sm font-medium text-foreground">
+                A mostrar estatísticas de <strong>{monthlyStats.monthLabel}</strong>
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedMonth('all')}
+              className="text-xs text-primary hover:underline"
+            >
+              Ver todos
+            </button>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="mb-6">
@@ -505,7 +629,7 @@ const ClientesAdmin = () => {
         ) : (
           <div className="grid gap-3">
             {filteredClients.map((client) => {
-              const stats = clientStats[client.nome];
+              const stats = activeClientStats[client.nome];
               const isExpanded = expandedClient === client.id;
               
               return (
@@ -522,7 +646,10 @@ const ClientesAdmin = () => {
                             <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
                             {stats && stats.totalAgendamentos > 0 && (
                               <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                                {stats.totalAgendamentos} agendamentos
+                                {stats.totalAgendamentos} agendamento{stats.totalAgendamentos !== 1 ? 's' : ''}
+                                {selectedMonth !== 'all' && monthlyStats && (
+                                  <span className="ml-1 opacity-70">em {monthlyStats.monthLabel.split(' ')[0]}</span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -626,8 +753,15 @@ const ClientesAdmin = () => {
                         <div className="flex items-center gap-2">
                           <Euro size={16} className="text-success" />
                           <div>
-                            <p className="text-xs text-muted-foreground">Total Faturado</p>
-                            <p className="font-bold text-success">€{stats.totalRevenue.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {stats.paidRevenue >= stats.totalRevenue ? 'Faturado' : 'Faturado / Pago'}
+                            </p>
+                            <div className="flex items-baseline gap-1">
+                              <span className="font-bold text-success">€{stats.totalRevenue.toFixed(2)}</span>
+                              {stats.paidRevenue < stats.totalRevenue && (
+                                <span className="text-xs text-violet-500">/ €{stats.paidRevenue.toFixed(2)}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -639,7 +773,7 @@ const ClientesAdmin = () => {
                         </div>
                       </div>
                       {stats.firstService && stats.lastService && (
-                        <div className="mt-2 text-xs text-muted-foreground flex gap-4">
+                        <div className="mt-2 text-xs text-muted-foreground flex gap-4 flex-wrap">
                           <span>Primeiro serviço: {formatDate(stats.firstService)}</span>
                           <span>Último serviço: {formatDate(stats.lastService)}</span>
                         </div>
