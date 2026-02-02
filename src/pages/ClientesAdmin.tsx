@@ -292,76 +292,93 @@ const ClientesAdmin = () => {
           </Button>
         </div>
 
-        {/* Month Selector - Clean grouped by year */}
-        <div className="mb-6 bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <CalendarDays size={16} className="text-primary" />
-              <span className="text-sm font-medium text-foreground">Período</span>
-            </div>
-            <button
-              onClick={() => setSelectedMonth('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                selectedMonth === 'all'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
-            >
-              Ver Tudo
-            </button>
-          </div>
-          
-          {/* Years with months */}
-          <div className="space-y-3">
-            {(() => {
-              // Group months by year
-              const byYear: Record<number, Array<[string, typeof monthsConfig[string]]>> = {};
-              sortedMonths.forEach(([key, config]) => {
-                if (!byYear[config.year]) byYear[config.year] = [];
-                byYear[config.year].push([key, config]);
-              });
+        {/* Month Selector - Compact horizontal scroll */}
+        <div className="mb-6">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="flex items-center overflow-x-auto scrollbar-hide">
+              {/* All option */}
+              <button
+                onClick={() => setSelectedMonth('all')}
+                className={`flex-shrink-0 px-5 py-3 text-sm font-medium transition-all border-b-2 ${
+                  selectedMonth === 'all'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                Geral
+              </button>
               
-              // Sort years descending
-              const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+              <div className="w-px h-8 bg-border flex-shrink-0" />
               
-              return years.map(year => (
-                <div key={year}>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
-                    {year}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
+              {/* Months grouped inline */}
+              {(() => {
+                const byYear: Record<number, Array<[string, typeof monthsConfig[string]]>> = {};
+                sortedMonths.forEach(([key, config]) => {
+                  if (!byYear[config.year]) byYear[config.year] = [];
+                  byYear[config.year].push([key, config]);
+                });
+                
+                const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+                
+                return years.map((year, yearIdx) => (
+                  <div key={year} className="flex items-center flex-shrink-0">
+                    {yearIdx > 0 && <div className="w-px h-8 bg-border" />}
+                    <span className="px-3 py-3 text-xs font-bold text-muted-foreground/60 flex-shrink-0">
+                      {year}
+                    </span>
                     {byYear[year]
                       .sort((a, b) => a[1].monthIndex - b[1].monthIndex)
                       .map(([key, config]) => {
                         const isSelected = selectedMonth === key;
                         const monthStats = getStatsForMonth(key);
                         const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
-                        const monthName = config.label.split(' ')[0].slice(0, 3); // Abreviar: Jan, Fev, Mar...
+                        const monthAbbr = config.label.split(' ')[0].slice(0, 3);
+                        
+                        // Check if current month
+                        const now = new Date();
+                        const isCurrentMonth = config.year === now.getFullYear() && config.monthIndex === now.getMonth();
                         
                         return (
                           <button
                             key={key}
                             onClick={() => setSelectedMonth(key)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all relative ${
+                            className={`relative flex-shrink-0 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
                               isSelected
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : hasData
-                                  ? 'bg-secondary text-foreground hover:bg-primary/10'
-                                  : 'bg-muted/50 text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground'
+                                ? 'border-primary text-primary bg-primary/5'
+                                : isCurrentMonth
+                                  ? 'border-transparent text-success hover:bg-secondary/50'
+                                  : hasData
+                                    ? 'border-transparent text-foreground hover:bg-secondary/50'
+                                    : 'border-transparent text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/30'
                             }`}
                           >
-                            {monthName}
-                            {hasData && !isSelected && (
-                              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-success rounded-full" />
+                            {monthAbbr}
+                            {isCurrentMonth && !isSelected && (
+                              <span className="absolute top-2 right-1 w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
+                            )}
+                            {hasData && !isCurrentMonth && !isSelected && (
+                              <span className="absolute top-2 right-1 w-1 h-1 bg-primary/50 rounded-full" />
                             )}
                           </button>
                         );
                       })}
                   </div>
-                </div>
-              ));
-            })()}
+                ));
+              })()}
+            </div>
           </div>
+          
+          {/* Selected month indicator */}
+          {selectedMonth !== 'all' && monthlyStats && (
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                A mostrar: <strong className="text-foreground">{monthlyStats.monthLabel}</strong>
+              </span>
+              <button onClick={() => setSelectedMonth('all')} className="text-primary hover:underline">
+                Limpar filtro
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Summary Stats Cards */}
