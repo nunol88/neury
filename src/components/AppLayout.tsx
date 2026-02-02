@@ -2,6 +2,7 @@ import React from 'react';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,10 +17,17 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <SidebarInset className="flex flex-col flex-1 min-w-0">
           {/* Top bar with sidebar trigger */}
-          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 print:hidden">
+          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 print:hidden">
             <SidebarTrigger className="-ml-1" />
             {isMobile && (
-              <span className="font-semibold text-sm truncate">MaysLimpo</span>
+              <div className="flex items-center gap-2">
+                <img 
+                  src={logoMayslimpo} 
+                  alt="MaysLimpo" 
+                  className="w-7 h-7 rounded-full object-cover"
+                />
+                <span className="font-semibold text-sm truncate">MaysLimpo</span>
+              </div>
             )}
           </header>
           
