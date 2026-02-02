@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2 } from 'lucide-react';
+import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2 } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   themeGradient: string;
@@ -8,12 +8,16 @@ interface FloatingActionMenuProps {
   canCopyFromPrevious: boolean;
   copyingFromPrevious: boolean;
   previousMonthLabel: string | null;
+  canUndo: boolean;
+  undoMessage: string | null;
+  undoSaving: boolean;
   onSelectSingle: () => void;
   onSelectFixed: () => void;
   onSelectBiWeekly: () => void;
   onOpenCalendar: () => void;
   onGoToToday: () => void;
   onCopyFromPrevious: () => void;
+  onUndo: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
@@ -23,12 +27,16 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   canCopyFromPrevious,
   copyingFromPrevious,
   previousMonthLabel,
+  canUndo,
+  undoMessage,
+  undoSaving,
   onSelectSingle,
   onSelectFixed,
   onSelectBiWeekly,
   onOpenCalendar,
   onGoToToday,
   onCopyFromPrevious,
+  onUndo,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -49,6 +57,23 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 animate-fade-in"
           onClick={() => setIsExpanded(false)}
         />
+      )}
+
+      {/* Undo Button - Always visible when there's something to undo */}
+      {canUndo && !isExpanded && (
+        <button
+          onClick={onUndo}
+          disabled={undoSaving}
+          className="flex items-center gap-2 bg-muted-foreground text-background px-4 py-2.5 rounded-full shadow-lg transition-all transform hover:scale-105 animate-fade-in disabled:opacity-50"
+          title={undoMessage || 'Desfazer'}
+        >
+          {undoSaving ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <Undo2 size={18} />
+          )}
+          <span className="text-sm font-medium">Desfazer</span>
+        </button>
       )}
 
       {/* Go to Today Button - Always above main button when visible */}
@@ -80,6 +105,27 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
           {/* Admin-only options */}
           {isAdmin && (
             <>
+              {/* Undo option in menu */}
+              {canUndo && (
+                <button
+                  onClick={() => handleOptionClick(onUndo)}
+                  disabled={undoSaving}
+                  className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in disabled:opacity-50"
+                  style={{ animationDelay: '175ms' }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    {undoSaving ? (
+                      <Loader2 size={20} className="text-muted-foreground animate-spin" />
+                    ) : (
+                      <Undo2 size={20} className="text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-card-foreground whitespace-nowrap">
+                    {undoMessage || 'Desfazer'}
+                  </span>
+                </button>
+              )}
+
               {/* Copy from Previous Month */}
               {canCopyFromPrevious && (
                 <button
