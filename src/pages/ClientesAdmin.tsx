@@ -58,6 +58,9 @@ const ClientesAdmin = () => {
     name: string;
     history: ClientHistory[];
   } | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportClientName, setReportClientName] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -190,21 +193,33 @@ const ClientesAdmin = () => {
     setShowHistoryModal(true);
   };
 
-  const handleGenerateReport = async (clientName: string) => {
-    const history = getClientHistory(clientName, selectedMonth === 'all' ? null : selectedMonth);
-    const monthLabel = selectedMonth !== 'all' && monthsConfig[selectedMonth] 
-      ? monthsConfig[selectedMonth].label 
+  const handleOpenReportModal = (clientName: string) => {
+    setReportClientName(clientName);
+    setShowReportModal(true);
+  };
+
+  const handleGenerateReport = async (monthKey: string) => {
+    if (!reportClientName) return;
+    
+    setGeneratingReport(true);
+    const history = getClientHistory(reportClientName, monthKey === 'all' ? null : monthKey);
+    const monthLabel = monthKey !== 'all' && monthsConfig[monthKey] 
+      ? monthsConfig[monthKey].label 
       : null;
     
     try {
-      await generateClientReportPdf(clientName, history, monthLabel);
-      toast({ title: 'Relatório gerado', description: `PDF de ${clientName} criado com sucesso.` });
+      await generateClientReportPdf(reportClientName, history, monthLabel);
+      toast({ title: 'Relatório gerado', description: `PDF de ${reportClientName} criado com sucesso.` });
+      setShowReportModal(false);
+      setReportClientName(null);
     } catch (error: any) {
       toast({ 
         title: 'Erro ao gerar relatório', 
         description: error.message,
         variant: 'destructive' 
       });
+    } finally {
+      setGeneratingReport(false);
     }
   };
 
@@ -628,6 +643,97 @@ const ClientesAdmin = () => {
           </div>
         )}
 
+        {/* Report Month Selection Modal */}
+        {showReportModal && reportClientName && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => { setShowReportModal(false); setReportClientName(null); }} />
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-md relative z-10">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <FileText size={20} />
+                  Gerar Relatório
+                </h2>
+                <button onClick={() => { setShowReportModal(false); setReportClientName(null); }} className="hover:bg-white/20 p-1 rounded">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Selecione o período para o relatório de <strong className="text-foreground">{reportClientName}</strong>:
+                </p>
+                
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {/* All periods option */}
+                  <button
+                    onClick={() => handleGenerateReport('all')}
+                    disabled={generatingReport}
+                    className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary transition-colors flex items-center justify-between group disabled:opacity-50"
+                  >
+                    <span className="font-medium text-foreground">Todos os períodos</span>
+                    <CalendarDays size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                  
+                  {/* Months grouped by year */}
+                  {(() => {
+                    const byYear: Record<number, Array<[string, typeof monthsConfig[string]]>> = {};
+                    sortedMonths.forEach(([key, config]) => {
+                      if (!byYear[config.year]) byYear[config.year] = [];
+                      byYear[config.year].push([key, config]);
+                    });
+                    
+                    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+                    
+                    return years.map((year) => (
+                      <div key={year}>
+                        <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-wider mt-3 mb-2 px-1">
+                          {year}
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {byYear[year]
+                            .sort((a, b) => b[1].monthIndex - a[1].monthIndex)
+                            .map(([key, config]) => {
+                              const monthStats = getStatsForMonth(key);
+                              const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
+                              const monthAbbr = config.label.split(' ')[0];
+                              
+                              // Check if current month
+                              const now = new Date();
+                              const isCurrentMonth = config.year === now.getFullYear() && config.monthIndex === now.getMonth();
+                              
+                              return (
+                                <button
+                                  key={key}
+                                  onClick={() => handleGenerateReport(key)}
+                                  disabled={generatingReport}
+                                  className={`p-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
+                                    isCurrentMonth
+                                      ? 'border-success bg-success/10 text-success hover:bg-success/20'
+                                      : hasData
+                                        ? 'border-border bg-card hover:bg-secondary text-foreground'
+                                        : 'border-border/50 bg-muted/30 text-muted-foreground hover:bg-secondary/50'
+                                  }`}
+                                >
+                                  {monthAbbr}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                
+                {generatingReport && (
+                  <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
+                    A gerar relatório...
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Clients List */}
         {clients.length === 0 ? (
           <EmptyState 
@@ -730,7 +836,7 @@ const ClientesAdmin = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleGenerateReport(client.nome)}
+                          onClick={() => handleOpenReportModal(client.nome)}
                           className="text-primary hover:text-primary hover:bg-primary/10"
                           title="Gerar relatório de serviços (PDF)"
                         >
