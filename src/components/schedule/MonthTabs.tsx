@@ -65,7 +65,7 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
   }, [activeMonth]);
 
   return (
-    <div className="glass-strong shadow-lg pt-3 px-3 sticky top-[52px] z-20 print:hidden overflow-x-auto border-b border-border/50">
+    <div className="glass-strong shadow-lg pt-3 px-3 sticky top-[52px] z-30 print:hidden overflow-x-auto border-b border-border/50">
       <div ref={tabsRef} className="max-w-7xl mx-auto flex gap-2 items-end relative pb-1">
         {/* Sliding indicator */}
         <div 

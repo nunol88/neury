@@ -1492,8 +1492,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   return (
     <div className={`font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
 
+      {/* Month Navigation Tabs */}
+      <MonthTabs
+        monthsConfig={monthsConfig}
+        activeMonth={activeMonth}
+        onMonthChange={setActiveMonth}
+      />
+
       {/* Header - Title and Actions */}
-      <header className={`bg-gradient-to-r ${themeGradient} text-white p-4 shadow-lg print:hidden relative z-20 mx-2 mt-2 rounded-lg`}>
+      <header className={`bg-gradient-to-r ${themeGradient} text-white p-4 shadow-lg print:hidden relative z-10 mx-2 rounded-lg`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -1531,12 +1538,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </header>
 
-      {/* Month Navigation Tabs */}
-      <MonthTabs
-        monthsConfig={monthsConfig}
-        activeMonth={activeMonth}
-        onMonthChange={setActiveMonth}
-      />
 
       {/* Hero Summary Bar */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
