@@ -11,8 +11,9 @@ import {
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search, CalendarDays, Sparkles
+  Navigation, Search, CalendarDays, Sparkles, FileText
 } from 'lucide-react';
+import { generateClientReportPdf } from '@/utils/clientReportPdf';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
@@ -187,6 +188,24 @@ const ClientesAdmin = () => {
     const history = getClientHistory(clientName, selectedMonth === 'all' ? null : selectedMonth);
     setSelectedClientHistory({ name: clientName, history });
     setShowHistoryModal(true);
+  };
+
+  const handleGenerateReport = async (clientName: string) => {
+    const history = getClientHistory(clientName, selectedMonth === 'all' ? null : selectedMonth);
+    const monthLabel = selectedMonth !== 'all' && monthsConfig[selectedMonth] 
+      ? monthsConfig[selectedMonth].label 
+      : null;
+    
+    try {
+      await generateClientReportPdf(clientName, history, monthLabel);
+      toast({ title: 'Relatório gerado', description: `PDF de ${clientName} criado com sucesso.` });
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao gerar relatório', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -704,8 +723,18 @@ const ClientesAdmin = () => {
                           size="sm"
                           onClick={() => handleShowHistory(client.nome)}
                           className="text-primary hover:text-primary hover:bg-primary/10"
+                          title="Ver histórico"
                         >
                           <History size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateReport(client.nome)}
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                          title="Gerar relatório de serviços (PDF)"
+                        >
+                          <FileText size={14} />
                         </Button>
                         <Button
                           variant="outline"

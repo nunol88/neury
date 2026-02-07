@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2, Trash2 } from 'lucide-react';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloatingActionMenuProps {
   themeGradient: string;
@@ -45,6 +47,11 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   onDeleteMonth,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { open: sidebarOpen } = useSidebar();
+  const isMobile = useIsMobile();
+  
+  // Calculate left offset based on sidebar state
+  const leftOffset = !isMobile && sidebarOpen ? 'left-[calc(16rem+1.5rem)]' : 'left-6';
 
   const handleMainClick = () => {
     setIsExpanded(!isExpanded);
@@ -56,7 +63,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-3 print:hidden">
+    <div className={`fixed bottom-6 ${leftOffset} z-50 flex flex-col items-start gap-3 print:hidden transition-all duration-300`}>
       {/* Backdrop when expanded */}
       {isExpanded && (
         <div 

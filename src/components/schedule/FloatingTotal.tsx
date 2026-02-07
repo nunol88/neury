@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUp, Euro } from 'lucide-react';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloatingTotalProps {
   totalValue: number;
@@ -11,6 +13,11 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
   completedValue,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const { open: sidebarOpen } = useSidebar();
+  const isMobile = useIsMobile();
+  
+  // Calculate right offset based on sidebar state (right side button stays right)
+  const rightOffset = 'right-6';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,7 +41,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 z-50 print:hidden group animate-scale-in"
+      className={`fixed bottom-6 ${rightOffset} z-50 print:hidden group animate-scale-in transition-all duration-300`}
     >
       <div className="glass-strong rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3 border border-primary/20">
         {/* Total value display */}
