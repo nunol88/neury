@@ -137,10 +137,6 @@ export const addProfessionalFooter = async (
     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     doc.text(`${dateStr} às ${timeStr}`, 28, footerY + 13);
     
-    // Website/contact on right
-    doc.setTextColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
-    doc.text('www.mayslimpo.pt', 196, footerY + 10, { align: 'right' });
-    
   } catch (error) {
     console.error('Error adding footer logo:', error);
     // Fallback without logo
