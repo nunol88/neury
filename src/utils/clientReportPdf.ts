@@ -158,7 +158,7 @@ export const generateClientReportPdf = async (
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(SUCCESS_COLOR.r, SUCCESS_COLOR.g, SUCCESS_COLOR.b);
-    doc.text(`Total a Receber:  € ${totalValue.toFixed(2)}`, 20, summaryY + 30);
+    doc.text(`Total a Pagar:  € ${totalValue.toFixed(2)}`, 20, summaryY + 30);
   }
   
   // Footer
