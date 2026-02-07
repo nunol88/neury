@@ -1492,31 +1492,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   return (
     <div className={`font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
 
-      {/* Month Navigation Tabs */}
-      <MonthTabs
-        monthsConfig={monthsConfig}
-        activeMonth={activeMonth}
-        onMonthChange={setActiveMonth}
-      />
-
-      {/* Header */}
-      <header className={`bg-gradient-to-r ${themeGradient} text-white p-6 shadow-lg print:hidden relative z-10 rounded-b-lg mx-2`}>
+      {/* Header - Title and Actions */}
+      <header className={`bg-gradient-to-r ${themeGradient} text-white p-4 shadow-lg print:hidden relative z-20 mx-2 mt-2 rounded-lg`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
               Agenda da Neury
             </h1>
-            <p className="opacity-90 mt-1 flex items-center gap-2 text-lg font-medium">
-              Visualizando: {activeConfig?.label}
+            <p className="opacity-90 mt-0.5 flex items-center gap-2 text-base font-medium">
+              {activeConfig?.label}
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0 flex gap-3 flex-wrap items-center">
+          <div className="mt-3 md:mt-0 flex gap-2 flex-wrap items-center">
             <button
               onClick={exportToPDF}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
+              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition text-sm"
             >
-              <Download size={20} />
+              <Download size={18} />
               <span className="hidden sm:inline">Exportar PDF</span>
             </button>
             
@@ -1537,6 +1530,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           </div>
         </div>
       </header>
+
+      {/* Month Navigation Tabs */}
+      <MonthTabs
+        monthsConfig={monthsConfig}
+        activeMonth={activeMonth}
+        onMonthChange={setActiveMonth}
+      />
 
       {/* Hero Summary Bar */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
