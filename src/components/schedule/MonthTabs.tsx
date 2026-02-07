@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Calendar, Sparkles, Clock } from 'lucide-react';
 import { MonthConfig, getThemeGradient } from '@/utils/monthConfig';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MonthTabsProps {
   monthsConfig: Record<string, MonthConfig>;
@@ -18,6 +20,8 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
   const activeTabRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [isSticky, setIsSticky] = useState(false);
+  const { open: sidebarOpen } = useSidebar();
+  const isMobile = useIsMobile();
 
   // Get current month key
   const getCurrentMonthKey = (): string | null => {
@@ -79,6 +83,9 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Calculate left offset for sticky mode based on sidebar state
+  const stickyLeftOffset = !isMobile && sidebarOpen ? 'left-[16rem]' : 'left-0';
+
   return (
     <>
       {/* Spacer to prevent content jump when tabs become sticky */}
@@ -86,7 +93,7 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
       <div 
         ref={containerRef}
         className={`glass-strong shadow-lg pt-3 px-3 print:hidden overflow-x-auto border-b border-border/50 transition-all duration-300 ${
-          isSticky ? 'fixed top-[52px] left-0 right-0 z-30' : ''
+          isSticky ? `fixed top-[52px] ${stickyLeftOffset} right-0 z-30` : ''
         }`}
       >
         <div ref={tabsRef} className="max-w-7xl mx-auto flex gap-2 items-end relative pb-1">
