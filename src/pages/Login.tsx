@@ -148,7 +148,7 @@ const Login = () => {
           {/* Logo */}
           <div className="flex flex-col items-center space-y-4">
             <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl animate-fade-in ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
-              <img src={logoMayslimpo} alt="MaysLimpo Logo" className="w-full h-full object-cover" />
+              <img src={logoMayslimpo} alt="Mayslimpo Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
               <h1 className={`text-2xl font-bold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>

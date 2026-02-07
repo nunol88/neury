@@ -39,7 +39,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
         <div className="flex items-center gap-3">
           <img 
             src={logoMayslimpo} 
-            alt="MaysLimpo Logo" 
+            alt="Mayslimpo Logo" 
             className="w-10 h-10 rounded-full object-cover shadow-sm border border-border"
           />
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
