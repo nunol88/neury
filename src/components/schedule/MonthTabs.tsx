@@ -14,8 +14,10 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
   onMonthChange,
 }) => {
   const tabsRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [isSticky, setIsSticky] = useState(false);
 
   // Get current month key
   const getCurrentMonthKey = (): string | null => {
@@ -64,9 +66,30 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
     }
   }, [activeMonth]);
 
+  // Handle scroll to toggle sticky behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      // Become sticky after scrolling 150px (past the header area)
+      setIsSticky(window.scrollY > 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="glass-strong shadow-lg pt-3 px-3 print:hidden overflow-x-auto border-b border-border/50">
-      <div ref={tabsRef} className="max-w-7xl mx-auto flex gap-2 items-end relative pb-1">
+    <>
+      {/* Spacer to prevent content jump when tabs become sticky */}
+      {isSticky && <div className="h-[52px]" />}
+      <div 
+        ref={containerRef}
+        className={`glass-strong shadow-lg pt-3 px-3 print:hidden overflow-x-auto border-b border-border/50 transition-all duration-300 ${
+          isSticky ? 'fixed top-[52px] left-0 right-0 z-30' : ''
+        }`}
+      >
+        <div ref={tabsRef} className="max-w-7xl mx-auto flex gap-2 items-end relative pb-1">
         {/* Sliding indicator */}
         <div 
           className={`absolute bottom-0 h-[3px] bg-gradient-to-r ${themeGradient} rounded-full transition-all duration-300 ease-out`}
@@ -154,6 +177,7 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
         ))}
       </div>
     </div>
+    </>
   );
 };
 
