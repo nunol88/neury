@@ -62,8 +62,8 @@ export const generateClientReportPdf = async (
         formattedDate,
         dayName.charAt(0).toUpperCase() + dayName.slice(1),
         `${service.startTime} - ${service.endTime}`,
-        `${hours.toFixed(1)}h`,
-        `€${value.toFixed(2)}`
+        `${hours.toFixed(1)} h`,
+        `€ ${value.toFixed(2)}`
       ];
     }
     
@@ -71,7 +71,7 @@ export const generateClientReportPdf = async (
       formattedDate,
       dayName.charAt(0).toUpperCase() + dayName.slice(1),
       `${service.startTime} - ${service.endTime}`,
-      `${hours.toFixed(1)}h`
+      `${hours.toFixed(1)} h`
     ];
   });
   
@@ -151,20 +151,14 @@ export const generateClientReportPdf = async (
   doc.setTextColor(60, 60, 60);
   doc.setFontSize(10);
   doc.text(`Total de Serviços: ${completedServices.length}`, 20, summaryY + 18);
-  doc.text(`Total de Horas: ${totalHours.toFixed(1)}h`, 100, summaryY + 18);
+  doc.text(`Total de Horas: ${totalHours.toFixed(1)} h`, 100, summaryY + 18);
   
   // Add total value if hourly rate is provided
   if (hourlyRate) {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(SUCCESS_COLOR.r, SUCCESS_COLOR.g, SUCCESS_COLOR.b);
-    doc.text(`Total a Receber: €${totalValue.toFixed(2)}`, 20, summaryY + 30);
-    
-    // Add breakdown
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(`(${totalHours.toFixed(1)}h × €${hourlyRate.toFixed(2)}/h)`, 100, summaryY + 30);
+    doc.text(`Total a Receber:  € ${totalValue.toFixed(2)}`, 20, summaryY + 30);
   }
   
   // Footer
