@@ -221,7 +221,7 @@ export function ExportDropdown({ onExportPDF, generateAiContext, allTasks = {}, 
     return `<AI_ANALYSIS_INPUT>
   <META>
     <timestamp>${now.toISOString()}</timestamp>
-    <project>MaysLimpo - Cleaning Service Management</project>
+    <project>Mayslimpo - Cleaning Service Management</project>
     <purpose>Operational analysis and optimization recommendations</purpose>
     <period>${currentMonth}</period>
     <language>Portuguese (Portugal)</language>

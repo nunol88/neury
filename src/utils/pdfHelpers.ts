@@ -63,7 +63,7 @@ export const addProfessionalHeader = async (
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('MaysLimpo', 44, 18);
+    doc.text('Mayslimpo', 44, 18);
     
     // Slogan
     doc.setFontSize(9);
@@ -95,7 +95,7 @@ export const addProfessionalHeader = async (
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('MaysLimpo', 14, 20);
+    doc.text('Mayslimpo', 14, 20);
     doc.setFontSize(14);
     doc.text(title, 196, 18, { align: 'right' });
     doc.setFontSize(10);
@@ -129,7 +129,7 @@ export const addProfessionalFooter = async (
     doc.setFontSize(8);
     doc.setTextColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
     doc.setFont('helvetica', 'bold');
-    doc.text('Documento gerado por MaysLimpo', 28, footerY + 8);
+    doc.text('Documento gerado por Mayslimpo', 28, footerY + 8);
     
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
@@ -148,7 +148,7 @@ export const addProfessionalFooter = async (
     doc.setTextColor(100, 100, 100);
     const dateStr = new Date().toLocaleDateString('pt-BR');
     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    doc.text(`Documento gerado por MaysLimpo - ${dateStr} às ${timeStr}`, 14, footerY + 8);
+    doc.text(`Documento gerado por Mayslimpo - ${dateStr} às ${timeStr}`, 14, footerY + 8);
   }
 };
 

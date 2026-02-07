@@ -71,12 +71,12 @@ export function AppSidebar() {
         <div className="flex items-center gap-3 px-3 py-3">
           <img 
             src={logoMayslimpo} 
-            alt="MaysLimpo" 
+            alt="Mayslimpo" 
             className="w-10 h-10 rounded-full object-cover shadow-sm border border-sidebar-border flex-shrink-0"
           />
           <div className="flex flex-col overflow-hidden">
             <span className="font-semibold text-sidebar-foreground truncate">
-              MaysLimpo
+              Mayslimpo
             </span>
             <span className="text-xs text-sidebar-foreground/60 truncate">
               Gestão de Limpezas

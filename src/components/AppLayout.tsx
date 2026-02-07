@@ -23,10 +23,10 @@ export function AppLayout({ children }: AppLayoutProps) {
               <div className="flex items-center gap-2">
                 <img 
                   src={logoMayslimpo} 
-                  alt="MaysLimpo" 
+                  alt="Mayslimpo" 
                   className="w-7 h-7 rounded-full object-cover"
                 />
-                <span className="font-semibold text-sm truncate">MaysLimpo</span>
+                <span className="font-semibold text-sm truncate">Mayslimpo</span>
               </div>
             )}
           </header>
