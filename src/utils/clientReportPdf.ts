@@ -5,11 +5,13 @@ import { ClientHistory } from '@/hooks/useClientStats';
 
 // Brand colors
 const BRAND_PRIMARY = { r: 135, g: 206, b: 235 };
+const SUCCESS_COLOR = { r: 34, g: 197, b: 94 };
 
 export const generateClientReportPdf = async (
   clientName: string,
   history: ClientHistory[],
-  selectedMonthLabel?: string | null
+  selectedMonthLabel?: string | null,
+  hourlyRate?: number
 ): Promise<void> => {
   const doc = new jsPDF();
   
@@ -27,6 +29,11 @@ export const generateClientReportPdf = async (
   doc.setTextColor(80, 80, 80);
   doc.text(`Período: ${periodLabel}`, 14, yPos);
   
+  // Hourly rate info (if provided)
+  if (hourlyRate) {
+    doc.text(`Valor/Hora: €${hourlyRate.toFixed(2)}`, 120, yPos);
+  }
+  
   yPos += 10;
   
   if (completedServices.length === 0) {
@@ -38,7 +45,7 @@ export const generateClientReportPdf = async (
     return;
   }
   
-  // Prepare table data (NO monetary values)
+  // Prepare table data with values if hourly rate is provided
   const tableData = completedServices.map(service => {
     const date = new Date(service.date);
     const dayName = date.toLocaleDateString('pt-PT', { weekday: 'long' });
@@ -49,6 +56,17 @@ export const generateClientReportPdf = async (
     const end = new Date(`1970-01-01T${service.endTime}`);
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     
+    if (hourlyRate) {
+      const value = hours * hourlyRate;
+      return [
+        formattedDate,
+        dayName.charAt(0).toUpperCase() + dayName.slice(1),
+        `${service.startTime} - ${service.endTime}`,
+        `${hours.toFixed(1)}h`,
+        `€${value.toFixed(2)}`
+      ];
+    }
+    
     return [
       formattedDate,
       dayName.charAt(0).toUpperCase() + dayName.slice(1),
@@ -57,9 +75,30 @@ export const generateClientReportPdf = async (
     ];
   });
   
+  // Table headers based on whether we have hourly rate
+  const tableHeaders = hourlyRate 
+    ? [['Data', 'Dia', 'Horário', 'Horas', 'Valor']]
+    : [['Data', 'Dia', 'Horário', 'Horas']];
+  
+  // Column styles based on whether we have hourly rate
+  const columnStyles = hourlyRate 
+    ? {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 28, halign: 'right' as const },
+      }
+    : {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 25 },
+      };
+  
   // Add services table
   autoTable(doc, {
-    head: [['Data', 'Dia', 'Horário', 'Horas']],
+    head: tableHeaders,
     body: tableData,
     startY: yPos,
     theme: 'grid',
@@ -76,12 +115,7 @@ export const generateClientReportPdf = async (
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
-    columnStyles: {
-      0: { cellWidth: 35 },
-      1: { cellWidth: 45 },
-      2: { cellWidth: 45 },
-      3: { cellWidth: 25 },
-    },
+    columnStyles,
     margin: { left: 14, right: 14 },
     styles: {
       fontSize: 10,
@@ -99,11 +133,14 @@ export const generateClientReportPdf = async (
     return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
   }, 0);
   
-  // Add summary (NO monetary values)
+  const totalValue = hourlyRate ? totalHours * hourlyRate : 0;
+  
+  // Add summary
   const summaryY = finalY + 10;
+  const summaryHeight = hourlyRate ? 38 : 28;
   
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, summaryY, 182, 28, 3, 3, 'F');
+  doc.roundedRect(14, summaryY, 182, summaryHeight, 3, 3, 'F');
   
   doc.setFontSize(11);
   doc.setTextColor(BRAND_PRIMARY.r, BRAND_PRIMARY.g, BRAND_PRIMARY.b);
@@ -116,8 +153,22 @@ export const generateClientReportPdf = async (
   doc.text(`Total de Serviços: ${completedServices.length}`, 20, summaryY + 18);
   doc.text(`Total de Horas: ${totalHours.toFixed(1)}h`, 100, summaryY + 18);
   
+  // Add total value if hourly rate is provided
+  if (hourlyRate) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(SUCCESS_COLOR.r, SUCCESS_COLOR.g, SUCCESS_COLOR.b);
+    doc.text(`Total a Receber: €${totalValue.toFixed(2)}`, 20, summaryY + 30);
+    
+    // Add breakdown
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`(${totalHours.toFixed(1)}h × €${hourlyRate.toFixed(2)}/h)`, 100, summaryY + 30);
+  }
+  
   // Footer
-  await addProfessionalFooter(doc, summaryY + 35);
+  await addProfessionalFooter(doc, summaryY + summaryHeight + 10);
   
   // Save
   const safeClientName = clientName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
