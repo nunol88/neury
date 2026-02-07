@@ -64,7 +64,8 @@ const LiquidGlassReportModal: React.FC<LiquidGlassReportModalProps> = ({
     if (!byYear[config.year]) byYear[config.year] = [];
     byYear[config.year].push([key, config]);
   });
-  const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+  // Sort years ascending (oldest first)
+  const years = Object.keys(byYear).map(Number).sort((a, b) => a - b);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -154,7 +155,7 @@ const LiquidGlassReportModal: React.FC<LiquidGlassReportModalProps> = ({
                           {year}
                         </SelectLabel>
                         {byYear[year]
-                          .sort((a, b) => b[1].monthIndex - a[1].monthIndex)
+                          .sort((a, b) => a[1].monthIndex - b[1].monthIndex)
                           .map(([key, config]) => {
                             const monthStats = getStatsForMonth(key);
                             const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
