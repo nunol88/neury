@@ -20,6 +20,7 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { ClientsViewSkeleton } from '@/components/ui/skeleton-loader';
 import ClientAvatar from '@/components/ui/client-avatar';
 import EmptyState from '@/components/ui/empty-state';
+import LiquidGlassReportModal from '@/components/clients/LiquidGlassReportModal';
 
 const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
@@ -666,158 +667,23 @@ const ClientesAdmin = () => {
           </div>
         )}
 
-        {/* Report Modal - Two Steps: Month Selection + Hourly Rate */}
-        {showReportModal && reportClientName && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={handleCloseReportModal} />
-            <div className="bg-card rounded-xl shadow-xl w-full max-w-md relative z-10">
-              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  <FileText size={20} />
-                  Gerar Relatório
-                </h2>
-                <button onClick={handleCloseReportModal} className="hover:bg-white/20 p-1 rounded">
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div className="p-4">
-                {/* Step 1: Month Selection */}
-                {reportStep === 'month' && (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      <strong className="text-foreground">1/2</strong> — Selecione o período para <strong className="text-foreground">{reportClientName}</strong>:
-                    </p>
-                    
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {/* All periods option */}
-                      <button
-                        onClick={() => handleSelectReportMonth('all')}
-                        className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary transition-colors flex items-center justify-between group"
-                      >
-                        <span className="font-medium text-foreground">Todos os períodos</span>
-                        <CalendarDays size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                      </button>
-                      
-                      {/* Months grouped by year */}
-                      {(() => {
-                        const byYear: Record<number, Array<[string, typeof monthsConfig[string]]>> = {};
-                        sortedMonths.forEach(([key, config]) => {
-                          if (!byYear[config.year]) byYear[config.year] = [];
-                          byYear[config.year].push([key, config]);
-                        });
-                        
-                        const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
-                        
-                        return years.map((year) => (
-                          <div key={year}>
-                            <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-wider mt-3 mb-2 px-1">
-                              {year}
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {byYear[year]
-                                .sort((a, b) => b[1].monthIndex - a[1].monthIndex)
-                                .map(([key, config]) => {
-                                  const monthStats = getStatsForMonth(key);
-                                  const hasData = monthStats && monthStats.totals.totalAgendamentos > 0;
-                                  const monthAbbr = config.label.split(' ')[0];
-                                  
-                                  const now = new Date();
-                                  const isCurrentMonth = config.year === now.getFullYear() && config.monthIndex === now.getMonth();
-                                  
-                                  return (
-                                    <button
-                                      key={key}
-                                      onClick={() => handleSelectReportMonth(key)}
-                                      className={`p-2 rounded-lg border text-sm font-medium transition-colors ${
-                                        isCurrentMonth
-                                          ? 'border-success bg-success/10 text-success hover:bg-success/20'
-                                          : hasData
-                                            ? 'border-border bg-card hover:bg-secondary text-foreground'
-                                            : 'border-border/50 bg-muted/30 text-muted-foreground hover:bg-secondary/50'
-                                      }`}
-                                    >
-                                      {monthAbbr}
-                                    </button>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </>
-                )}
-                
-                {/* Step 2: Hourly Rate */}
-                {reportStep === 'rate' && (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      <strong className="text-foreground">2/2</strong> — Insira o valor por hora para calcular o total:
-                    </p>
-                    
-                    <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Período selecionado:</p>
-                      <p className="font-medium text-foreground">
-                        {reportSelectedMonth === 'all' 
-                          ? 'Todos os períodos' 
-                          : monthsConfig[reportSelectedMonth!]?.label}
-                      </p>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Valor por Hora (€)
-                      </label>
-                      <div className="relative">
-                        <Euro size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          value={reportHourlyRate}
-                          onChange={(e) => setReportHourlyRate(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input text-foreground text-lg font-bold focus:ring-2 focus:ring-primary focus:border-primary"
-                          placeholder="7.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        O relatório calculará automaticamente o valor total baseado nas horas trabalhadas.
-                      </p>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setReportStep('month')}
-                        className="flex-1"
-                      >
-                        Voltar
-                      </Button>
-                      <Button
-                        onClick={handleGenerateReport}
-                        disabled={generatingReport || !reportHourlyRate}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        {generatingReport ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin mr-2" />
-                            A gerar...
-                          </>
-                        ) : (
-                          <>
-                            <FileText size={16} className="mr-2" />
-                            Gerar PDF
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Liquid Glass Report Modal */}
+        <LiquidGlassReportModal
+          isOpen={showReportModal && !!reportClientName}
+          onClose={handleCloseReportModal}
+          clientName={reportClientName || ''}
+          reportStep={reportStep}
+          setReportStep={setReportStep}
+          reportSelectedMonth={reportSelectedMonth}
+          setReportSelectedMonth={setReportSelectedMonth}
+          reportHourlyRate={reportHourlyRate}
+          setReportHourlyRate={setReportHourlyRate}
+          onGenerateReport={handleGenerateReport}
+          generatingReport={generatingReport}
+          monthsConfig={monthsConfig}
+          sortedMonths={sortedMonths}
+          getStatsForMonth={getStatsForMonth}
+        />
 
         {/* Clients List */}
         {clients.length === 0 ? (
