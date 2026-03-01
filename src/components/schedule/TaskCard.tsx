@@ -174,7 +174,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       )}
 
       {/* Footer: Price + Actions */}
-      <div className="flex justify-between items-center border-t pt-2 border-border/40 mt-1">
+      <div className="flex justify-between items-center border-t pt-2 border-border/40 mt-1 overflow-hidden">
         <div className="flex items-center gap-2">
           {/* Price badge */}
           {isAdmin && onTogglePayment ? (
