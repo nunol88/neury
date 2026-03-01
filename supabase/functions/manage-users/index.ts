@@ -2,8 +2,37 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Input validation helpers
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_NAME_LENGTH = 100;
+const VALID_ROLES = ["admin", "neury"];
+
+function sanitizeErrorMessage(error: { message?: string }): string {
+  const msg = error?.message || "";
+  
+  if (msg.includes("duplicate") || msg.includes("already exists") || msg.includes("already been registered")) {
+    return "Este email já está registado";
+  }
+  if (msg.includes("password")) {
+    return "Password não cumpre os requisitos de segurança";
+  }
+  if (msg.includes("not found") || msg.includes("User not found")) {
+    return "Utilizador não encontrado";
+  }
+  
+  return "Ocorreu um erro ao processar o pedido";
+}
+
+function makeErrorResponse(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,10 +47,7 @@ Deno.serve(async (req) => {
     // Verify the caller is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return makeErrorResponse("Não autorizado", 401);
     }
 
     const callerClient = createClient(supabaseUrl, anonKey, {
@@ -30,10 +56,7 @@ Deno.serve(async (req) => {
 
     const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return makeErrorResponse("Não autorizado", 401);
     }
 
     // Check admin role
@@ -44,10 +67,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (callerRole?.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Apenas administradores" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return makeErrorResponse("Apenas administradores", 403);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
@@ -57,32 +77,38 @@ Deno.serve(async (req) => {
       const { email, password, role, name } = payload;
 
       if (!email || !password || !role) {
-        return new Response(JSON.stringify({ error: "Email, password e role são obrigatórios" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return makeErrorResponse("Email, password e role são obrigatórios", 400);
       }
 
-      if (!["admin", "neury"].includes(role)) {
-        return new Response(JSON.stringify({ error: "Role inválido" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      // Validate email format
+      if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+        return makeErrorResponse("Formato de email inválido", 400);
       }
+
+      // Validate password strength
+      if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
+        return makeErrorResponse(`Password deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres`, 400);
+      }
+
+      // Validate role
+      if (!VALID_ROLES.includes(role)) {
+        return makeErrorResponse("Role inválido", 400);
+      }
+
+      // Sanitize name
+      const sanitizedName = (typeof name === "string" ? name.trim().slice(0, MAX_NAME_LENGTH) : "") || email.split("@")[0];
 
       // Create user via admin API
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email,
+        email: email.trim(),
         password,
         email_confirm: true,
-        user_metadata: { name: name || email.split("@")[0] },
+        user_metadata: { name: sanitizedName },
       });
 
       if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.error("User creation failed:", createError);
+        return makeErrorResponse(sanitizeErrorMessage(createError), 400);
       }
 
       // Assign role
@@ -91,10 +117,8 @@ Deno.serve(async (req) => {
         .insert({ user_id: newUser.user.id, role, is_active: true });
 
       if (roleError) {
-        return new Response(JSON.stringify({ error: roleError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.error("Role assignment failed:", roleError);
+        return makeErrorResponse(sanitizeErrorMessage(roleError), 400);
       }
 
       return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
@@ -105,19 +129,13 @@ Deno.serve(async (req) => {
     if (action === "delete") {
       const { user_id } = payload;
 
-      if (!user_id) {
-        return new Response(JSON.stringify({ error: "user_id é obrigatório" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (!user_id || typeof user_id !== "string") {
+        return makeErrorResponse("user_id é obrigatório", 400);
       }
 
       // Prevent deleting self
       if (user_id === caller.id) {
-        return new Response(JSON.stringify({ error: "Não pode eliminar a si próprio" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return makeErrorResponse("Não pode eliminar a si próprio", 400);
       }
 
       // Delete role first
@@ -127,10 +145,8 @@ Deno.serve(async (req) => {
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id);
 
       if (deleteError) {
-        return new Response(JSON.stringify({ error: deleteError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.error("User deletion failed:", deleteError);
+        return makeErrorResponse(sanitizeErrorMessage(deleteError), 400);
       }
 
       return new Response(JSON.stringify({ success: true }), {
@@ -139,14 +155,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === "list") {
-      // List all auth users with their roles
       const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers();
 
       if (listError) {
-        return new Response(JSON.stringify({ error: listError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.error("User listing failed:", listError);
+        return makeErrorResponse(sanitizeErrorMessage(listError), 400);
       }
 
       const { data: roles } = await adminClient.from("user_roles").select("*");
@@ -169,14 +182,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: "Ação inválida" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return makeErrorResponse("Ação inválida", 400);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Unexpected error in manage-users:", err);
+    return makeErrorResponse("Erro interno do servidor", 500);
   }
 });
