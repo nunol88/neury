@@ -1473,7 +1473,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const headerBg = theme === 'dark' ? 'bg-secondary' : bgColor;
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
-  const roleLabel = role === 'admin' ? 'Administrador' : 'Neury';
+  const roleLabel = role === 'admin' ? 'Administrador' : 'Funcionário/a';
 
   if (loading) {
     return (
@@ -1500,13 +1500,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       />
 
       {/* Header - Title and Actions */}
-      <header className={`bg-gradient-to-r ${themeGradient} text-white p-4 shadow-lg print:hidden relative z-10 mx-2 rounded-lg`}>
+      <header className="glass-card p-4 shadow-lg print:hidden relative z-10 mx-2 rounded-xl border border-border/50">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              Agenda da Neury
+            <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+              {isAdmin ? `Agenda de ${username}` : 'A minha Agenda'}
             </h1>
-            <p className="opacity-90 mt-0.5 flex items-center gap-2 text-base font-medium">
+            <p className="text-muted-foreground mt-0.5 flex items-center gap-2 text-base font-medium">
               {activeConfig?.label}
             </p>
           </div>
@@ -1514,7 +1514,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           <div className="mt-3 md:mt-0 flex gap-2 flex-wrap items-center">
             <button
               onClick={exportToPDF}
-              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition text-sm"
+              className="bg-primary/10 hover:bg-primary/20 text-foreground px-3 py-1.5 rounded-lg flex items-center gap-2 transition text-sm border border-border/50"
             >
               <Download size={18} />
               <span className="hidden sm:inline">Exportar PDF</span>
@@ -1522,7 +1522,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             
             {/* Actions menu (copy month, delete month) */}
             {isAdmin && (
-              <div className="bg-white/20 rounded-lg">
+              <div className="bg-primary/10 rounded-lg border border-border/50">
                 <ScheduleActionsMenu
                   canCopyFromPrevious={!!previousMonth}
                   copyingFromPrevious={copyingFromPrevious}
@@ -1598,22 +1598,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       <FloatingTotal
         totalValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          const NEURY_RATE = 7;
+          const EMPLOYEE_RATE = 7;
           return monthTasks.reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
-            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * NEURY_RATE;
+            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
           }, 0);
         })()}
         completedValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          const NEURY_RATE = 7;
+          const EMPLOYEE_RATE = 7;
           return monthTasks.filter(t => t.completed).reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
-            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * NEURY_RATE;
+            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
           }, 0);
         })()}
       />

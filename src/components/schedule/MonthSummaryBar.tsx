@@ -9,14 +9,14 @@ interface MonthSummaryBarProps {
   isAdmin?: boolean;
 }
 
-const NEURY_RATE = 7;
+const EMPLOYEE_RATE = 7;
 
 const getTaskPrice = (t: Task, isAdmin: boolean): number => {
   if (isAdmin) return parseFloat(t.price) || 0;
   const start = new Date(`1970-01-01T${t.startTime}`);
   const end = new Date(`1970-01-01T${t.endTime}`);
   const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  return hours * NEURY_RATE;
+  return hours * EMPLOYEE_RATE;
 };
 
 const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
@@ -56,8 +56,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <Calendar size={18} className="text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-primary">{totalTasks}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Agendamentos</p>
+              <p className="text-xl font-bold text-primary">{totalTasks}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Agendamentos</p>
             </div>
           </div>
 
@@ -67,8 +67,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <CheckCircle2 size={18} className="text-success" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-success">{completedTasks}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Concluídos</p>
+              <p className="text-xl font-bold text-success">{completedTasks}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Concluídos</p>
             </div>
           </div>
 
@@ -78,8 +78,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <Clock size={18} className="text-muted-foreground" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{totalHours.toFixed(0)}h</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Horas</p>
+              <p className="text-xl font-bold text-foreground">{totalHours.toFixed(0)}h</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Horas</p>
             </div>
           </div>
 
@@ -89,8 +89,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <Target size={18} className="text-amber-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-500">{pendingTasks}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pendentes</p>
+              <p className="text-xl font-bold text-amber-500">{pendingTasks}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Pendentes</p>
             </div>
           </div>
         </div>
@@ -101,62 +101,62 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
           <div className="flex items-center gap-4">
             {/* Completion progress */}
             <div className="relative">
-              <svg className="w-16 h-16 transform -rotate-90">
+              <svg className="w-14 h-14 transform -rotate-90">
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
+                  cx="28"
+                  cy="28"
+                  r="24"
                   stroke="currentColor"
-                  strokeWidth="4"
+                  strokeWidth="3.5"
                   fill="none"
                   className="text-muted/30"
                 />
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
+                  cx="28"
+                  cy="28"
+                  r="24"
                   stroke="currentColor"
-                  strokeWidth="4"
+                  strokeWidth="3.5"
                   fill="none"
-                  strokeDasharray={`${2 * Math.PI * 28}`}
-                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - completionRate / 100)}`}
+                  strokeDasharray={`${2 * Math.PI * 24}`}
+                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - completionRate / 100)}`}
                   className="text-success transition-all duration-1000 ease-out"
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm font-bold text-success">{completionRate.toFixed(0)}%</span>
+                <span className="text-xs font-bold text-success">{completionRate.toFixed(0)}%</span>
                 <span className="text-[8px] text-muted-foreground">Feito</span>
               </div>
             </div>
 
             {/* Occupancy progress */}
             <div className="relative">
-              <svg className="w-16 h-16 transform -rotate-90">
+              <svg className="w-14 h-14 transform -rotate-90">
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
+                  cx="28"
+                  cy="28"
+                  r="24"
                   stroke="currentColor"
-                  strokeWidth="4"
+                  strokeWidth="3.5"
                   fill="none"
                   className="text-muted/30"
                 />
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
+                  cx="28"
+                  cy="28"
+                  r="24"
                   stroke="currentColor"
-                  strokeWidth="4"
+                  strokeWidth="3.5"
                   fill="none"
-                  strokeDasharray={`${2 * Math.PI * 28}`}
-                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - occupancyRate / 100)}`}
+                  strokeDasharray={`${2 * Math.PI * 24}`}
+                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - occupancyRate / 100)}`}
                   className="text-primary transition-all duration-1000 ease-out"
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm font-bold text-primary">{occupancyRate.toFixed(0)}%</span>
+                <span className="text-xs font-bold text-primary">{occupancyRate.toFixed(0)}%</span>
                 <span className="text-[8px] text-muted-foreground">Ocupação</span>
               </div>
             </div>
@@ -169,8 +169,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <span>Total {monthLabel}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Euro size={20} className="text-success" />
-              <span className="text-3xl font-bold text-success">{totalValue.toFixed(2)}</span>
+              <Euro size={18} className="text-success" />
+              <span className="text-2xl font-bold text-success">{totalValue.toFixed(2)}</span>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
               <span className="text-success">€{completedValue.toFixed(2)} faturado</span>
