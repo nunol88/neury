@@ -177,29 +177,35 @@ const GestaoUtilizadores: React.FC = () => {
         {users.map((u) => {
           const isAdmin = u.role === 'admin';
           return (
-            <Card key={u.id} className={!u.is_active && !isAdmin ? 'opacity-60' : ''}>
-              <CardContent className="flex items-center justify-between py-4 px-5">
+            <Card key={u.id} className={`transition-all duration-200 hover:shadow-md hover:border-primary/20 ${!u.is_active && !isAdmin ? 'opacity-60' : ''}`}>
+              <CardContent className="flex items-center justify-between py-5 px-6">
                 <div className="flex items-center gap-4">
-                  <div className={`rounded-full p-2 ${u.is_active || isAdmin ? 'bg-primary/10' : 'bg-muted'}`}>
+                  <div className={`rounded-full p-2.5 ${isAdmin ? 'bg-primary/15' : u.is_active ? 'bg-green-100 dark:bg-green-950/40' : 'bg-muted'}`}>
                     {u.is_active || isAdmin ? (
-                      <UserCheck className="h-5 w-5 text-primary" />
+                      <UserCheck className={`h-5 w-5 ${isAdmin ? 'text-primary' : 'text-green-600 dark:text-green-400'}`} />
                     ) : (
                       <UserX className="h-5 w-5 text-muted-foreground" />
                     )}
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">{u.name}</span>
-                      <Badge variant={isAdmin ? 'default' : 'secondary'}>
-                        {isAdmin ? (
-                          <><ShieldCheck className="h-3 w-3 mr-1" /> Admin</>
-                        ) : (
-                          'Funcionário'
-                        )}
-                      </Badge>
+                      {isAdmin ? (
+                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                          <ShieldCheck className="h-3 w-3 mr-1" /> Admin
+                        </Badge>
+                      ) : u.is_active ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
+                          Funcionário
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-muted text-muted-foreground border-border">
+                          Funcionário
+                        </Badge>
+                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{u.email}</span>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <span className="text-xs text-muted-foreground block">{u.email}</span>
+                    <div className="text-xs text-muted-foreground/80">
                       {isAdmin
                         ? 'Acesso total — pode gerir tudo'
                         : u.is_active
@@ -213,9 +219,9 @@ const GestaoUtilizadores: React.FC = () => {
                   {!isAdmin && (
                     <>
                       <div className="text-right hidden sm:block">
-                        <span className="text-sm text-muted-foreground block">
+                        <Badge variant="outline" className={`text-xs ${u.is_active ? 'border-green-200 text-green-600 dark:border-green-800 dark:text-green-400' : 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400'}`}>
                           {u.is_active ? 'Ativo' : 'Inativo'}
-                        </span>
+                        </Badge>
                       </div>
                       <Switch
                         checked={u.is_active}
