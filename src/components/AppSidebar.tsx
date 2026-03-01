@@ -26,7 +26,8 @@ import {
   Sun, 
   Moon,
   Receipt,
-  Info
+  Info,
+  UserCog
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
@@ -36,6 +37,7 @@ const navItems = [
   { title: 'Clientes', url: '/admin/clientes', icon: Users },
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
   { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
+  { title: 'Utilizadores', url: '/admin/utilizadores', icon: UserCog },
   { title: 'Sobre', url: '/admin/sobre', icon: Info },
 ];
 
