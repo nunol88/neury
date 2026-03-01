@@ -152,7 +152,7 @@ const Login = () => {
             </div>
             <div className="text-center">
               <h1 className={`text-2xl font-bold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
-                Agenda Neury
+                Agenda Mayara Godoi
               </h1>
               <div className={`mt-2 flex items-center justify-center gap-2 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
                 {greeting.icon === 'night' ? (
@@ -291,7 +291,7 @@ const Login = () => {
           <div className={`text-center text-xs animate-fade-in animation-delay-700 ${
             theme === 'dark' ? 'text-muted-foreground/50' : 'text-white/30'
           }`}>
-            Agenda Neury v{APP_VERSION}
+            Agenda Mayara Godoi v{APP_VERSION}
           </div>
         </div>
       </div>
