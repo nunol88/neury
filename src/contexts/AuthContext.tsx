@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole;
+  isActive: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -24,47 +25,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole>(null);
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
 
   // Secure role fetching with validation
-  const fetchUserRole = useCallback(async (userId: string): Promise<AppRole> => {
+  const fetchUserRole = useCallback(async (userId: string): Promise<{ role: AppRole; active: boolean }> => {
     try {
-      // Validate userId format to prevent injection
       if (!userId || typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) {
         console.error('Invalid user ID format');
-        return null;
+        return { role: null, active: false };
       }
 
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, is_active')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching role:', error.message);
-        return null;
+        return { role: null, active: false };
       }
 
-      // Validate the returned role against allowed values
       const roleValue = data?.role;
       if (roleValue && VALID_ROLES.includes(roleValue)) {
-        return roleValue as AppRole;
+        return { role: roleValue as AppRole, active: data?.is_active ?? true };
       }
 
-      return null;
+      return { role: null, active: false };
     } catch (error) {
       console.error('Error fetching role:', error);
-      return null;
+      return { role: null, active: false };
     }
   }, []);
 
   // Function to verify role on-demand (for sensitive operations)
   const verifyRole = useCallback(async (): Promise<AppRole> => {
     if (!user?.id) return null;
-    const verifiedRole = await fetchUserRole(user.id);
-    setRole(verifiedRole);
-    return verifiedRole;
+    const result = await fetchUserRole(user.id);
+    setRole(result.role);
+    setIsActive(result.active);
+    return result.role;
   }, [user?.id, fetchUserRole]);
 
   useEffect(() => {
@@ -77,12 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Defer role fetching with setTimeout
         if (session?.user) {
           setTimeout(async () => {
-            const userRole = await fetchUserRole(session.user.id);
-            setRole(userRole);
+            const result = await fetchUserRole(session.user.id);
+            setRole(result.role);
+            setIsActive(result.active);
             setLoading(false);
           }, 0);
         } else {
           setRole(null);
+          setIsActive(true);
           setLoading(false);
         }
       }
@@ -94,8 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then(userRole => {
-          setRole(userRole);
+        fetchUserRole(session.user.id).then(result => {
+          setRole(result.role);
+          setIsActive(result.active);
           setLoading(false);
         });
       } else {
@@ -130,10 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await supabase.auth.signOut();
     setRole(null);
+    setIsActive(true);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut, verifyRole }}>
+    <AuthContext.Provider value={{ user, session, role, isActive, loading, signIn, signUp, signOut, verifyRole }}>
       {children}
     </AuthContext.Provider>
   );
