@@ -8,7 +8,7 @@ import {
 import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 
 type ChangeType = 'new' | 'fix' | 'improvement';
 
@@ -26,6 +26,20 @@ interface VersionEntry {
 }
 
 const changelog: VersionEntry[] = [
+  {
+    version: '2.2.0',
+    date: '2026-03-01',
+    title: '🧹 Visual Mais Limpo',
+    summary: 'A app ficou mais limpa e profissional. Foram removidas animações desnecessárias (confetti, brilhos, piscares) e os cartões ficaram mais simples. A sidebar agora tem botões mais compactos, as tabs dos meses deixaram de ter ícones repetidos, e o botão flutuante ficou mais discreto. A página de login também ficou mais elegante.',
+    changes: [
+      { text: 'Cartões de tarefas e dias mais limpos, sem efeitos excessivos', type: 'improvement' },
+      { text: 'Tabs dos meses simplificadas (sem ícones e brilhos)', type: 'improvement' },
+      { text: 'Sidebar com botões de ícone no rodapé', type: 'improvement' },
+      { text: 'Botão flutuante mais pequeno e discreto', type: 'improvement' },
+      { text: 'Login sem animações de fundo distrativas', type: 'improvement' },
+      { text: 'Cores unificadas usando o tema da app', type: 'improvement' },
+    ],
+  },
   {
     version: '2.1.0',
     date: '2026-03-01',

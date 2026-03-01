@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 
 const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
@@ -129,14 +129,7 @@ const Login = () => {
         {theme === 'dark' ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-white" />}
       </button>
 
-      {/* Animated background orbs - only show in light mode */}
-      {theme !== 'dark' && (
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        </div>
-      )}
+      {/* Subtle background gradient */}
 
       {/* Glass card */}
       <div className={`relative w-full max-w-md ${shake ? 'animate-shake' : ''}`}>
@@ -147,7 +140,7 @@ const Login = () => {
         <div className="relative p-8 space-y-6">
           {/* Logo */}
           <div className="flex flex-col items-center space-y-4">
-            <div className={`w-24 h-24 rounded-full overflow-hidden ring-4 shadow-2xl animate-fade-in ${theme === 'dark' ? 'ring-primary/30 shadow-black/40' : 'ring-white/30 shadow-black/20'}`}>
+            <div className={`w-20 h-20 rounded-full overflow-hidden ring-2 shadow-lg animate-fade-in ${theme === 'dark' ? 'ring-primary/30' : 'ring-white/20'}`}>
               <img src={logoMayslimpo} alt="Mayslimpo Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">

@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   CalendarDays, 
   BarChart3, 
@@ -83,9 +84,6 @@ export function AppSidebar() {
             <span className="font-semibold text-sidebar-foreground truncate">
               Mayslimpo
             </span>
-            <span className="text-xs text-sidebar-foreground/60 truncate">
-              Gestão de Limpezas
-            </span>
           </div>
         </div>
       </SidebarHeader>
@@ -143,29 +141,41 @@ export function AppSidebar() {
         
         <SidebarSeparator />
         
-        {/* Action buttons */}
-        <div className="flex flex-row gap-2 p-3">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={toggleTheme}
-            className="flex-1"
-            title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            <span className="ml-2">Tema</span>
-          </Button>
+        {/* Action buttons - icon only */}
+        <div className="flex flex-row gap-1 p-3 justify-center">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="h-9 w-9"
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleSignOut}
-            className="flex-1 text-destructive hover:text-destructive"
-            title="Sair"
-          >
-            <LogOut size={18} />
-            <span className="ml-2">Sair</span>
-          </Button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleSignOut}
+                  className="h-9 w-9 text-destructive hover:text-destructive"
+                >
+                  <LogOut size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Sair</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </SidebarFooter>
     </Sidebar>
