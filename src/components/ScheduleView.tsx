@@ -53,7 +53,7 @@ interface ScheduleViewProps {
 }
 
 const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
-  const { user, role, signOut } = useAuth();
+  const { user, role, isActive, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
@@ -1577,6 +1577,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               dayObj={dayObj}
               tasks={dayTasks}
               isAdmin={isAdmin}
+              canEdit={isAdmin || isActive}
               userRole={role || 'user'}
               isDarkMode={theme === 'dark'}
               headerBg={headerBg}
