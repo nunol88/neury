@@ -3,38 +3,60 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Users, ShieldCheck, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
-interface UserRole {
+interface ManagedUser {
   id: string;
-  user_id: string;
-  role: 'admin' | 'neury';
+  email: string;
+  name: string;
+  role: string | null;
   is_active: boolean;
+  role_id: string | null;
   created_at: string;
 }
 
-const ROLE_DISPLAY: Record<string, { name: string; description: string }> = {
-  admin: { name: 'Mayara', description: 'Administradora — acesso total' },
-  neury: { name: 'Neury', description: 'Funcionária' },
-};
-
 const GestaoUtilizadores: React.FC = () => {
-  const [users, setUsers] = useState<UserRole[]>([]);
+  const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<ManagedUser | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Form state
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState<string>('neury');
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('*')
-      .order('role', { ascending: true });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('manage-users', {
+        body: { action: 'list' },
+      });
 
-    if (error) {
+      if (res.error) throw res.error;
+      setUsers(res.data.users || []);
+    } catch (err: any) {
       toast.error('Erro ao carregar utilizadores');
-      console.error(error);
-    } else {
-      setUsers(data || []);
+      console.error(err);
     }
     setLoading(false);
   };
@@ -43,31 +65,88 @@ const GestaoUtilizadores: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const toggleActive = async (userRole: UserRole) => {
-    if (userRole.role === 'admin') {
+  const toggleActive = async (user: ManagedUser) => {
+    if (user.role === 'admin') {
       toast.error('Não é possível desativar a administradora');
       return;
     }
+    if (!user.role_id) return;
 
-    setToggling(userRole.id);
+    setToggling(user.id);
     const { error } = await supabase
       .from('user_roles')
-      .update({ is_active: !userRole.is_active })
-      .eq('id', userRole.id);
+      .update({ is_active: !user.is_active })
+      .eq('id', user.role_id);
 
     if (error) {
-      toast.error('Erro ao atualizar estado do utilizador');
+      toast.error('Erro ao atualizar estado');
       console.error(error);
     } else {
-      const display = ROLE_DISPLAY[userRole.role] || { name: userRole.role };
-      toast.success(
-        userRole.is_active
-          ? `${display.name} desativada com sucesso`
-          : `${display.name} ativada com sucesso`
-      );
+      toast.success(user.is_active ? `${user.name} desativado(a)` : `${user.name} ativado(a)`);
       fetchUsers();
     }
     setToggling(null);
+  };
+
+  const handleCreate = async () => {
+    if (!newEmail || !newPassword || !newRole) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Password deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email: newEmail,
+          password: newPassword,
+          role: newRole,
+          name: newName || newEmail.split('@')[0],
+        },
+      });
+
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || res.error?.message || 'Erro ao criar');
+      }
+
+      toast.success('Utilizador criado com sucesso!');
+      setShowCreateDialog(false);
+      setNewName('');
+      setNewEmail('');
+      setNewPassword('');
+      setNewRole('neury');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar utilizador');
+    }
+    setCreating(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUser) return;
+
+    setDeleting(true);
+    try {
+      const res = await supabase.functions.invoke('manage-users', {
+        body: { action: 'delete', user_id: deleteUser.id },
+      });
+
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || res.error?.message || 'Erro ao eliminar');
+      }
+
+      toast.success(`${deleteUser.name} foi removido(a)`);
+      setDeleteUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao eliminar utilizador');
+    }
+    setDeleting(false);
   };
 
   if (loading) {
@@ -80,24 +159,30 @@ const GestaoUtilizadores: React.FC = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="flex items-center gap-3">
-        <Users className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Gestão de Utilizadores</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Users className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Gestão de Utilizadores</h1>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+          <UserPlus size={16} />
+          <span className="hidden sm:inline">Adicionar</span>
+        </Button>
       </div>
 
       <p className="text-muted-foreground text-sm">
-        Ative ou desative utilizadores. Utilizadores inativos apenas podem visualizar, sem permissão para editar.
+        Gerencie utilizadores da aplicação. Funcionários sem poderes apenas podem observar.
       </p>
 
       <div className="grid gap-4">
         {users.map((u) => {
-          const display = ROLE_DISPLAY[u.role] || { name: u.role, description: '' };
+          const isAdmin = u.role === 'admin';
           return (
-            <Card key={u.id} className={!u.is_active ? 'opacity-60' : ''}>
+            <Card key={u.id} className={!u.is_active && !isAdmin ? 'opacity-60' : ''}>
               <CardContent className="flex items-center justify-between py-4 px-5">
                 <div className="flex items-center gap-4">
-                  <div className={`rounded-full p-2 ${u.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
-                    {u.is_active ? (
+                  <div className={`rounded-full p-2 ${u.is_active || isAdmin ? 'bg-primary/10' : 'bg-muted'}`}>
+                    {u.is_active || isAdmin ? (
                       <UserCheck className="h-5 w-5 text-primary" />
                     ) : (
                       <UserX className="h-5 w-5 text-muted-foreground" />
@@ -105,32 +190,50 @@ const GestaoUtilizadores: React.FC = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground">{display.name}</span>
-                      <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                        {u.role === 'admin' ? (
+                      <span className="font-semibold text-foreground">{u.name}</span>
+                      <Badge variant={isAdmin ? 'default' : 'secondary'}>
+                        {isAdmin ? (
                           <><ShieldCheck className="h-3 w-3 mr-1" /> Admin</>
                         ) : (
-                          'Funcionária'
+                          'Funcionário'
                         )}
                       </Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {u.is_active 
-                        ? display.description + ' — pode editar'
-                        : display.description + ' — apenas visualização'}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{u.email}</span>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {isAdmin
+                        ? 'Acesso total — pode gerir tudo'
+                        : u.is_active
+                          ? 'Com poderes — pode marcar tarefas'
+                          : 'Sem poderes — apenas observação'}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">
-                    {u.is_active ? 'Ativa' : 'Inativa'}
-                  </span>
-                  <Switch
-                    checked={u.is_active}
-                    onCheckedChange={() => toggleActive(u)}
-                    disabled={u.role === 'admin' || toggling === u.id}
-                  />
+                  {!isAdmin && (
+                    <>
+                      <div className="text-right hidden sm:block">
+                        <span className="text-sm text-muted-foreground block">
+                          {u.is_active ? 'Com poderes' : 'Sem poderes'}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={u.is_active}
+                        onCheckedChange={() => toggleActive(u)}
+                        disabled={toggling === u.id}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteUser(u)}
+                        title="Remover utilizador"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -143,6 +246,108 @@ const GestaoUtilizadores: React.FC = () => {
           </p>
         )}
       </div>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus size={20} className="text-primary" />
+              Adicionar Utilizador
+            </DialogTitle>
+            <DialogDescription>
+              Crie uma conta para um novo funcionário ou administrador.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                placeholder="Ex: Maria Silva"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@exemplo.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de conta</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="neury">Funcionário</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={creating}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreate} disabled={creating}>
+              {creating ? <Loader2 size={16} className="animate-spin mr-2" /> : <UserPlus size={16} className="mr-2" />}
+              Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover utilizador</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que deseja remover <strong>{deleteUser?.name}</strong> ({deleteUser?.email})?
+              Esta ação é irreversível e elimina a conta permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 size={16} className="animate-spin mr-2" /> : <Trash2 size={16} className="mr-2" />}
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

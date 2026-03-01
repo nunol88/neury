@@ -16,6 +16,7 @@ interface DayCardProps {
   dayObj: DayInfo;
   tasks: Task[];
   isAdmin: boolean;
+  canEdit?: boolean;
   userRole?: string;
   isDarkMode: boolean;
   headerBg: string;
@@ -34,6 +35,7 @@ const DayCard: React.FC<DayCardProps> = ({
   dayObj,
   tasks,
   isAdmin,
+  canEdit = true,
   userRole = 'user',
   isDarkMode,
   headerBg,
@@ -231,6 +233,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 key={task.id}
                 task={task}
                 isAdmin={isAdmin}
+                canEdit={canEdit}
                 userRole={userRole}
                 onDragStart={onDragStart}
                 onEdit={onEditTask}

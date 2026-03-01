@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface TaskCardProps {
   task: Task;
   isAdmin: boolean;
+  canEdit?: boolean;
   userRole?: string;
   onDragStart: (e: React.DragEvent, task: Task) => void;
   onEdit: (task: Task) => void;
@@ -20,6 +21,7 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   isAdmin,
+  canEdit = true,
   userRole = 'user',
   onDragStart,
   onEdit,
@@ -309,18 +311,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </button>
           )}
           
-          {/* Complete button - visible for all users */}
-          <button
-            onClick={handleToggleStatus}
-            className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
-              task.completed
-                ? 'bg-success/20 hover:bg-success/30 text-success'
-                : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success border border-border/50'
-            }`}
-            title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
-          >
-            <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
-          </button>
+          {/* Complete button - only for admin or users with edit permission */}
+          {(isAdmin || canEdit) && (
+            <button
+              onClick={handleToggleStatus}
+              className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
+                task.completed
+                  ? 'bg-success/20 hover:bg-success/30 text-success'
+                  : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success border border-border/50'
+              }`}
+              title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
+            >
+              <Check size={14} className={task.completed ? 'animate-success-pop' : ''} />
+            </button>
+          )}
           
           {/* Copy, Edit and Delete - reveal on hover */}
           {isAdmin && (
