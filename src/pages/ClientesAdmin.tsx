@@ -403,7 +403,7 @@ const ClientesAdmin = () => {
 
         {/* Summary Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border transition-all duration-200 hover:shadow-md">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Users size={18} className="text-primary" />
@@ -418,7 +418,7 @@ const ClientesAdmin = () => {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border transition-all duration-200 hover:shadow-md">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <TrendingUp size={18} className="text-primary" />
@@ -433,7 +433,7 @@ const ClientesAdmin = () => {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border transition-all duration-200 hover:shadow-md">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-success/10 rounded-lg">
                 <Euro size={18} className="text-success" />
@@ -451,7 +451,7 @@ const ClientesAdmin = () => {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border transition-all duration-200 hover:shadow-md">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-warning/10 rounded-lg">
                 <Clock size={18} className="text-warning" />

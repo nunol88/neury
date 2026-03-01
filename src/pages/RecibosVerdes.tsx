@@ -50,8 +50,18 @@ const RecibosVerdes: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}><CardContent className="pt-4"><div className="h-12 bg-muted rounded animate-pulse" /></CardContent></Card>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}><CardContent className="py-4"><div className="h-10 bg-muted rounded animate-pulse" /></CardContent></Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -133,21 +143,25 @@ const RecibosVerdes: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Users className="h-4 w-4" />
-              <span className="text-xs">Clientes RV</span>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground">Clientes RV</span>
             </div>
             <p className="text-2xl font-bold">{stats.totalClientes}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Euro className="h-4 w-4" />
-              <span className="text-xs">Faturado</span>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <Euro className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground">Faturado</span>
             </div>
             <p className="text-2xl font-bold text-primary">
               {formatCurrency(stats.totalFaturado)}
@@ -155,11 +169,13 @@ const RecibosVerdes: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Percent className="h-4 w-4" />
-              <span className="text-xs">Contrib. SS</span>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-destructive/10 rounded-lg">
+                <Percent className="h-4 w-4 text-destructive" />
+              </div>
+              <span className="text-xs text-muted-foreground">Contrib. SS</span>
             </div>
             <p className="text-2xl font-bold text-destructive">
               {formatCurrency(stats.totalContribuicaoSS)}
@@ -170,11 +186,13 @@ const RecibosVerdes: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-200 hover:shadow-md">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Wallet className="h-4 w-4" />
-              <span className="text-xs">Líquido</span>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-accent rounded-lg">
+                <Wallet className="h-4 w-4 text-accent-foreground" />
+              </div>
+              <span className="text-xs text-muted-foreground">Líquido</span>
             </div>
             <p className="text-2xl font-bold text-accent-foreground">
               {formatCurrency(stats.totalLiquido)}
@@ -201,7 +219,7 @@ const RecibosVerdes: React.FC = () => {
           filteredClients.map(client => (
             <Card 
               key={client.id} 
-              className={`transition-colors ${client.recibo_verde ? 'border-primary/50 bg-primary/5' : ''}`}
+              className={`transition-all duration-200 hover:shadow-md ${client.recibo_verde ? 'border-primary/50 bg-primary/5 hover:border-primary/70' : 'hover:border-primary/20'}`}
             >
               <CardContent className="py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

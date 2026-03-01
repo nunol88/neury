@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
 
-const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
+const REMEMBER_USER_KEY = 'agenda_mayslimpo_remembered_user';
 
 const getGreeting = () => {
   const hour = new Date().getHours();

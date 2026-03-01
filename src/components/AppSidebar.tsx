@@ -31,6 +31,7 @@ import {
   UserCog
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+import ClientAvatar from '@/components/ui/client-avatar';
 
 const navItems = [
   { title: 'Agendamentos', url: '/admin/agendamentos', icon: CalendarDays },
@@ -125,6 +126,7 @@ export function AppSidebar() {
         {/* User info */}
         <div className="px-3 py-3">
           <div className="flex items-center gap-2 text-sm">
+            <ClientAvatar name={username || 'U'} size="sm" />
             <span className="capitalize font-medium text-sidebar-foreground truncate">
               {username}
             </span>
