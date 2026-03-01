@@ -26,6 +26,21 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.4.0',
+    date: '2026-03-01',
+    title: '🎯 Polimento Global da App',
+    summary: 'Melhorias em todas as páginas: a página 404 ficou com branding Mayslimpo e em português, os selects do Dashboard passaram a usar componentes shadcn, os cards de Recibos Verdes e Clientes ganharam hover states suaves, a sidebar mostra agora o avatar com iniciais do utilizador, e a navegação faz scroll-to-top automático.',
+    changes: [
+      { text: 'Página 404 em português com logo Mayslimpo e animação', type: 'improvement' },
+      { text: 'Selects nativos do Dashboard substituídos por shadcn Select', type: 'improvement' },
+      { text: 'Hover states nos cards de Recibos Verdes e Clientes', type: 'improvement' },
+      { text: 'Skeleton loading na página de Gestão Fiscal', type: 'improvement' },
+      { text: 'Avatar com iniciais do utilizador na sidebar', type: 'new' },
+      { text: 'Scroll-to-top automático ao navegar entre páginas', type: 'new' },
+      { text: 'Ícones com fundos coloridos nos stats de Recibos Verdes', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.3.1',
     date: '2026-03-01',
     title: '✨ Melhorias Visuais — Pagamentos e Utilizadores',

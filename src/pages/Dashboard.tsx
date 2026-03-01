@@ -26,6 +26,7 @@ import autoTable from 'jspdf-autotable';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
 import { ExportDropdown } from '@/components/ExportDropdown';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
 import {
@@ -559,80 +560,100 @@ recommend short-term decisions and define one primary focus for improvement.
           </div>
           
           {/* Year Selector */}
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          <div className="flex items-center gap-3 flex-wrap">
+            <Select
+              value={selectedYear.toString()}
+              onValueChange={(v) => setSelectedYear(Number(v))}
             >
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             {/* Month Selector - visible for monthly and weekly */}
             {(periodFilter === 'monthly' || periodFilter === 'weekly') && (
-              <select
-                value={selectedMonth}
-                onChange={(e) => {
-                  setSelectedMonth(Number(e.target.value));
+              <Select
+                value={selectedMonth.toString()}
+                onValueChange={(v) => {
+                  setSelectedMonth(Number(v));
                   setSelectedWeek(1);
                 }}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {MONTH_NAMES.map((month, index) => (
-                  <option key={index} value={index}>
-                    {month}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             {/* Week Selector - visible for weekly */}
             {periodFilter === 'weekly' && (
-              <select
-                value={selectedWeek}
-                onChange={(e) => setSelectedWeek(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={selectedWeek.toString()}
+                onValueChange={(v) => setSelectedWeek(Number(v))}
               >
-                {weeksInMonth.map((week, index) => (
-                  <option key={index} value={index + 1}>
-                    {week.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {weeksInMonth.map((week, index) => (
+                    <SelectItem key={index} value={(index + 1).toString()}>
+                      {week.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             {/* Quarter Selector - visible for quarterly */}
             {periodFilter === 'quarterly' && (
-              <select
-                value={selectedQuarter}
-                onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={selectedQuarter.toString()}
+                onValueChange={(v) => setSelectedQuarter(Number(v))}
               >
-                {QUARTER_NAMES.map((quarter, index) => (
-                  <option key={index} value={index}>
-                    {quarter}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {QUARTER_NAMES.map((quarter, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {quarter}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             {/* Semester Selector - visible for semester */}
             {periodFilter === 'semester' && (
-              <select
-                value={selectedSemester}
-                onChange={(e) => setSelectedSemester(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={selectedSemester.toString()}
+                onValueChange={(v) => setSelectedSemester(Number(v))}
               >
-                {SEMESTER_NAMES.map((semester, index) => (
-                  <option key={index} value={index}>
-                    {semester}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEMESTER_NAMES.map((semester, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {semester}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
           
