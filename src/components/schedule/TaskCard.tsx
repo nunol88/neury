@@ -174,8 +174,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       )}
 
       {/* Footer: Price + Actions */}
-      <div className="flex justify-between items-center border-t pt-2 border-border/40 mt-1 overflow-hidden">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center border-t pt-2 border-border/40 mt-1">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Price badge */}
           {isAdmin && onTogglePayment ? (
             <TooltipProvider delayDuration={200}>
@@ -183,7 +183,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleTogglePayment}
-                    className="transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="transition-all duration-200 hover:scale-105 active:scale-95 shrink-0"
                   >
                     <div className={`flex items-center gap-1 font-bold text-sm px-2 py-1 rounded-lg border transition-colors ${
                       task.pago 
@@ -202,7 +202,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <div className={`flex items-center gap-1 font-bold text-sm px-2 py-1 rounded-lg border ${
+            <div className={`flex items-center gap-1 font-bold text-sm px-2 py-1 rounded-lg border shrink-0 ${
               task.pago 
                 ? 'bg-primary/10 text-primary border-primary/30' 
                 : 'bg-success/10 text-success border-success/30'
@@ -214,7 +214,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
           
           {/* Hours */}
-          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium shrink-0">
             {hours.toFixed(1)}h
           </span>
           
@@ -223,7 +223,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 text-xs text-warning bg-warning/10 px-1.5 py-0.5 rounded font-medium cursor-help border border-warning/20">
+                  <div className="flex items-center gap-1 text-xs text-warning bg-warning/10 px-1.5 py-0.5 rounded font-medium cursor-help border border-warning/20 shrink-0">
                     <StickyNote size={10} />
                     <span className="hidden sm:inline">Notas</span>
                   </div>
@@ -236,14 +236,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 shrink-0">
           {/* Notes on mobile */}
           {task.notes && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="p-2 hover:bg-warning/10 rounded-full transition-colors sm:hidden">
-                    <StickyNote size={14} className="text-warning" />
+                  <button className="p-1.5 hover:bg-warning/10 rounded-full transition-colors sm:hidden">
+                    <StickyNote size={13} className="text-warning" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[250px] text-xs">
@@ -253,40 +253,34 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </TooltipProvider>
           )}
           
-          {task.address && (
-            <button onClick={openGoogleMaps} className="p-2 hover:bg-primary/10 rounded-full transition-colors" title="Navegar no Google Maps">
-              <Navigation size={14} className="text-primary" />
-            </button>
-          )}
-          
           {(isAdmin || canEdit) && (
             <button
               onClick={handleToggleStatus}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-1.5 rounded-full transition-colors ${
                 task.completed
                   ? 'bg-success/15 hover:bg-success/25 text-success'
                   : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success'
               }`}
               title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
             >
-              <Check size={14} />
+              <Check size={13} />
             </button>
           )}
           
           {isAdmin && (
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <>
               {onCopy && (
-                <button onClick={() => onCopy(task)} className="p-2 hover:bg-success/10 rounded-full transition-colors" title="Copiar para outro dia">
-                  <Copy size={14} className="text-success" />
+                <button onClick={() => onCopy(task)} className="p-1.5 hover:bg-success/10 rounded-full transition-colors opacity-0 group-hover:opacity-100" title="Copiar para outro dia">
+                  <Copy size={13} className="text-success" />
                 </button>
               )}
-              <button onClick={() => onEdit(task)} className="p-2 hover:bg-primary/10 rounded-full transition-colors" title="Editar">
-                <Pencil size={14} className="text-primary" />
+              <button onClick={() => onEdit(task)} className="p-1.5 hover:bg-primary/10 rounded-full transition-colors opacity-0 group-hover:opacity-100" title="Editar">
+                <Pencil size={13} className="text-primary" />
               </button>
-              <button onClick={() => onDelete(task.id)} className="p-2 hover:bg-destructive/10 rounded-full transition-colors" title="Eliminar">
-                <Trash2 size={14} className="text-destructive" />
+              <button onClick={() => onDelete(task.id)} className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100" title="Eliminar">
+                <Trash2 size={13} className="text-destructive" />
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
