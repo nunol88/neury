@@ -1,39 +1,79 @@
 
-# Melhorias Visuais - Pagamentos v2.3.1
+# Melhorias Globais do App - v2.4.0
 
 ## Resumo
-Adicionar hover states suaves, badges mais consistentes e melhorar o aspeto geral dos cards na pagina de Pagamentos.
+Implementar 6 melhorias em ficheiros diferentes: pagina 404 com branding, selects nativos do Dashboard substituidos por shadcn, hover states nos Recibos Verdes e Clientes, avatar na sidebar, scroll-to-top na navegacao, e atualizacao de versao.
 
 ---
 
-## Alteracoes em `src/pages/Pagamentos.tsx`
+## 1. Pagina 404 em Portugues com Branding
+**Ficheiro:** `src/pages/NotFound.tsx`
 
-### 1. Summary Cards (Faturado / Recebido / Pendente)
-- Adicionar `transition-all duration-200 hover:shadow-md` a cada card de resumo
-- Adicionar um fundo subtil colorido: verde claro no "Recebido", laranja claro no "Pendente"
-- Exemplo: card Recebido ganha `bg-green-50/50 dark:bg-green-950/20`, card Pendente ganha `bg-orange-50/50 dark:bg-orange-950/20`
+- Traduzir todo o conteudo para portugues ("Pagina nao encontrada", "Voltar ao inicio")
+- Adicionar logo Mayslimpo no topo
+- Animacao de entrada com classes CSS (fade-in)
+- Botao estilizado em vez de link simples
+- Fundo mais elegante com gradiente subtil
 
-### 2. Client Cards
-- Adicionar `transition-all duration-200 hover:shadow-md hover:border-primary/20` aos cards de cliente
-- Melhoria no header: badge de status com fundo preenchido em vez de apenas outline
-  - "Falta: X" -> `bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800`
-  - "Tudo pago" -> `bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800`
+## 2. Selects Nativos do Dashboard -> Shadcn Select
+**Ficheiro:** `src/pages/Dashboard.tsx`
 
-### 3. Service Rows (linhas individuais de cada servico)
-- Adicionar `transition-all duration-150` para hover mais suave
-- Hover state: `hover:shadow-sm` nas linhas nao pagas
-- Linhas pagas: adicionar `line-through` subtil no horario ou opacity ligeira para distinguir melhor
+- Importar `Select, SelectContent, SelectItem, SelectTrigger, SelectValue` de `@/components/ui/select`
+- Substituir os 5 `<select>` nativos (ano, mes, semana, trimestre, semestre) por componentes shadcn Select
+- Manter a mesma logica de visibilidade condicional
+- Corrigir tambem a constante `REMEMBER_USER_KEY` no Login (ja feito na centralizacao anterior)
 
-### 4. Botao "Marcar todos como pago"
-- Trocar de `variant="outline"` para estilo com fundo verde subtil: `bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:hover:bg-green-950/50 dark:text-green-400 dark:border-green-800`
+## 3. Hover States nos Recibos Verdes
+**Ficheiro:** `src/pages/RecibosVerdes.tsx`
 
-### 5. Estado vazio
-- Adicionar `transition-all duration-200` ao card vazio para consistencia
+- Adicionar `transition-all duration-200 hover:shadow-md` aos 4 stats cards
+- Adicionar `transition-all duration-200 hover:shadow-md hover:border-primary/20` aos client cards
+- Substituir o spinner basico por skeleton loading (usando o pattern existente no projeto)
+- Adicionar icones com backgrounds coloridos nos stats cards (consistente com Clientes e Pagamentos)
+
+## 4. Hover States nos Cards de Clientes
+**Ficheiro:** `src/pages/ClientesAdmin.tsx`
+
+- Adicionar `transition-all duration-200 hover:shadow-md` aos 4 summary stats cards (linhas ~406-464)
+- As classes dos summary cards usam `bg-card rounded-xl shadow-sm` - adicionar hover states consistentes
+
+## 5. Avatar com Iniciais na Sidebar
+**Ficheiro:** `src/components/AppSidebar.tsx`
+
+- Importar `ClientAvatar` de `@/components/ui/client-avatar`
+- Adicionar avatar com iniciais do username no footer, ao lado do nome
+- Substituir o texto simples por layout com avatar + nome + badge
+
+## 6. Scroll-to-Top na Navegacao
+**Ficheiro:** `src/components/AppLayout.tsx`
+
+- Adicionar um efeito que faz scroll-to-top quando a rota muda
+- Usar `useLocation` do react-router-dom para detetar mudancas de rota
+- Fazer `window.scrollTo(0, 0)` ou scroll do container principal
+
+## 7. Atualizar Versao para 2.4.0
+**Ficheiro:** `src/utils/appVersion.ts`
+
+- Atualizar `APP_VERSION` para `'2.4.0'`
+
+**Ficheiro:** `src/pages/Sobre.tsx`
+
+- Adicionar entrada no changelog para v2.4.0 com todas as melhorias
 
 ---
 
 ## Detalhes Tecnicos
 
-Ficheiro unico a editar: **`src/pages/Pagamentos.tsx`**
+**Ficheiros a editar (7):**
+1. `src/pages/NotFound.tsx` - reescrever com branding
+2. `src/pages/Dashboard.tsx` - substituir selects nativos por shadcn
+3. `src/pages/RecibosVerdes.tsx` - hover states + skeleton loading
+4. `src/pages/ClientesAdmin.tsx` - hover states nos summary cards
+5. `src/components/AppSidebar.tsx` - avatar com iniciais
+6. `src/components/AppLayout.tsx` - scroll-to-top
+7. `src/utils/appVersion.ts` - versao 2.4.0
+8. `src/pages/Sobre.tsx` - changelog v2.4.0
 
-Nenhuma dependencia nova. Apenas mudancas de classes CSS Tailwind nos elementos existentes.
+**Dependencias:** Nenhuma nova. Usa apenas componentes e utilitarios ja existentes no projeto (shadcn Select, ClientAvatar, etc).
+
+**Login:** Corrigir `REMEMBER_USER_KEY` de `'agenda_neury_remembered_user'` para `'agenda_mayslimpo_remembered_user'` para consistencia com o branding.
