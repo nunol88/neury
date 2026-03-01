@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Info, Sparkles, Bug, Wrench, Rocket, Star } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 type ChangeType = 'new' | 'fix' | 'improvement';
 
@@ -22,6 +22,20 @@ interface VersionEntry {
 }
 
 const changelog: VersionEntry[] = [
+  {
+    version: '2.1.0',
+    date: '2026-03-01',
+    highlights: 'Gestão de utilizadores e controlo de acessos',
+    changes: [
+      { text: 'Página de gestão de utilizadores com adicionar, remover e ativar/inativar', type: 'new' },
+      { text: 'Edge function segura para criar e eliminar contas de utilizadores', type: 'new' },
+      { text: 'Funcionários apenas podem observar por predefinição (sem edição)', type: 'new' },
+      { text: 'Admin pode ativar/desativar funcionários para permitir marcar tarefas', type: 'new' },
+      { text: 'Preços diferenciados: funcionários veem €7/hora, admin vê valores reais', type: 'new' },
+      { text: 'Proteção a nível de base de dados (RLS) para utilizadores inativos', type: 'improvement' },
+      { text: 'Estado ativo/inativo integrado no contexto de autenticação', type: 'improvement' },
+    ],
+  },
   {
     version: '2.0.0',
     date: '2026-03-01',
