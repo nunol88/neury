@@ -1,89 +1,101 @@
 
 
-# Melhorias Visuais - App Mais Moderna e Limpa
+# Renomear "Neury" para "Mayara" + Melhorias Visuais v2.3.0
 
 ## Resumo
 
-A app ja tem uma base solida com glassmorphism e animacoes. O problema principal e que ha demasiados efeitos visuais a competir pela atencao (confetti, pings, glows, gradientes, pulses, sparkles). O objetivo e simplificar para um look mais limpo e profissional.
+Duas grandes mudancas: (1) A partir de marco, a agenda passa a ser da Mayara - o nome "Neury" desaparece da interface e passa a mostrar "Funcionario" ou o nome real do utilizador; (2) Melhorias visuais em todas as paginas para um look mais moderno e profissional.
 
 ---
 
-## 1. Reduzir "ruido visual" nos DayCards e TaskCards
+## 1. Renomear "Neury" para contexto correto
 
-**Problema:** Cada card tem gradientes, rings, glows, confetti, estrelas douradas, badges com ping, medalhas - tudo ao mesmo tempo.
+**O que muda:**
+- O titulo "Agenda da Neury" passa a mostrar o nome real do utilizador logado (ex: "Agenda da Mayara" para admin, "A minha Agenda" para funcionarios)
+- O role label "Neury" na sidebar e header passa a "Funcionario/a"
+- O tooltip "Marcado pela Neury" no TaskCard passa a "Marcado pelo funcionario"
+- A constante `NEURY_RATE = 7` mantem-se (logica de negocios), mas e renomeada para `EMPLOYEE_RATE`
+- Na pagina de Login, a ajuda passa de "neury -- Agenda pessoal" para mostrar os nomes reais dos utilizadores ou texto generico
+- As rotas `/neury/...` e o role `neury` na base de dados NAO mudam (para nao partir nada)
 
-**Solucao:**
-- Remover a medalha dourada (Star com ping) dos dias completos - basta um check subtil ou uma borda verde suave
-- Remover a animacao confetti ao marcar tarefa como completa - substituir por um simples scale + fade
-- Simplificar o badge "Hoje" - remover o Sparkles animado e o glow, manter apenas um indicador de cor solida
-- Reduzir o numero de ring/shadow layers nos cards - um unico border colorido basta
-- Cards vazios com opacity reduzida ficam bem, manter
-- Remover `hover:scale` dos DayCards (causa instabilidade visual em grelha)
+**Ficheiros afetados:**
+- `src/components/ScheduleView.tsx` -- titulo e roleLabel
+- `src/components/schedule/TaskCard.tsx` -- tooltip e constante NEURY_RATE
+- `src/components/schedule/MonthSummaryBar.tsx` -- constante NEURY_RATE
+- `src/components/AppSidebar.tsx` -- roleLabel
+- `src/pages/Login.tsx` -- texto de ajuda
+- `src/pages/NeuryAgendamentos.tsx` -- sem mudancas (apenas wrapper)
+- `src/components/schedule/FloatingTotal.tsx` -- sem mudancas
 
-## 2. Tipografia e espacamento mais limpos
+## 2. Melhorias visuais globais
 
-**Problema:** Muitos tamanhos de texto diferentes (text-[10px], text-xs, text-sm, text-lg, text-2xl) criam falta de hierarquia.
+### 2a. Header dos agendamentos mais elegante
+- Substituir o gradiente colorido do header por um estilo glass mais subtil que funciona bem em ambos os temas
+- Tipografia mais limpa no titulo
 
-**Solucao:**
-- Usar apenas 3-4 tamanhos de texto consistentes
-- Aumentar ligeiramente o padding interno dos cards para dar mais "ar"
-- Separador entre info e acoes no TaskCard: trocar de `border-dashed` para `border-solid` mais subtil
+### 2b. MonthSummaryBar mais compacta
+- Reduzir o tamanho dos numeros de `text-2xl` para `text-xl`
+- Labels mais legiveis (trocar `text-[10px]` por `text-xs`)
+- Circulos de progresso ligeiramente menores (de 64px para 56px)
 
-## 3. Sidebar mais limpa
+### 2c. Cards de pagamento (Pagamentos.tsx) mais modernos
+- Adicionar hover states mais suaves
+- Badges de status com cores mais consistentes
 
-**Problema:** A sidebar esta OK mas pode ser mais elegante.
+### 2d. Dashboard -- pequenos ajustes
+- Garantir que os cards de estatisticas usam as variaveis de tema consistentemente
 
-**Solucao:**
-- Remover o texto "Gestao de Limpezas" do header da sidebar - so o nome "Mayslimpo" basta
-- Botoes "Tema" e "Sair" no footer: trocar de texto para apenas icones com tooltip, ocupando menos espaco
+### 2e. Gestao de Utilizadores -- visual mais limpo
+- Cards de utilizador com layout mais respiravel
+- Badges de role e status mais elegantes
 
-## 4. MonthTabs simplificados
+### 2f. Pagina Sobre atualizada
+- Nova entrada v2.3.0 no changelog
+- Explicacao em linguagem simples das mudancas
 
-**Problema:** Cada tab tem Calendar icon + Sparkles animado + ping dot + badge "Atual" + hover glow. E demasiado.
+## 3. Login -- atualizar referencias
 
-**Solucao:**
-- Remover o icone Calendar de cada tab (o texto do mes ja e suficiente)
-- Remover Sparkles do tab ativo
-- Manter o dot verde no mes atual mas sem a animacao ping
-- Sliding indicator na base e suficiente como indicador ativo
-
-## 5. FloatingActionMenu mais discreto
-
-**Problema:** O FAB de 64px com gradiente e bastante grande.
-
-**Solucao:**
-- Reduzir para 56px (w-14 h-14)
-- Usar cor solida (primary) em vez de gradiente
-- Backdrop blur mais subtil quando expandido
-
-## 6. Paleta de cores mais coerente
-
-**Problema:** Mistura de cores hardcoded (violet, amber, sky, yellow, cyan) com variaveis CSS.
-
-**Solucao:**
-- Unificar badges de pagamento e notas para usar as variaveis de tema (success, warning, muted)
-- Reduzir o numero de cores distintas visiveis em simultaneo
-
-## 7. Login page - pequenas melhorias
-
-A pagina de login ja esta bem feita. Apenas:
-- Reduzir o tamanho do logo de 96px para 80px
-- Remover os orbs animados do background (sao distracao)
+- Mudar "Agenda Mayara Godoi" -> manter (ja esta correto)
+- Ajuda: trocar "neury -- Agenda pessoal" por texto generico "O seu nome de utilizador"
+- Atualizar versao para 2.3.0
 
 ---
 
 ## Detalhes Tecnicos
 
-### Ficheiros a editar:
-1. **`src/components/schedule/TaskCard.tsx`** - Simplificar confetti, badges, borders
-2. **`src/components/schedule/DayCard.tsx`** - Remover medalha Star, simplificar today badge, remover hover:scale
-3. **`src/components/schedule/MonthTabs.tsx`** - Remover Calendar icons, Sparkles, simplificar ping
-4. **`src/components/schedule/FloatingActionMenu.tsx`** - Reduzir tamanho do FAB
-5. **`src/components/schedule/FloatingTotal.tsx`** - Simplificar glass effect
-6. **`src/components/AppSidebar.tsx`** - Remover subtitulo, simplificar footer
-7. **`src/pages/Login.tsx`** - Remover orbs, reduzir logo
-8. **`src/index.css`** - Limpar animacoes nao usadas
-9. **`src/pages/Sobre.tsx`** - Atualizar changelog com v2.2.0
+### Ficheiros a editar (por ordem):
 
-### Principio geral:
-Menos animacoes simultaneas, menos layers de sombra/glow, mais espaco em branco, tipografia mais consistente. A app vai parecer mais profissional sem perder personalidade.
+1. **`src/components/schedule/TaskCard.tsx`**
+   - Renomear `NEURY_RATE` para `EMPLOYEE_RATE`
+   - Tooltip: "Marcado pela Neury" -> "Marcado pelo funcionario"
+
+2. **`src/components/schedule/MonthSummaryBar.tsx`**
+   - Renomear `NEURY_RATE` para `EMPLOYEE_RATE`
+   - Reduzir tamanhos de texto e circulos de progresso
+
+3. **`src/components/ScheduleView.tsx`**
+   - Titulo: usar nome do utilizador em vez de "Neury" hardcoded
+   - roleLabel: "Neury" -> "Funcionario/a"
+   - Renomear `NEURY_RATE` para `EMPLOYEE_RATE`
+   - Header: estilo glass em vez de gradiente colorido forte
+
+4. **`src/components/AppSidebar.tsx`**
+   - roleLabel: "Neury" -> "Funcionario/a"
+
+5. **`src/pages/Login.tsx`**
+   - Versao 2.3.0
+   - Ajuda: texto generico em vez de "neury"
+
+6. **`src/pages/Sobre.tsx`**
+   - Versao 2.3.0
+   - Nova entrada no changelog
+
+7. **`src/pages/GestaoUtilizadores.tsx`**
+   - Pequenos ajustes visuais nos cards
+
+### O que NAO muda:
+- Rotas (`/neury/agendamentos`, `/neury/sobre`) -- mantem-se para nao partir URLs
+- Role na base de dados (`neury`) -- mantem-se
+- Logica de precos (funcionarios veem sempre 7 euros/hora)
+- Estrutura de componentes
+
