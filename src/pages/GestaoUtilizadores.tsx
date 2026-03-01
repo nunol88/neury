@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -43,7 +42,7 @@ const GestaoUtilizadores: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<string>('neury');
+  
 
   const fetchUsers = async () => {
     try {
@@ -89,7 +88,7 @@ const GestaoUtilizadores: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    if (!newEmail || !newPassword || !newRole) {
+    if (!newEmail || !newPassword) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -105,7 +104,7 @@ const GestaoUtilizadores: React.FC = () => {
           action: 'create',
           email: newEmail,
           password: newPassword,
-          role: newRole,
+          role: 'neury',
           name: newName || newEmail.split('@')[0],
         },
       });
@@ -119,7 +118,7 @@ const GestaoUtilizadores: React.FC = () => {
       setNewName('');
       setNewEmail('');
       setNewPassword('');
-      setNewRole('neury');
+      
       fetchUsers();
     } catch (err: any) {
       toast.error(err.message || 'Erro ao criar utilizador');
@@ -171,7 +170,7 @@ const GestaoUtilizadores: React.FC = () => {
       </div>
 
       <p className="text-muted-foreground text-sm">
-        Gerencie utilizadores da aplicação. Funcionários sem poderes apenas podem observar.
+        Gerencie utilizadores da aplicação. Novos utilizadores têm acesso apenas de visualização.
       </p>
 
       <div className="grid gap-4">
@@ -204,8 +203,8 @@ const GestaoUtilizadores: React.FC = () => {
                       {isAdmin
                         ? 'Acesso total — pode gerir tudo'
                         : u.is_active
-                          ? 'Com poderes — pode marcar tarefas'
-                          : 'Sem poderes — apenas observação'}
+                          ? 'Ativo — pode marcar tarefas'
+                          : 'Inativo — apenas observação'}
                     </div>
                   </div>
                 </div>
@@ -215,7 +214,7 @@ const GestaoUtilizadores: React.FC = () => {
                     <>
                       <div className="text-right hidden sm:block">
                         <span className="text-sm text-muted-foreground block">
-                          {u.is_active ? 'Com poderes' : 'Sem poderes'}
+                          {u.is_active ? 'Ativo' : 'Inativo'}
                         </span>
                       </div>
                       <Switch
@@ -256,7 +255,7 @@ const GestaoUtilizadores: React.FC = () => {
               Adicionar Utilizador
             </DialogTitle>
             <DialogDescription>
-              Crie uma conta para um novo funcionário ou administrador.
+              Crie uma conta para um novo funcionário. O novo utilizador terá acesso apenas de visualização.
             </DialogDescription>
           </DialogHeader>
 
@@ -298,18 +297,6 @@ const GestaoUtilizadores: React.FC = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de conta</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="neury">Funcionário</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
