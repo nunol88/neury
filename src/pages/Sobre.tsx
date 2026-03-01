@@ -8,7 +8,7 @@ import {
 import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 
 type ChangeType = 'new' | 'fix' | 'improvement';
 
@@ -26,6 +26,20 @@ interface VersionEntry {
 }
 
 const changelog: VersionEntry[] = [
+  {
+    version: '2.3.0',
+    date: '2026-03-01',
+    title: '🎨 Mayara no Comando + Visual Renovado',
+    summary: 'A agenda agora mostra o nome real de quem está a usar a app. O nome "Neury" desapareceu da interface e foi substituído por "Funcionário/a" ou pelo nome do utilizador. O visual ficou mais moderno: o cabeçalho dos agendamentos tem agora um estilo glass elegante, os resumos mensais ficaram mais compactos e legíveis, e toda a interface está mais consistente.',
+    changes: [
+      { text: 'Título da agenda mostra o nome do utilizador logado', type: 'new' },
+      { text: '"Neury" substituído por "Funcionário/a" em toda a interface', type: 'improvement' },
+      { text: 'Cabeçalho dos agendamentos com estilo glass moderno', type: 'improvement' },
+      { text: 'Resumo mensal mais compacto e legível', type: 'improvement' },
+      { text: 'Texto de ajuda no login atualizado', type: 'improvement' },
+      { text: 'Círculos de progresso mais elegantes', type: 'improvement' },
+    ],
+  },
   {
     version: '2.2.0',
     date: '2026-03-01',

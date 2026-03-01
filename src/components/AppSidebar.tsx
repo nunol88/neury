@@ -56,7 +56,7 @@ export function AppSidebar() {
   const isAdmin = role === 'admin';
   const items = isAdmin ? navItems : neurySidebarItems;
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
-  const roleLabel = isAdmin ? 'Administrador' : 'Neury';
+  const roleLabel = isAdmin ? 'Administrador' : 'Funcionário/a';
 
   const handleSignOut = async () => {
     await signOut();

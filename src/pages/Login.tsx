@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 
 const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
@@ -308,7 +308,7 @@ const Login = () => {
               </div>
               <ul className={`text-sm space-y-1 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
                 <li>• <strong>admin</strong> — Acesso completo</li>
-                <li>• <strong>neury</strong> — Agenda pessoal</li>
+                <li>• <strong>O seu nome de utilizador</strong> — Agenda pessoal</li>
               </ul>
             </div>
             

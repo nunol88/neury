@@ -72,8 +72,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const startTime = new Date(`1970-01-01T${task.startTime}`);
   const endTime = new Date(`1970-01-01T${task.endTime}`);
   const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-  const NEURY_RATE = 7;
-  const displayPrice = isAdmin ? task.price : (hours * NEURY_RATE).toFixed(2);
+  const EMPLOYEE_RATE = 7;
+  const displayPrice = isAdmin ? task.price : (hours * EMPLOYEE_RATE).toFixed(2);
 
   return (
     <div
@@ -127,7 +127,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               {task.completedByRole === 'admin' 
                 ? 'Confirmado pelo Admin' 
                 : task.completedByRole === 'neury'
-                  ? 'Marcado pela Neury'
+                  ? 'Marcado pelo funcionário'
                   : 'Concluído'}
             </TooltipContent>
           </Tooltip>
