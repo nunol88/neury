@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 
 const PROJECT_STRUCTURE = `
-# Estrutura do Projeto - Agenda Neury
+# Estrutura do Projeto - Agenda Mayara Godoi
 
 ## Tecnologias
 - React 18 + TypeScript
@@ -222,7 +222,7 @@ ${FEATURES_DOC}
 ${dataStats}
 
 ---
-Exportado de: Agenda Neury
+Exportado de: Agenda Mayara Godoi
 Plataforma: Lovable.dev
 `;
 

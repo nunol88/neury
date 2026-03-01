@@ -38,7 +38,7 @@ interface ExportDropdownProps {
 }
 
 const PROJECT_STRUCTURE = `
-# Estrutura do Projeto - Agenda Neury
+# Estrutura do Projeto - Agenda Mayara Godoi
 
 ## Tecnologias
 - React 18 + TypeScript
