@@ -7,8 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
-
-const APP_VERSION = '2.3.1';
+import { APP_VERSION } from '@/utils/appVersion';
 
 type ChangeType = 'new' | 'fix' | 'improvement';
 

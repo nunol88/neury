@@ -10,8 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle, Mail, Phone, User } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
-
-const APP_VERSION = '2.3.0';
+import { APP_VERSION } from '@/utils/appVersion';
 
 const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
