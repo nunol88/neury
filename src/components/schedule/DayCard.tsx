@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import TaskCard from './TaskCard';
-import { CalendarPlus, Sparkles, Star, Trophy } from 'lucide-react';
+import { CalendarPlus, Check } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 
 interface DayInfo {
@@ -55,23 +55,16 @@ const DayCard: React.FC<DayCardProps> = ({
   const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
   const isSunday = dayObj.dateObject.getDay() === 0;
   
-  // Check if this is today
   const today = new Date();
   const isToday = dayObj.dateObject.toDateString() === today.toDateString();
-  
-  // Check if date is in the past
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
-  
-  // Check if day is a holiday
   const holiday = getHoliday(dayObj.dateString);
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = isPast ? 'none' : 'move';
-    if (!isPast) {
-      setIsDragOver(true);
-    }
+    if (!isPast) setIsDragOver(true);
     onDragOver(e);
   };
 
@@ -79,7 +72,6 @@ const DayCard: React.FC<DayCardProps> = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
-    
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setIsDragOver(false);
     }
@@ -87,19 +79,12 @@ const DayCard: React.FC<DayCardProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     setIsDragOver(false);
-    if (!isPast) {
-      onDrop(e, dayObj.dateString);
-    }
+    if (!isPast) onDrop(e, dayObj.dateString);
   };
 
-  // Calculate total value for the day
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
   const completedTasks = tasks.filter(t => t.completed).length;
-  
-  // Check if day is fully completed (has tasks and all are done)
   const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length;
-  
-  // Check if day is empty (no tasks)
   const isEmpty = tasks.length === 0;
 
   return (
@@ -109,43 +94,36 @@ const DayCard: React.FC<DayCardProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{ 
-        animationDelay: `${animationDelay}ms`,
-        animationFillMode: 'backwards'
-      }}
+      style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards' }}
       className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative
         ${isWeekend ? 'bg-muted/50' : ''}
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
-        ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-glow-primary' : ''}
-        ${isFullyCompleted && !isToday ? 'ring-2 ring-success/50 shadow-glow-success' : ''}
+        ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
+        ${isFullyCompleted && !isToday ? 'border-success/50' : ''}
         ${isPast && isAdmin ? 'opacity-60' : ''}
         ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
-        ${isEmpty && !isToday && !isPast ? 'opacity-50 hover:opacity-80' : ''}
-        hover:shadow-lg hover:scale-[1.01]
+        ${isEmpty && !isToday && !isPast ? 'opacity-50' : ''}
       `}
     >
-      {/* Gold medal for fully completed days */}
+      {/* Simple check for fully completed days */}
       {isFullyCompleted && (
-        <div className="absolute -top-1 -right-1 z-20 animate-scale-in">
-          <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 flex items-center justify-center shadow-lg">
-              <Star size={16} className="text-white fill-white" />
-            </div>
-            <div className="absolute inset-0 rounded-full bg-yellow-400/50 animate-ping" style={{ animationDuration: '2s' }} />
+        <div className="absolute -top-1 -right-1 z-20">
+          <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center shadow-sm">
+            <Check size={14} className="text-success-foreground" strokeWidth={3} />
           </div>
         </div>
       )}
+
       {/* Drop indicator overlay */}
       {isDragOver && !isPast && (
-        <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center animate-pulse backdrop-blur-[1px]">
+        <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center backdrop-blur-[1px]">
           <div className="glass rounded-full p-4 shadow-lg">
-            <CalendarPlus className="w-8 h-8 text-primary animate-bounce" />
+            <CalendarPlus className="w-8 h-8 text-primary" />
           </div>
         </div>
       )}
       
-      {/* Past date warning overlay */}
       {isDragOver && isPast && (
         <div className="absolute inset-0 bg-destructive/10 rounded-xl pointer-events-none z-10 flex items-center justify-center">
           <div className="glass rounded-lg px-4 py-2">
@@ -155,23 +133,17 @@ const DayCard: React.FC<DayCardProps> = ({
       )}
 
       {/* Header */}
-      <div className={`p-3 border-b border-border/50 flex justify-between items-center relative overflow-hidden
-        ${isWeekend ? 'bg-muted/50' : 'bg-gradient-to-r from-card to-card/80'}
-        ${isToday ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent' : ''}
+      <div className={`p-3 border-b border-border/50 flex justify-between items-center
+        ${isWeekend ? 'bg-muted/50' : 'bg-card'}
+        ${isToday ? 'bg-primary/5' : ''}
       `}>
-        {/* Decorative gradient for today */}
-        {isToday && (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
-        )}
-        
-        <div className="relative z-10">
+        <div>
           <h2 className={`font-bold capitalize flex items-center gap-2 ${
             isSunday ? 'text-destructive' : 'text-card-foreground'
           } ${isToday ? 'text-primary' : ''}`}>
             {dayObj.dayName}
             {isToday && (
-              <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-2.5 py-1 rounded-full shadow-md animate-pulse">
-                <Sparkles size={10} className="animate-spin" style={{ animationDuration: '3s' }} />
+              <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                 Hoje
               </span>
             )}
@@ -179,26 +151,25 @@ const DayCard: React.FC<DayCardProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-semibold tracking-wide">{dayObj.formatted}</span>
             {holiday && (
-              <span className="flex items-center gap-1 text-[10px] bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 px-1.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">
-                <span className="font-medium">{holiday.name}</span>
-                <span>{holiday.emoji}</span>
+              <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded-full bg-muted border border-border">
+                {holiday.name} {holiday.emoji}
               </span>
             )}
           </div>
         </div>
         
-        <div className="flex items-center gap-2 relative z-10">
+        <div className="flex items-center gap-2">
           {tasks.length > 0 && (
             <div className="flex flex-col items-end gap-0.5">
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full shadow-sm transition-all
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full
                 ${completedTasks === tasks.length 
-                  ? 'bg-success/20 text-success border border-success/30' 
-                  : 'bg-primary/10 text-primary border border-primary/20'
+                  ? 'bg-success/15 text-success' 
+                  : 'bg-primary/10 text-primary'
                 }`}>
                 {completedTasks}/{tasks.length}
               </span>
               {dayTotal > 0 && (
-                <span className="text-[10px] text-success font-bold">
+                <span className="text-xs text-success font-bold">
                   €{dayTotal.toFixed(0)}
                 </span>
               )}
@@ -208,13 +179,13 @@ const DayCard: React.FC<DayCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className={`p-2 flex-1 min-h-[100px] relative transition-all duration-300 ${
+      <div className={`p-2.5 flex-1 min-h-[100px] relative transition-all duration-300 ${
         isDragOver && !isPast ? 'bg-primary/5' : ''
       }`}>
         {tasks.length === 0 ? (
-          <div className={`h-full flex items-center justify-center text-xs italic transition-all duration-300 ${
+          <div className={`h-full flex items-center justify-center text-xs italic ${
             isDragOver && !isPast 
-              ? 'text-primary font-semibold scale-105' 
+              ? 'text-primary font-semibold' 
               : 'text-muted-foreground/40'
           }`}>
             {isDragOver && !isPast ? (

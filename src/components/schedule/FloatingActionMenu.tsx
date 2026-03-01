@@ -67,7 +67,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
       {/* Backdrop when expanded */}
       {isExpanded && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 animate-fade-in"
+          className="fixed inset-0 bg-black/10 backdrop-blur-[2px] -z-10 animate-fade-in"
           onClick={() => setIsExpanded(false)}
         />
       )}
@@ -160,16 +160,11 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
       {/* Main FAB Button */}
       <button
         onClick={handleMainClick}
-        className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 bg-gradient-to-r ${themeGradient} text-white ${
+        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 bg-primary text-primary-foreground ${
           isExpanded ? 'rotate-45' : ''
         }`}
-        style={{
-          boxShadow: isExpanded 
-            ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-            : '0 4px 16px rgba(0, 0, 0, 0.2)'
-        }}
       >
-        {isExpanded ? <X size={28} /> : <Plus size={32} />}
+        {isExpanded ? <X size={24} /> : <Plus size={28} />}
       </button>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Calendar, Sparkles, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { MonthConfig, getThemeGradient } from '@/utils/monthConfig';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -119,62 +119,33 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
                 const isActive = activeMonth === key;
                 const isCurrentMonth = key === currentMonthKey;
                 
-                return (
+                  return (
                   <button
                     key={key}
                     ref={isActive ? activeTabRef : null}
                     onClick={() => onMonthChange(key)}
-                    className={`group relative px-4 py-2.5 rounded-t-xl font-semibold text-xs transition-all duration-300 flex items-center gap-1.5
+                    className={`group relative px-4 py-2.5 rounded-t-xl font-semibold text-xs transition-all duration-200 flex items-center gap-1.5
                       ${isActive
-                        ? 'text-primary transform -translate-y-0.5'
+                        ? 'text-primary'
                         : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                       }
                       ${isCurrentMonth && !isActive ? 'text-success' : ''}
                     `}
                   >
-                    {/* Current month indicator dot */}
+                    {/* Current month static dot */}
                     {isCurrentMonth && (
-                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 flex items-center gap-1">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                        </span>
+                      <span className="absolute -top-1 left-1/2 -translate-x-1/2">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-success"></span>
                       </span>
                     )}
                     
-                    <Calendar 
-                      size={14} 
-                      className={`transition-all duration-300 ${
-                        isActive ? 'text-primary animate-pulse' : ''
-                      } ${
-                        isCurrentMonth && !isActive ? 'text-success' : ''
-                      } group-hover:scale-110`}
-                    />
-                    <span className="relative">
-                      {config.label.split(' ')[0]}
-                      {isActive && (
-                        <Sparkles 
-                          size={10} 
-                          className="absolute -top-1.5 -right-3 text-primary animate-pulse" 
-                        />
-                      )}
-                    </span>
+                    <span>{config.label.split(' ')[0]}</span>
                     
-                    {/* Current month badge */}
                     {isCurrentMonth && !isActive && (
-                      <span className="ml-1 flex items-center gap-0.5 text-[9px] bg-success/20 text-success px-1.5 py-0.5 rounded-full border border-success/30">
+                      <span className="ml-1 flex items-center gap-0.5 text-[9px] bg-success/15 text-success px-1.5 py-0.5 rounded-full">
                         <Clock size={8} />
                         Atual
                       </span>
-                    )}
-                    
-                    {/* Hover glow effect */}
-                    {!isActive && (
-                      <div className={`absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-                        isCurrentMonth 
-                          ? 'bg-gradient-to-t from-success/0 to-success/10' 
-                          : 'bg-gradient-to-t from-primary/0 to-primary/5'
-                      }`} />
                     )}
                   </button>
                 );
