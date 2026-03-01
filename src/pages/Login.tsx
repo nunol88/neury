@@ -11,7 +11,7 @@ import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '2.0.0';
 
 const REMEMBER_USER_KEY = 'agenda_neury_remembered_user';
 
