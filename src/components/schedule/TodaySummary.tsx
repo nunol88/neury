@@ -5,15 +5,26 @@ import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles } from 'lucide-react';
 interface TodaySummaryProps {
   tasks: Task[];
   onScrollToToday?: () => void;
+  isAdmin?: boolean;
 }
 
-const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday }) => {
+const NEURY_RATE = 7;
+
+const getTaskPrice = (t: Task, isAdmin: boolean): number => {
+  if (isAdmin) return parseFloat(t.price) || 0;
+  const start = new Date(`1970-01-01T${t.startTime}`);
+  const end = new Date(`1970-01-01T${t.endTime}`);
+  const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+  return hours * NEURY_RATE;
+};
+
+const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isAdmin = true }) => {
   const todayTasks = tasks;
   const completedTasks = todayTasks.filter(t => t.completed);
   const pendingTasks = todayTasks.filter(t => !t.completed);
   
-  const totalValue = todayTasks.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
-  const completedValue = completedTasks.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
+  const totalValue = todayTasks.reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
+  const completedValue = completedTasks.reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
   
   const progress = todayTasks.length > 0 
     ? Math.round((completedTasks.length / todayTasks.length) * 100) 

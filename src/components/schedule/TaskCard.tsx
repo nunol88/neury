@@ -86,6 +86,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const endTime = new Date(`1970-01-01T${task.endTime}`);
   const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
+  // For non-admin (Neury), always show €7/h rate
+  const NEURY_RATE = 7;
+  const displayPrice = isAdmin ? task.price : (hours * NEURY_RATE).toFixed(2);
+
   return (
     <div
       draggable={isAdmin}
@@ -232,7 +236,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30 hover:from-violet-500/20 hover:to-violet-400/10 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-500/30'
                     }`}>
                       <Euro size={14} className={task.pago ? 'animate-pulse' : ''} />
-                      <span>{task.price}</span>
+                      <span>{displayPrice}</span>
                       {task.pago && <Check size={12} className="ml-0.5" />}
                     </div>
                   </button>
@@ -250,7 +254,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   : 'bg-gradient-to-r from-success/20 to-success/10 text-success border-success/30'
               }`}>
                 <Euro size={12} />
-                {task.price}
+                {displayPrice}
                 {task.pago && <Check size={10} className="ml-0.5" />}
               </div>
             </div>

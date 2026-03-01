@@ -1545,6 +1545,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           tasks={getTasksForMonth(activeMonth)}
           monthLabel={activeConfig?.label || ''}
           totalDays={currentMonthDays.length}
+          isAdmin={isAdmin}
         />
       </div>
 
@@ -1558,6 +1559,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               return t.date === todayStr;
             })}
             onScrollToToday={scrollToToday}
+            isAdmin={isAdmin}
           />
         </div>
       )}
@@ -1595,11 +1597,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       <FloatingTotal
         totalValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          return monthTasks.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+          const NEURY_RATE = 7;
+          return monthTasks.reduce((acc, curr) => {
+            if (isAdmin) return acc + (parseFloat(curr.price) || 0);
+            const start = new Date(`1970-01-01T${curr.startTime}`);
+            const end = new Date(`1970-01-01T${curr.endTime}`);
+            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * NEURY_RATE;
+          }, 0);
         })()}
         completedValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          return monthTasks.filter(t => t.completed).reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+          const NEURY_RATE = 7;
+          return monthTasks.filter(t => t.completed).reduce((acc, curr) => {
+            if (isAdmin) return acc + (parseFloat(curr.price) || 0);
+            const start = new Date(`1970-01-01T${curr.startTime}`);
+            const end = new Date(`1970-01-01T${curr.endTime}`);
+            return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * NEURY_RATE;
+          }, 0);
         })()}
       />
 
