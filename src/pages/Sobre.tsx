@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Info, Sparkles, Bug, Wrench, Rocket, Star } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
 const APP_VERSION = '2.1.0';
@@ -17,7 +20,8 @@ interface ChangeItem {
 interface VersionEntry {
   version: string;
   date: string;
-  highlights?: string;
+  title: string;
+  summary: string;
   changes: ChangeItem[];
 }
 
@@ -25,161 +29,149 @@ const changelog: VersionEntry[] = [
   {
     version: '2.1.0',
     date: '2026-03-01',
-    highlights: 'Gestão de utilizadores e controlo de acessos',
+    title: '👥 Gestão de Funcionários',
+    summary: 'Agora a Mayara consegue adicionar e remover funcionários diretamente na app. Cada funcionário pode ser ativado ou desativado — quando está inativo, só consegue ver os agendamentos sem mexer em nada. Os funcionários veem sempre o valor de €7/hora, enquanto a Mayara vê os preços reais de cada cliente.',
     changes: [
-      { text: 'Página de gestão de utilizadores com adicionar, remover e ativar/inativar', type: 'new' },
-      { text: 'Edge function segura para criar e eliminar contas de utilizadores', type: 'new' },
-      { text: 'Funcionários apenas podem observar por predefinição (sem edição)', type: 'new' },
-      { text: 'Admin pode ativar/desativar funcionários para permitir marcar tarefas', type: 'new' },
-      { text: 'Preços diferenciados: funcionários veem €7/hora, admin vê valores reais', type: 'new' },
-      { text: 'Proteção a nível de base de dados (RLS) para utilizadores inativos', type: 'improvement' },
-      { text: 'Estado ativo/inativo integrado no contexto de autenticação', type: 'improvement' },
+      { text: 'Adicionar e remover funcionários na app', type: 'new' },
+      { text: 'Ativar ou desativar funcionários com um botão', type: 'new' },
+      { text: 'Funcionários inativos só podem ver, sem editar', type: 'new' },
+      { text: 'Funcionários veem €7/hora, Mayara vê o preço real', type: 'new' },
+      { text: 'Segurança reforçada para proteger os dados', type: 'improvement' },
     ],
   },
   {
     version: '2.0.0',
     date: '2026-03-01',
-    highlights: 'Nova identidade, página Sobre e refinamentos',
+    title: '✨ Nova Identidade',
+    summary: 'A app mudou de nome! Antes chamava-se "Agenda Neury" e agora é "Agenda Mayara Godoi". Tudo foi atualizado: o nome, os PDFs que se exportam, e foi criada esta página "Sobre" para acompanhar todas as novidades.',
     changes: [
-      { text: 'Rebranding completo: "Agenda Neury" → "Agenda Mayara Godoi"', type: 'new' },
-      { text: 'Página "Sobre" com histórico detalhado de versões e changelog', type: 'new' },
-      { text: 'Atualização de metadados (título, Open Graph, manifest PWA)', type: 'improvement' },
-      { text: 'Uniformização do nome Mayslimpo em toda a aplicação', type: 'improvement' },
-      { text: 'Rodapés de exportação PDF atualizados com nova marca', type: 'improvement' },
+      { text: 'Nome mudou de "Agenda Neury" para "Agenda Mayara Godoi"', type: 'new' },
+      { text: 'Página "Sobre" com histórico de tudo o que foi feito', type: 'new' },
+      { text: 'PDFs exportados agora têm o nome correto', type: 'improvement' },
+      { text: 'Nome Mayslimpo aparece em todo o lado', type: 'improvement' },
     ],
   },
   {
     version: '1.9.0',
     date: '2026-02-15',
-    highlights: 'Modal de relatório Liquid Glass e melhorias visuais',
+    title: '🪟 Visual Moderno',
+    summary: 'A app ficou mais bonita! Os relatórios de clientes agora abrem numa janela com efeito de vidro (tipo iPhone). Cada cliente tem um avatar com as suas iniciais e cores únicas. Quando uma página está a carregar, aparece uma animação suave em vez de ficar em branco.',
     changes: [
-      { text: 'Modal "Liquid Glass" (glassmorphism) para geração de relatório de cliente', type: 'new' },
-      { text: 'Efeitos de orbes animadas, blur e gradientes no modal de relatório', type: 'new' },
-      { text: 'Avatares personalizados por cliente com iniciais coloridas', type: 'new' },
-      { text: 'Componente Empty State reutilizável para listas vazias', type: 'new' },
-      { text: 'Skeleton loaders para carregamento de páginas', type: 'improvement' },
+      { text: 'Janela de relatório com visual de vidro transparente', type: 'new' },
+      { text: 'Cada cliente tem uma bolinha colorida com as iniciais', type: 'new' },
+      { text: 'Animação suave enquanto as páginas carregam', type: 'improvement' },
     ],
   },
   {
     version: '1.8.0',
     date: '2026-02-01',
-    highlights: 'Widget de comparação de períodos no Dashboard',
+    title: '📊 Comparar Períodos',
+    summary: 'No Dashboard, agora dá para comparar semanas, meses ou até anos. Por exemplo: "Quanto faturei em Janeiro vs Fevereiro?" — a app mostra gráficos lado a lado com as diferenças em percentagem.',
     changes: [
-      { text: 'Widget de comparação entre períodos (semanal, mensal, trimestral, semestral, anual)', type: 'new' },
-      { text: 'Gráficos comparativos com barras lado a lado e indicadores de tendência', type: 'new' },
-      { text: 'Seletor flexível de períodos com anos dinâmicos', type: 'new' },
-      { text: 'Cálculo automático de variação percentual entre períodos', type: 'improvement' },
+      { text: 'Comparar receitas entre períodos diferentes', type: 'new' },
+      { text: 'Gráficos lado a lado para ver as diferenças', type: 'new' },
+      { text: 'Percentagem automática de crescimento ou queda', type: 'improvement' },
     ],
   },
   {
     version: '1.7.0',
     date: '2026-01-15',
-    highlights: 'Dashboard avançado com gráficos e exportação',
+    title: '📈 Dashboard com Números',
+    summary: 'Foi criado um painel com todos os números importantes: quantos trabalhos foram feitos, quanto se faturou, qual a taxa de conclusão. Tudo com gráficos coloridos e animações. Também dá para exportar o dashboard em PDF.',
     changes: [
-      { text: 'Dashboard com KPIs: total agendamentos, concluídos, receita, taxa de conclusão', type: 'new' },
-      { text: 'Gráficos interativos: barras, linhas, áreas, pizza e radial', type: 'new' },
-      { text: 'Sparklines e indicadores de tendência nos cards de estatísticas', type: 'new' },
-      { text: 'Animação CountUp nos valores numéricos do dashboard', type: 'new' },
-      { text: 'Exportação do dashboard em PDF com cabeçalho profissional', type: 'new' },
-      { text: 'Exportação de contexto para IA com dados da app', type: 'new' },
+      { text: 'Painel com números: trabalhos feitos, receita, taxa de conclusão', type: 'new' },
+      { text: 'Gráficos coloridos (barras, linhas, pizza)', type: 'new' },
+      { text: 'Números animados que contam de 0 até ao valor', type: 'new' },
+      { text: 'Exportar o dashboard em PDF', type: 'new' },
     ],
   },
   {
     version: '1.6.0',
     date: '2026-01-01',
-    highlights: 'Gestão fiscal e recibos verdes',
+    title: '🧾 Gestão Fiscal',
+    summary: 'Para clientes com recibo verde, a app agora calcula automaticamente quanto se paga à Segurança Social. Mostra a receita bruta, a contribuição (24,5% sobre 70%) e o que sobra no final. Tudo isto pode ser exportado em PDF.',
     changes: [
-      { text: 'Página de gestão fiscal com cálculo automático de Segurança Social', type: 'new' },
-      { text: 'Marcação de clientes com/sem recibo verde', type: 'new' },
-      { text: 'Cálculo de base de incidência (70%) e taxa efetiva (24,5%)', type: 'new' },
-      { text: 'Resumo financeiro: receita bruta, contribuição SS e receita líquida', type: 'new' },
-      { text: 'Exportação de relatório fiscal em PDF', type: 'new' },
-      { text: 'Filtros por tipo de cliente (recibo verde / normal)', type: 'improvement' },
+      { text: 'Cálculo automático da Segurança Social', type: 'new' },
+      { text: 'Marcar clientes com ou sem recibo verde', type: 'new' },
+      { text: 'Ver receita bruta, contribuição e receita líquida', type: 'new' },
+      { text: 'Exportar relatório fiscal em PDF', type: 'new' },
     ],
   },
   {
     version: '1.5.0',
     date: '2025-12-15',
-    highlights: 'Gestão de pagamentos',
+    title: '💰 Controlo de Pagamentos',
+    summary: 'Agora dá para controlar quem já pagou e quem ainda deve. Cada trabalho pode ser marcado como "pago" e a app regista a data. Dá para filtrar por estado e pesquisar por nome de cliente.',
     changes: [
-      { text: 'Página de pagamentos com resumo mensal (total, pago, pendente)', type: 'new' },
-      { text: 'Marcação individual e em massa de pagamentos como pagos', type: 'new' },
-      { text: 'Registo automático de data de pagamento', type: 'new' },
-      { text: 'Filtros por estado (pago/pendente) e pesquisa por cliente', type: 'new' },
-      { text: 'Badges visuais de estado de pagamento', type: 'improvement' },
+      { text: 'Marcar trabalhos como pagos ou pendentes', type: 'new' },
+      { text: 'Resumo mensal: total, pago e por receber', type: 'new' },
+      { text: 'Data de pagamento registada automaticamente', type: 'new' },
+      { text: 'Pesquisar e filtrar por cliente ou estado', type: 'new' },
     ],
   },
   {
     version: '1.4.0',
     date: '2025-12-01',
-    highlights: 'Gestão avançada de clientes',
+    title: '👤 Gestão de Clientes',
+    summary: 'Foi criada uma página só para os clientes. Dá para adicionar, editar e remover clientes com os dados todos: nome, telefone, morada, preço por hora e notas. Cada cliente tem um histórico detalhado e dá para gerar um relatório em PDF.',
     changes: [
-      { text: 'Página de gestão de clientes com CRUD completo', type: 'new' },
-      { text: 'Campos: nome, telefone, morada, preço/hora e notas', type: 'new' },
-      { text: 'Histórico detalhado por cliente com estatísticas', type: 'new' },
-      { text: 'Geração de relatório PDF por cliente com dados do período', type: 'new' },
-      { text: 'Pesquisa e filtragem de clientes', type: 'new' },
-      { text: 'Validação de duplicados ao adicionar clientes', type: 'improvement' },
-      { text: 'Integração automática de clientes dos agendamentos', type: 'improvement' },
+      { text: 'Página para gerir todos os clientes', type: 'new' },
+      { text: 'Guardar nome, telefone, morada e preço/hora', type: 'new' },
+      { text: 'Ver o histórico de trabalhos de cada cliente', type: 'new' },
+      { text: 'Gerar relatório PDF por cliente', type: 'new' },
+      { text: 'Aviso quando se tenta adicionar um cliente que já existe', type: 'improvement' },
     ],
   },
   {
     version: '1.3.0',
     date: '2025-11-15',
-    highlights: 'Funcionalidades avançadas de agendamento',
+    title: '🗓️ Agendamento Avançado',
+    summary: 'Muitas novidades nos agendamentos! A app agora avisa quando dois trabalhos estão no mesmo horário. Há um botão flutuante para ações rápidas, um botão "Ir para Hoje" e a possibilidade de desfazer quando se apaga algo por engano.',
     changes: [
-      { text: 'Menu de ações flutuante (FAB) com adicionar, exportar e eliminar mês', type: 'new' },
-      { text: 'Deteção automática de conflitos de horário entre agendamentos', type: 'new' },
-      { text: 'Diálogo de confirmação para eliminar todos os dados de um mês', type: 'new' },
-      { text: 'Botão "Ir para Hoje" com navegação automática ao mês/dia atual', type: 'new' },
-      { text: 'Resumo do dia atual com contagem de tarefas e receita', type: 'new' },
-      { text: 'Sistema de desfazer (undo) para ações de eliminação', type: 'new' },
-      { text: 'Agendamento em datas passadas via date picker', type: 'new' },
-      { text: 'Seletor de tipo de serviço (limpeza, engomadoria, etc.)', type: 'new' },
+      { text: 'Aviso automático de conflitos de horário', type: 'new' },
+      { text: 'Botão flutuante para ações rápidas', type: 'new' },
+      { text: 'Botão "Ir para Hoje" que salta para o dia atual', type: 'new' },
+      { text: 'Desfazer ações (quando se apaga algo por engano)', type: 'new' },
+      { text: 'Resumo do dia com tarefas e valor', type: 'new' },
+      { text: 'Agendar em datas passadas', type: 'new' },
     ],
   },
   {
     version: '1.2.0',
     date: '2025-11-01',
-    highlights: 'Calendário e exportação PDF',
+    title: '📅 Calendário e PDF',
+    summary: 'A agenda passou a ter uma vista de calendário organizada por dias e meses. Cada dia mostra os trabalhos marcados. Foi adicionada a exportação em PDF profissional com logo e cabeçalho da Mayslimpo.',
     changes: [
-      { text: 'Visualização de calendário mensal com dias e tarefas', type: 'new' },
-      { text: 'Cards de dia com lista de agendamentos e resumo', type: 'new' },
-      { text: 'Barra de resumo mensal com totais e receita', type: 'new' },
-      { text: 'Total flutuante com valor acumulado do mês', type: 'new' },
-      { text: 'Exportação de agenda mensal em PDF profissional', type: 'new' },
-      { text: 'Cabeçalhos e rodapés profissionais nos PDFs com logo', type: 'new' },
-      { text: 'Separadores por abas de mês com navegação rápida', type: 'new' },
+      { text: 'Vista de calendário mensal organizada por dias', type: 'new' },
+      { text: 'Resumo mensal com totais e receita', type: 'new' },
+      { text: 'Exportar a agenda do mês em PDF', type: 'new' },
+      { text: 'Separadores por mês para navegação rápida', type: 'new' },
     ],
   },
   {
     version: '1.1.0',
     date: '2025-10-15',
-    highlights: 'Sistema de autenticação e perfis',
+    title: '🔐 Login e Segurança',
+    summary: 'Foi criado o sistema de login com um visual moderno. A app saúda o utilizador conforme a hora do dia. Há dois tipos de conta: Admin (Mayara, com acesso total) e Funcionário (só pode ver). Também tem a opção de lembrar o utilizador.',
     changes: [
-      { text: 'Login com estética "Liquid Glass" (glassmorphism)', type: 'new' },
-      { text: 'Saudação dinâmica por hora do dia (bom dia/boa tarde/boa noite)', type: 'new' },
-      { text: 'Funcionalidade "Lembrar utilizador" com auto-preenchimento', type: 'new' },
-      { text: 'Indicador visual de Caps Lock ativo', type: 'new' },
-      { text: 'Modal de ajuda com contactos de suporte (email e WhatsApp)', type: 'new' },
-      { text: 'Dois perfis de acesso: Admin (gestão total) e Neury (apenas visualização)', type: 'new' },
-      { text: 'Rotas protegidas com verificação de permissões', type: 'new' },
-      { text: 'Sidebar responsiva com navegação contextual por perfil', type: 'improvement' },
+      { text: 'Ecrã de login com visual moderno', type: 'new' },
+      { text: 'Saudação automática (bom dia/boa tarde/boa noite)', type: 'new' },
+      { text: 'Opção "Lembrar-me" para não ter de escrever o email sempre', type: 'new' },
+      { text: 'Dois tipos de conta: Admin e Funcionário', type: 'new' },
+      { text: 'Páginas protegidas — só entra quem tem permissão', type: 'new' },
     ],
   },
   {
     version: '1.0.0',
     date: '2025-10-01',
-    highlights: 'Lançamento inicial — fundação da aplicação',
+    title: '🚀 Lançamento',
+    summary: 'A primeira versão da app! Criada de raiz com tudo o que é preciso: agendamentos, temas claro e escuro, funciona no telemóvel e no computador. Inclui os feriados portugueses calculados automaticamente e funciona mesmo sem internet.',
     changes: [
-      { text: 'Estrutura base React + Vite + TypeScript + Tailwind CSS', type: 'new' },
-      { text: 'Integração com base de dados (Lovable Cloud)', type: 'new' },
-      { text: 'Sistema de agendamentos com criação, edição e eliminação', type: 'new' },
-      { text: 'Suporte a tema claro e escuro com toggle na sidebar', type: 'new' },
-      { text: 'Layout responsivo com sidebar colapsável', type: 'new' },
-      { text: 'PWA com service worker e suporte offline', type: 'new' },
-      { text: 'Feriados portugueses calculados automaticamente', type: 'new' },
-      { text: 'Favicon e manifesto configurados', type: 'new' },
+      { text: 'Sistema de agendamentos (criar, editar, apagar)', type: 'new' },
+      { text: 'Tema claro e escuro', type: 'new' },
+      { text: 'Funciona no telemóvel e computador', type: 'new' },
+      { text: 'Funciona sem internet (PWA)', type: 'new' },
+      { text: 'Feriados portugueses automáticos', type: 'new' },
     ],
   },
 ];
@@ -192,6 +184,7 @@ const typeConfig: Record<ChangeType, { label: string; icon: React.ElementType; v
 
 const Sobre = () => {
   const { theme } = useTheme();
+  const [selectedVersion, setSelectedVersion] = useState<VersionEntry | null>(null);
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-8">
@@ -219,54 +212,94 @@ const Sobre = () => {
       <div className="space-y-6">
         <div className="flex items-center gap-2">
           <Info className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Histórico de Versões</h2>
+          <h2 className="text-lg font-semibold text-foreground">O que há de novo?</h2>
         </div>
+        <p className="text-sm text-muted-foreground">Carregue em qualquer versão para ver os detalhes.</p>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
           {changelog.map((entry, i) => (
-            <div
+            <button
               key={entry.version}
-              className="relative rounded-xl border border-border bg-card p-5 space-y-3"
+              onClick={() => setSelectedVersion(entry)}
+              className="w-full text-left rounded-xl border border-border bg-card p-4 hover:border-primary/40 hover:shadow-md transition-all duration-200 group"
             >
-              {/* Version badge */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   {i === 0 ? (
-                    <Star className="h-4 w-4 text-primary" />
+                    <Star className="h-5 w-5 text-primary" />
                   ) : (
-                    <Rocket className="h-4 w-4 text-muted-foreground" />
+                    <Rocket className="h-5 w-5 text-muted-foreground" />
                   )}
-                  <span className="font-bold text-foreground text-lg">v{entry.version}</span>
-                  {i === 0 && (
-                    <Badge variant="default" className="text-xs">Atual</Badge>
-                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">v{entry.version}</span>
+                      {i === 0 && (
+                        <Badge variant="default" className="text-xs">Atual</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{entry.title}</p>
+                  </div>
                 </div>
-                <span className="text-xs text-muted-foreground">{entry.date}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground hidden sm:block">{entry.date}</span>
+                  <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
               </div>
-
-              {entry.highlights && (
-                <p className="text-sm text-muted-foreground italic">{entry.highlights}</p>
-              )}
-
-              <ul className="space-y-2">
-                {entry.changes.map((change, j) => {
-                  const config = typeConfig[change.type];
-                  const Icon = config.icon;
-                  return (
-                    <li key={j} className="flex items-start gap-2 text-sm">
-                      <Badge variant={config.variant} className="text-[10px] px-1.5 py-0 shrink-0 mt-0.5">
-                        <Icon className="h-3 w-3 mr-1" />
-                        {config.label}
-                      </Badge>
-                      <span className="text-foreground">{change.text}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Version Detail Dialog */}
+      <Dialog open={!!selectedVersion} onOpenChange={(open) => !open && setSelectedVersion(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          {selectedVersion && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  {selectedVersion.title}
+                </DialogTitle>
+                <DialogDescription className="flex items-center gap-2 text-xs">
+                  <span>Versão {selectedVersion.version}</span>
+                  <span>•</span>
+                  <span>{selectedVersion.date}</span>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                {/* Simple explanation */}
+                <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {selectedVersion.summary}
+                  </p>
+                </div>
+
+                {/* Changes list */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    O que mudou:
+                  </p>
+                  <ul className="space-y-2">
+                    {selectedVersion.changes.map((change, j) => {
+                      const config = typeConfig[change.type];
+                      const Icon = config.icon;
+                      return (
+                        <li key={j} className="flex items-start gap-2 text-sm">
+                          <Badge variant={config.variant} className="text-[10px] px-1.5 py-0 shrink-0 mt-0.5">
+                            <Icon className="h-3 w-3 mr-1" />
+                            {config.label}
+                          </Badge>
+                          <span className="text-foreground">{change.text}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground pt-4">
