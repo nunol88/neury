@@ -8,7 +8,7 @@ import {
 import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 type ChangeType = 'new' | 'fix' | 'improvement';
 
@@ -26,6 +26,20 @@ interface VersionEntry {
 }
 
 const changelog: VersionEntry[] = [
+  {
+    version: '2.3.1',
+    date: '2026-03-01',
+    title: '✨ Melhorias Visuais — Pagamentos e Utilizadores',
+    summary: 'Os cards de pagamento ficaram mais modernos: hover states suaves, badges com fundo preenchido e cores mais consistentes. O botão "Marcar todos como pago" tem agora um estilo verde subtil. Na Gestão de Utilizadores, os cards ficaram mais espaçados, os ícones mudam de cor conforme o estado (verde para ativos, destaque para admin), e os badges de role e estado ficaram mais elegantes.',
+    changes: [
+      { text: 'Cards de pagamento com hover suave e sombra ao passar o rato', type: 'improvement' },
+      { text: 'Badges de estado com fundo preenchido (laranja/verde)', type: 'improvement' },
+      { text: 'Linhas pagas com opacidade reduzida para distinguir melhor', type: 'improvement' },
+      { text: 'Botão "Marcar todos como pago" com estilo verde', type: 'improvement' },
+      { text: 'Cards de utilizador com layout mais respirável', type: 'improvement' },
+      { text: 'Ícones e badges de utilizador com cores contextuais', type: 'improvement' },
+    ],
+  },
   {
     version: '2.3.0',
     date: '2026-03-01',
