@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Users, ShieldCheck, UserCheck, UserX, Loader2 } from 'lucide-react';
@@ -13,6 +13,11 @@ interface UserRole {
   is_active: boolean;
   created_at: string;
 }
+
+const ROLE_DISPLAY: Record<string, { name: string; description: string }> = {
+  admin: { name: 'Mayara', description: 'Administradora — acesso total' },
+  neury: { name: 'Neury', description: 'Funcionária' },
+};
 
 const GestaoUtilizadores: React.FC = () => {
   const [users, setUsers] = useState<UserRole[]>([]);
@@ -40,7 +45,7 @@ const GestaoUtilizadores: React.FC = () => {
 
   const toggleActive = async (userRole: UserRole) => {
     if (userRole.role === 'admin') {
-      toast.error('Não é possível desativar um administrador');
+      toast.error('Não é possível desativar a administradora');
       return;
     }
 
@@ -54,10 +59,11 @@ const GestaoUtilizadores: React.FC = () => {
       toast.error('Erro ao atualizar estado do utilizador');
       console.error(error);
     } else {
+      const display = ROLE_DISPLAY[userRole.role] || { name: userRole.role };
       toast.success(
         userRole.is_active
-          ? 'Utilizador desativado com sucesso'
-          : 'Utilizador ativado com sucesso'
+          ? `${display.name} desativada com sucesso`
+          : `${display.name} ativada com sucesso`
       );
       fetchUsers();
     }
@@ -84,47 +90,52 @@ const GestaoUtilizadores: React.FC = () => {
       </p>
 
       <div className="grid gap-4">
-        {users.map((u) => (
-          <Card key={u.id} className={!u.is_active ? 'opacity-60' : ''}>
-            <CardContent className="flex items-center justify-between py-4 px-5">
-              <div className="flex items-center gap-4">
-                <div className={`rounded-full p-2 ${u.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
-                  {u.is_active ? (
-                    <UserCheck className="h-5 w-5 text-primary" />
-                  ) : (
-                    <UserX className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground capitalize">{u.role}</span>
-                    <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                      {u.role === 'admin' ? (
-                        <><ShieldCheck className="h-3 w-3 mr-1" /> Admin</>
-                      ) : (
-                        u.role
-                      )}
-                    </Badge>
+        {users.map((u) => {
+          const display = ROLE_DISPLAY[u.role] || { name: u.role, description: '' };
+          return (
+            <Card key={u.id} className={!u.is_active ? 'opacity-60' : ''}>
+              <CardContent className="flex items-center justify-between py-4 px-5">
+                <div className="flex items-center gap-4">
+                  <div className={`rounded-full p-2 ${u.is_active ? 'bg-primary/10' : 'bg-muted'}`}>
+                    {u.is_active ? (
+                      <UserCheck className="h-5 w-5 text-primary" />
+                    ) : (
+                      <UserX className="h-5 w-5 text-muted-foreground" />
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {u.is_active ? 'Ativo — pode editar' : 'Inativo — apenas visualização'}
-                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">{display.name}</span>
+                      <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                        {u.role === 'admin' ? (
+                          <><ShieldCheck className="h-3 w-3 mr-1" /> Admin</>
+                        ) : (
+                          'Funcionária'
+                        )}
+                      </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {u.is_active 
+                        ? display.description + ' — pode editar'
+                        : display.description + ' — apenas visualização'}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">
-                  {u.is_active ? 'Ativo' : 'Inativo'}
-                </span>
-                <Switch
-                  checked={u.is_active}
-                  onCheckedChange={() => toggleActive(u)}
-                  disabled={u.role === 'admin' || toggling === u.id}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    {u.is_active ? 'Ativa' : 'Inativa'}
+                  </span>
+                  <Switch
+                    checked={u.is_active}
+                    onCheckedChange={() => toggleActive(u)}
+                    disabled={u.role === 'admin' || toggling === u.id}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
 
         {users.length === 0 && (
           <p className="text-center text-muted-foreground py-8">

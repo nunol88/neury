@@ -6,19 +6,31 @@ interface MonthSummaryBarProps {
   tasks: Task[];
   monthLabel: string;
   totalDays: number;
+  isAdmin?: boolean;
 }
+
+const NEURY_RATE = 7;
+
+const getTaskPrice = (t: Task, isAdmin: boolean): number => {
+  if (isAdmin) return parseFloat(t.price) || 0;
+  const start = new Date(`1970-01-01T${t.startTime}`);
+  const end = new Date(`1970-01-01T${t.endTime}`);
+  const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+  return hours * NEURY_RATE;
+};
 
 const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   tasks,
   monthLabel,
   totalDays,
+  isAdmin = true,
 }) => {
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.completed).length;
   const pendingTasks = totalTasks - completedTasks;
   
-  const totalValue = tasks.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
-  const completedValue = tasks.filter(t => t.completed).reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
+  const totalValue = tasks.reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
+  const completedValue = tasks.filter(t => t.completed).reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
   
   const totalHours = tasks.reduce((sum, t) => {
     const start = new Date(`1970-01-01T${t.startTime}`);
