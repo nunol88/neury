@@ -160,7 +160,7 @@ const Pagamentos: React.FC = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-4">
-          <Card>
+          <Card className="transition-all duration-200 hover:shadow-md">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-foreground">
                 {formatCurrency(summary.totalInvoiced)}
@@ -172,7 +172,7 @@ const Pagamentos: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-green-200 dark:border-green-800">
+          <Card className="transition-all duration-200 hover:shadow-md border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {formatCurrency(summary.totalPaid)}
@@ -184,7 +184,7 @@ const Pagamentos: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-orange-200 dark:border-orange-800">
+          <Card className="transition-all duration-200 hover:shadow-md border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {formatCurrency(summary.totalPending)}
@@ -207,7 +207,7 @@ const Pagamentos: React.FC = () => {
             ))}
           </div>
         ) : filteredClients.length === 0 ? (
-          <Card>
+          <Card className="transition-all duration-200">
             <CardContent className="p-8 text-center text-muted-foreground">
               <CheckCircle2 size={48} className="mx-auto mb-3 text-green-500" />
               <p className="font-medium">Sem pagamentos pendentes</p>
@@ -217,7 +217,7 @@ const Pagamentos: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {filteredClients.map((client) => (
-              <Card key={client.clientName}>
+              <Card key={client.clientName} className="transition-all duration-200 hover:shadow-md hover:border-primary/20">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -226,11 +226,11 @@ const Pagamentos: React.FC = () => {
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       {client.totalPending > 0 ? (
-                        <Badge variant="outline" className="border-orange-300 text-orange-600">
+                        <Badge className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800">
                           Falta: {formatCurrency(client.totalPending)}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="border-green-300 text-green-600">
+                        <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
                           Tudo pago
                         </Badge>
                       )}
@@ -247,10 +247,10 @@ const Pagamentos: React.FC = () => {
                     {client.services.map((service) => (
                       <div 
                         key={service.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-150 ${
                           service.pago 
-                            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                            : 'bg-muted/30 border-border'
+                            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 opacity-75' 
+                            : 'bg-muted/30 border-border hover:shadow-sm'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -286,7 +286,7 @@ const Pagamentos: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="mt-3 w-full"
+                      className="mt-3 w-full bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:hover:bg-green-950/50 dark:text-green-400 dark:border-green-800"
                       onClick={() => handleMarkAllPaid(client.clientName)}
                     >
                       <CheckCircle2 size={16} className="mr-2" />
