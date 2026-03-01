@@ -25,7 +25,8 @@ import {
   LogOut, 
   Sun, 
   Moon,
-  Receipt
+  Receipt,
+  Info
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 
@@ -35,10 +36,12 @@ const navItems = [
   { title: 'Clientes', url: '/admin/clientes', icon: Users },
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
   { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
+  { title: 'Sobre', url: '/admin/sobre', icon: Info },
 ];
 
 const neurySidebarItems = [
   { title: 'Agendamentos', url: '/neury/agendamentos', icon: CalendarDays },
+  { title: 'Sobre', url: '/neury/sobre', icon: Info },
 ];
 
 export function AppSidebar() {
