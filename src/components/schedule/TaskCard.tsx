@@ -253,19 +253,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </TooltipProvider>
           )}
           
-          {(isAdmin || canEdit) && (
-            <button
-              onClick={handleToggleStatus}
-              className={`p-1.5 rounded-full transition-colors ${
-                task.completed
-                  ? 'bg-success/15 hover:bg-success/25 text-success'
-                  : 'bg-muted hover:bg-success/10 text-muted-foreground hover:text-success'
-              }`}
-              title={task.completed ? 'Marcar como pendente' : 'Marcar como concluído'}
-            >
-              <Check size={13} />
-            </button>
-          )}
+          <button
+            onClick={handleToggleStatus}
+            disabled={!isAdmin && !canEdit}
+            className={`p-1.5 rounded-full transition-colors ${
+              !isAdmin && !canEdit
+                ? 'opacity-50 cursor-not-allowed'
+                : ''
+            } ${
+              task.completed
+                ? 'bg-success/15 hover:bg-success/25 text-success'
+                : `bg-muted text-muted-foreground ${isAdmin || canEdit ? 'hover:bg-success/10 hover:text-success' : ''}`
+            }`}
+            title={
+              !isAdmin && !canEdit
+                ? 'Conta inativa — apenas visualização'
+                : task.completed ? 'Marcar como pendente' : 'Marcar como concluído'
+            }
+          >
+            <Check size={13} />
+          </button>
           
           {isAdmin && (
             <>
