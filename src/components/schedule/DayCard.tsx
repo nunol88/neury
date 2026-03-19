@@ -58,13 +58,14 @@ const DayCard: React.FC<DayCardProps> = ({
   const today = new Date();
   const isToday = dayObj.dateObject.toDateString() === today.toDateString();
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
+  const isPastBlocked = isPast && !isAdmin;
   const holiday = getHoliday(dayObj.dateString);
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = isPast ? 'none' : 'move';
-    if (!isPast) setIsDragOver(true);
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
     onDragOver(e);
   };
 
@@ -79,7 +80,7 @@ const DayCard: React.FC<DayCardProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     setIsDragOver(false);
-    if (!isPast) onDrop(e, dayObj.dateString);
+    if (!isPastBlocked) onDrop(e, dayObj.dateString);
   };
 
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
@@ -100,10 +101,9 @@ const DayCard: React.FC<DayCardProps> = ({
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
         ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
         ${isFullyCompleted && !isToday ? 'border-success/50' : ''}
-        ${isPast && isAdmin ? 'opacity-60' : ''}
-        ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
-        ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
-        ${isEmpty && !isToday && !isPast ? 'opacity-50' : ''}
+        ${isPast && !isAdmin ? 'opacity-60' : ''}
+        ${isDragOver ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
+        ${isEmpty && !isToday && !isPastBlocked ? 'opacity-50' : ''}
       `}
     >
       {/* Simple check for fully completed days */}
