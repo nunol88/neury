@@ -172,15 +172,15 @@ const DayCard: React.FC<DayCardProps> = ({
 
       {/* Content */}
       <div className={`p-2.5 flex-1 min-h-[100px] relative transition-all duration-300 ${
-        isDragOver && !isPast ? 'bg-primary/5' : ''
+        isDragOver ? 'bg-primary/5' : ''
       }`}>
         {tasks.length === 0 ? (
           <div className={`h-full flex items-center justify-center text-xs italic ${
-            isDragOver && !isPast 
+            isDragOver
               ? 'text-primary font-semibold' 
               : 'text-muted-foreground/40'
           }`}>
-            {isDragOver && !isPast ? (
+            {isDragOver ? (
               <span className="flex items-center gap-2">
                 <CalendarPlus size={14} />
                 Soltar aqui
