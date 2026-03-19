@@ -116,18 +116,10 @@ const DayCard: React.FC<DayCardProps> = ({
       )}
 
       {/* Drop indicator overlay */}
-      {isDragOver && !isPast && (
+      {isDragOver && (
         <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center backdrop-blur-[1px]">
           <div className="glass rounded-full p-4 shadow-lg">
             <CalendarPlus className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-      )}
-      
-      {isDragOver && isPast && (
-        <div className="absolute inset-0 bg-destructive/10 rounded-xl pointer-events-none z-10 flex items-center justify-center">
-          <div className="glass rounded-lg px-4 py-2">
-            <span className="text-sm text-destructive font-semibold">Data passada</span>
           </div>
         </div>
       )}
