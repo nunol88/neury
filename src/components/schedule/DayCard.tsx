@@ -58,13 +58,14 @@ const DayCard: React.FC<DayCardProps> = ({
   const today = new Date();
   const isToday = dayObj.dateObject.toDateString() === today.toDateString();
   const isPast = dayObj.dateObject < new Date(today.setHours(0, 0, 0, 0));
+  const isPastBlocked = isPast && !isAdmin;
   const holiday = getHoliday(dayObj.dateString);
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!isAdmin) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = isPast ? 'none' : 'move';
-    if (!isPast) setIsDragOver(true);
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
     onDragOver(e);
   };
 
@@ -79,7 +80,7 @@ const DayCard: React.FC<DayCardProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     setIsDragOver(false);
-    if (!isPast) onDrop(e, dayObj.dateString);
+    if (!isPastBlocked) onDrop(e, dayObj.dateString);
   };
 
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
@@ -100,10 +101,9 @@ const DayCard: React.FC<DayCardProps> = ({
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
         ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
         ${isFullyCompleted && !isToday ? 'border-success/50' : ''}
-        ${isPast && isAdmin ? 'opacity-60' : ''}
-        ${isDragOver && !isPast ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
-        ${isDragOver && isPast ? 'ring-2 ring-destructive/50 bg-destructive/5' : ''}
-        ${isEmpty && !isToday && !isPast ? 'opacity-50' : ''}
+        ${isPast && !isAdmin ? 'opacity-60' : ''}
+        ${isDragOver ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
+        ${isEmpty && !isToday && !isPastBlocked ? 'opacity-50' : ''}
       `}
     >
       {/* Simple check for fully completed days */}
@@ -116,18 +116,10 @@ const DayCard: React.FC<DayCardProps> = ({
       )}
 
       {/* Drop indicator overlay */}
-      {isDragOver && !isPast && (
+      {isDragOver && (
         <div className="absolute inset-0 bg-primary/10 rounded-xl pointer-events-none z-10 flex items-center justify-center backdrop-blur-[1px]">
           <div className="glass rounded-full p-4 shadow-lg">
             <CalendarPlus className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-      )}
-      
-      {isDragOver && isPast && (
-        <div className="absolute inset-0 bg-destructive/10 rounded-xl pointer-events-none z-10 flex items-center justify-center">
-          <div className="glass rounded-lg px-4 py-2">
-            <span className="text-sm text-destructive font-semibold">Data passada</span>
           </div>
         </div>
       )}
@@ -180,15 +172,15 @@ const DayCard: React.FC<DayCardProps> = ({
 
       {/* Content */}
       <div className={`p-2.5 flex-1 min-h-[100px] relative transition-all duration-300 ${
-        isDragOver && !isPast ? 'bg-primary/5' : ''
+        isDragOver ? 'bg-primary/5' : ''
       }`}>
         {tasks.length === 0 ? (
           <div className={`h-full flex items-center justify-center text-xs italic ${
-            isDragOver && !isPast 
+            isDragOver
               ? 'text-primary font-semibold' 
               : 'text-muted-foreground/40'
           }`}>
-            {isDragOver && !isPast ? (
+            {isDragOver ? (
               <span className="flex items-center gap-2">
                 <CalendarPlus size={14} />
                 Soltar aqui
