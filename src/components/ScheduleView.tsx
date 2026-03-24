@@ -131,6 +131,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   // State for delete month confirmation dialog
   const [showDeleteMonthDialog, setShowDeleteMonthDialog] = useState(false);
 
+  // State for extra value modal
+  const [showExtraModal, setShowExtraModal] = useState(false);
+
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
     activeConfig ? generateDaysForMonth(activeConfig) : [], 
