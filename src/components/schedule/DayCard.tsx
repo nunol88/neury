@@ -17,6 +17,7 @@ interface DayInfo {
 interface DayCardProps {
   dayObj: DayInfo;
   tasks: Task[];
+  extras?: Extra[];
   isAdmin: boolean;
   canEdit?: boolean;
   userRole?: string;
@@ -30,6 +31,7 @@ interface DayCardProps {
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopyTask?: (task: Task) => void;
+  onDeleteExtra?: (id: string) => void;
   animationDelay?: number;
 }
 
