@@ -122,6 +122,36 @@ export type Database = {
         }
         Relationships: []
       }
+      extras: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          mes_key: string
+          observacoes: string | null
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          mes_key: string
+          observacoes?: string | null
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          mes_key?: string
+          observacoes?: string | null
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
