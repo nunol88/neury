@@ -1544,6 +1544,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </header>
 
+      {/* Extra Value Modal */}
+      <ExtraValueModal
+        isOpen={showExtraModal}
+        onClose={() => setShowExtraModal(false)}
+        onSubmit={async (data) => {
+          const result = await addExtra({
+            valor: data.valor,
+            data: data.data,
+            observacoes: data.observacoes,
+            mes_key: activeMonth,
+          });
+          return !!result;
+        }}
+        defaultDate={currentMonthDays[0]?.dateString}
+      />
 
       {/* Hero Summary Bar */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
