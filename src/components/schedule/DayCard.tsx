@@ -200,7 +200,6 @@ const DayCard: React.FC<DayCardProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {tasks.length === 0 && extras.length > 0 && !isDragOver && null}
             {tasks.map((task, index) => (
               <TaskCard
                 key={task.id}
