@@ -1621,23 +1621,27 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       <FloatingTotal
         totalValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          const monthExtras = getExtrasForMonth(activeMonth);
+          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
           const EMPLOYEE_RATE = 7;
           return monthTasks.reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
             return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
-          }, 0);
+          }, 0) + extrasTotal;
         })()}
         completedValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          const monthExtras = getExtrasForMonth(activeMonth);
+          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
           const EMPLOYEE_RATE = 7;
           return monthTasks.filter(t => t.completed).reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
             return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
-          }, 0);
+          }, 0) + extrasTotal;
         })()}
       />
 
