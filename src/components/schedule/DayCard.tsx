@@ -214,6 +214,48 @@ const DayCard: React.FC<DayCardProps> = ({
                 animationDelay={index * 50}
               />
             ))}
+            {/* Extra values */}
+            {extras.map((extra) => (
+              <div
+                key={extra.id}
+                className="relative group p-3 rounded-xl border border-success/30 bg-success/5 transition-all duration-200 text-sm animate-fade-in"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                      <Euro size={14} className="text-success" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-bold text-success text-sm">+€{Number(extra.valor).toFixed(2)}</span>
+                      {extra.observacoes && (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1 cursor-help">
+                                <StickyNote size={10} />
+                                {extra.observacoes}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[250px] text-xs">
+                              <p className="whitespace-pre-wrap">{extra.observacoes}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </div>
+                  {onDeleteExtra && (
+                    <button
+                      onClick={() => onDeleteExtra(extra.id)}
+                      className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                      title="Remover extra"
+                    >
+                      <Trash2 size={13} className="text-destructive" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
