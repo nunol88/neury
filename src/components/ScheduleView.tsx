@@ -61,6 +61,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { theme, toggleTheme } = useTheme();
   const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
+  const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate } = useExtras();
   const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
   
   // Static month configuration matching useAgendamentos
