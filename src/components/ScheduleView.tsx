@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
+import { useExtras } from '@/hooks/useExtras';
 import { useActionHistory, ActionRecord } from '@/hooks/useActionHistory';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
