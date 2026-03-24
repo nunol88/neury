@@ -23,6 +23,7 @@ interface FloatingActionMenuProps {
   onCopyFromPrevious: () => void;
   onUndo: () => void;
   onDeleteMonth: () => void;
+  onAddExtra?: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
