@@ -183,7 +183,7 @@ const DayCard: React.FC<DayCardProps> = ({
       <div className={`p-2.5 flex-1 min-h-[100px] relative transition-all duration-300 ${
         isDragOver ? 'bg-primary/5' : ''
       }`}>
-        {tasks.length === 0 ? (
+        {isEmpty ? (
           <div className={`h-full flex items-center justify-center text-xs italic ${
             isDragOver
               ? 'text-primary font-semibold' 
@@ -200,6 +200,7 @@ const DayCard: React.FC<DayCardProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
+            {tasks.length === 0 && extras.length > 0 && !isDragOver && null}
             {tasks.map((task, index) => (
               <TaskCard
                 key={task.id}
