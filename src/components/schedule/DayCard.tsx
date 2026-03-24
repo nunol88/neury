@@ -38,6 +38,7 @@ interface DayCardProps {
 const DayCard: React.FC<DayCardProps> = ({
   dayObj,
   tasks,
+  extras = [],
   isAdmin,
   canEdit = true,
   userRole = 'user',
@@ -51,6 +52,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onToggleStatus,
   onTogglePayment,
   onCopyTask,
+  onDeleteExtra,
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
