@@ -158,15 +158,17 @@ const DayCard: React.FC<DayCardProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
-          {tasks.length > 0 && (
+          {(tasks.length > 0 || extras.length > 0) && (
             <div className="flex flex-col items-end gap-0.5">
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full
-                ${completedTasks === tasks.length 
-                  ? 'bg-success/15 text-success' 
-                  : 'bg-primary/10 text-primary'
-                }`}>
-                {completedTasks}/{tasks.length}
-              </span>
+              {tasks.length > 0 && (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full
+                  ${completedTasks === tasks.length 
+                    ? 'bg-success/15 text-success' 
+                    : 'bg-primary/10 text-primary'
+                  }`}>
+                  {completedTasks}/{tasks.length}
+                </span>
+              )}
               {dayTotal > 0 && (
                 <span className="text-xs text-success font-bold">
                   €{dayTotal.toFixed(0)}
