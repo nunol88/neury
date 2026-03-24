@@ -25,6 +25,7 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   monthLabel,
   totalDays,
   isAdmin = true,
+  extrasTotal = 0,
 }) => {
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.completed).length;
