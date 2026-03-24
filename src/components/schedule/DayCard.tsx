@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
+import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { CalendarPlus, Check } from 'lucide-react';
+import { CalendarPlus, Check, Euro, StickyNote, Trash2 } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DayInfo {
   dateObject: Date;
