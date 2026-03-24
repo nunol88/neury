@@ -1582,6 +1582,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               key={dayObj.dateString}
               dayObj={dayObj}
               tasks={dayTasks}
+              extras={getExtrasForDate(dayObj.dateString)}
               isAdmin={isAdmin}
               canEdit={isAdmin || isActive}
               userRole={role || 'user'}
@@ -1595,6 +1596,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
               onCopyTask={isAdmin ? handleCopyTask : undefined}
+              onDeleteExtra={deleteExtra}
             />
           );
         })}
