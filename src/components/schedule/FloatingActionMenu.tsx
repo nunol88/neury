@@ -46,6 +46,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   onCopyFromPrevious,
   onUndo,
   onDeleteMonth,
+  onAddExtra,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { open: sidebarOpen } = useSidebar();
