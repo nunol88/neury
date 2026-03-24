@@ -89,10 +89,11 @@ const DayCard: React.FC<DayCardProps> = ({
     if (!isPastBlocked) onDrop(e, dayObj.dateString);
   };
 
-  const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0);
+  const extrasTotal = extras.reduce((sum, e) => sum + Number(e.valor), 0);
+  const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0) + extrasTotal;
   const completedTasks = tasks.filter(t => t.completed).length;
-  const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length;
-  const isEmpty = tasks.length === 0;
+  const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length && extras.length === 0;
+  const isEmpty = tasks.length === 0 && extras.length === 0;
 
   return (
     <div
