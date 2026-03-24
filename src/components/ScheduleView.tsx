@@ -2131,6 +2131,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         currentMonthLabel={activeConfig?.label || ''}
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
+        onAddExtra={() => setShowExtraModal(true)}
       />
 
       {/* Delete Month Confirmation Dialog */}
