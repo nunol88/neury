@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
+import { useExtras } from '@/hooks/useExtras';
 import { useActionHistory, ActionRecord } from '@/hooks/useActionHistory';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
@@ -34,6 +35,7 @@ import {
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
+import ExtraValueModal from '@/components/schedule/ExtraValueModal';
 
 import {
   generateMonthsConfig,
@@ -59,6 +61,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { theme, toggleTheme } = useTheme();
   const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
   const { clients, addClient } = useClients();
+  const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate } = useExtras();
   const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
   
   // Static month configuration matching useAgendamentos
@@ -127,6 +130,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   // State for delete month confirmation dialog
   const [showDeleteMonthDialog, setShowDeleteMonthDialog] = useState(false);
+
+  // State for extra value modal
+  const [showExtraModal, setShowExtraModal] = useState(false);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -1538,6 +1544,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         </div>
       </header>
 
+      {/* Extra Value Modal */}
+      <ExtraValueModal
+        isOpen={showExtraModal}
+        onClose={() => setShowExtraModal(false)}
+        onSubmit={async (data) => {
+          const result = await addExtra({
+            valor: data.valor,
+            data: data.data,
+            observacoes: data.observacoes,
+            mes_key: activeMonth,
+          });
+          return !!result;
+        }}
+        defaultDate={currentMonthDays[0]?.dateString}
+      />
 
       {/* Hero Summary Bar */}
       <div className="max-w-7xl mx-auto px-4 mt-6 print:mt-2 relative z-0">
@@ -1546,6 +1567,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           monthLabel={activeConfig?.label || ''}
           totalDays={currentMonthDays.length}
           isAdmin={isAdmin}
+          extrasTotal={getExtrasForMonth(activeMonth).reduce((sum, e) => sum + Number(e.valor), 0)}
         />
       </div>
 
@@ -1576,6 +1598,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               key={dayObj.dateString}
               dayObj={dayObj}
               tasks={dayTasks}
+              extras={getExtrasForDate(dayObj.dateString)}
               isAdmin={isAdmin}
               canEdit={isAdmin || isActive}
               userRole={role || 'user'}
@@ -1589,6 +1612,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
               onCopyTask={isAdmin ? handleCopyTask : undefined}
+              onDeleteExtra={deleteExtra}
             />
           );
         })}
@@ -1598,23 +1622,27 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       <FloatingTotal
         totalValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          const monthExtras = getExtrasForMonth(activeMonth);
+          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
           const EMPLOYEE_RATE = 7;
           return monthTasks.reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
             return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
-          }, 0);
+          }, 0) + extrasTotal;
         })()}
         completedValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
+          const monthExtras = getExtrasForMonth(activeMonth);
+          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
           const EMPLOYEE_RATE = 7;
           return monthTasks.filter(t => t.completed).reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
             const start = new Date(`1970-01-01T${curr.startTime}`);
             const end = new Date(`1970-01-01T${curr.endTime}`);
             return acc + ((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * EMPLOYEE_RATE;
-          }, 0);
+          }, 0) + extrasTotal;
         })()}
       />
 
@@ -2123,6 +2151,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         currentMonthLabel={activeConfig?.label || ''}
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
+        onAddExtra={() => setShowExtraModal(true)}
       />
 
       {/* Delete Month Confirmation Dialog */}
