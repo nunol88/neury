@@ -1567,6 +1567,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           monthLabel={activeConfig?.label || ''}
           totalDays={currentMonthDays.length}
           isAdmin={isAdmin}
+          extrasTotal={getExtrasForMonth(activeMonth).reduce((sum, e) => sum + Number(e.valor), 0)}
         />
       </div>
 

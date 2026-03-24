@@ -7,6 +7,7 @@ interface MonthSummaryBarProps {
   monthLabel: string;
   totalDays: number;
   isAdmin?: boolean;
+  extrasTotal?: number;
 }
 
 const EMPLOYEE_RATE = 7;
