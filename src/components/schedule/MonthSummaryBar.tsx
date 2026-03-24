@@ -31,8 +31,8 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   const completedTasks = tasks.filter(t => t.completed).length;
   const pendingTasks = totalTasks - completedTasks;
   
-  const totalValue = tasks.reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
-  const completedValue = tasks.filter(t => t.completed).reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0);
+  const totalValue = tasks.reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0) + extrasTotal;
+  const completedValue = tasks.filter(t => t.completed).reduce((sum, t) => sum + getTaskPrice(t, isAdmin), 0) + extrasTotal;
   
   const totalHours = tasks.reduce((sum, t) => {
     const start = new Date(`1970-01-01T${t.startTime}`);
