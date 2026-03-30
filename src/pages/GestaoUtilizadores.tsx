@@ -262,6 +262,15 @@ const GestaoUtilizadores: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
+                        title="Redefinir password"
+                      >
+                        <KeyRound size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => setDeleteUser(u)}
                         title="Remover utilizador"
