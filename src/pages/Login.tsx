@@ -283,7 +283,7 @@ const Login = () => {
                   ? 'bg-card border-border hover:bg-accent text-foreground'
                   : 'bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
               }`}
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoading || isGoogleLoading || isAppleLoading}
               onClick={async () => {
                 setIsGoogleLoading(true);
                 setError('');
