@@ -1,23 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
-
-type AppRole = 'admin' | 'neury' | null;
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  role: AppRole;
-  isActive: boolean;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
-  verifyRole: () => Promise<AppRole>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type AppRole } from '@/contexts/auth-context';
 
 // Valid roles that can be returned from the database
 const VALID_ROLES: readonly string[] = ['admin', 'neury'] as const;
@@ -172,10 +157,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
