@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { NavLink } from '@/components/NavLink';
-import { EMAIL_LOGIN_KEY } from '@/pages/Login';
+import { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/pages/Login';
 import {
   Sidebar,
   SidebarContent,
@@ -64,11 +64,20 @@ export function AppSidebar() {
   const [emailLoginEnabled, setEmailLoginEnabled] = useState(
     () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
   );
+  const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(
+    () => localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true'
+  );
 
   const toggleEmailLogin = () => {
     const newValue = !emailLoginEnabled;
     setEmailLoginEnabled(newValue);
     localStorage.setItem(EMAIL_LOGIN_KEY, String(newValue));
+  };
+
+  const toggleNewRegistrations = () => {
+    const newValue = !newRegistrationsEnabled;
+    setNewRegistrationsEnabled(newValue);
+    localStorage.setItem(NEW_REGISTRATIONS_KEY, String(newValue));
   };
 
   const handleSignOut = async () => {
@@ -162,11 +171,11 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Email login toggle - admin only */}
+        {/* Login settings - admin only */}
         {isAdmin && (
           <>
             <SidebarSeparator />
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Mail size={14} />
@@ -175,6 +184,17 @@ export function AppSidebar() {
                 <Switch
                   checked={emailLoginEnabled}
                   onCheckedChange={toggleEmailLogin}
+                  className="scale-75"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Users size={14} />
+                  <span>Novos registos</span>
+                </div>
+                <Switch
+                  checked={newRegistrationsEnabled}
+                  onCheckedChange={toggleNewRegistrations}
                   className="scale-75"
                 />
               </div>

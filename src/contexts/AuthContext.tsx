@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { NEW_REGISTRATIONS_KEY } from '@/pages/Login';
 
 type AppRole = 'admin' | 'neury' | null;
 
@@ -79,6 +80,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(async () => {
             const result = await fetchUserRole(session.user.id);
+            
+            // Block new users if registrations are disabled
+            if (!result.role) {
+              const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true';
+              if (!registrationsEnabled) {
+                console.warn('New registrations disabled - signing out unregistered user');
+                await supabase.auth.signOut();
+                setUser(null);
+                setSession(null);
+                setRole(null);
+                setLoading(false);
+                return;
+              }
+            }
+            
             setRole(result.role);
             setIsActive(result.active);
             setLoading(false);
@@ -97,7 +113,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then(result => {
+        fetchUserRole(session.user.id).then(async (result) => {
+          // Block new users if registrations are disabled
+          if (!result.role) {
+            const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true';
+            if (!registrationsEnabled) {
+              await supabase.auth.signOut();
+              setUser(null);
+              setSession(null);
+              setRole(null);
+              setLoading(false);
+              return;
+            }
+          }
           setRole(result.role);
           setIsActive(result.active);
           setLoading(false);
