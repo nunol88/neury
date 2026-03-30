@@ -63,11 +63,13 @@ const DayCard: React.FC<DayCardProps> = ({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (!isAdmin || !onCopyDay) return;
     feedbackTimer.current = setTimeout(() => {
       setIsLongPressing(true);
       if (navigator.vibrate) navigator.vibrate(30);
+      // Prevent text selection during long press
+      window.getSelection()?.removeAllRanges();
     }, 300);
     longPressTimer.current = setTimeout(() => {
       setIsLongPressing(false);
