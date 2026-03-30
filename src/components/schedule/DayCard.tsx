@@ -58,12 +58,20 @@ const DayCard: React.FC<DayCardProps> = ({
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTouchStart = () => {
     if (!isAdmin || !onCopyDay) return;
+    feedbackTimer.current = setTimeout(() => {
+      setIsLongPressing(true);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 300);
     longPressTimer.current = setTimeout(() => {
+      setIsLongPressing(false);
+      if (navigator.vibrate) navigator.vibrate([15, 50, 15]);
       const dayLabel = `${dayObj.dayName} ${dayObj.formatted}`;
       onCopyDay(dayObj.dateString, dayLabel);
     }, 600);
@@ -74,6 +82,11 @@ const DayCard: React.FC<DayCardProps> = ({
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = null;
+    }
+    setIsLongPressing(false);
   };
   
   const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
@@ -132,6 +145,7 @@ const DayCard: React.FC<DayCardProps> = ({
         ${isPast && !isAdmin ? 'opacity-60' : ''}
         ${isDragOver ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isEmpty && !isToday && !isPastBlocked ? 'opacity-50' : ''}
+        ${isLongPressing ? 'scale-[0.97] ring-2 ring-primary/60 shadow-lg' : ''}
       `}
     >
       {/* Simple check for fully completed days */}
