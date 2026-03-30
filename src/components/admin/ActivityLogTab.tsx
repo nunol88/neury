@@ -202,8 +202,6 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
           toast.success('Agendamento marcado como concluído!');
           break;
         }
-          break;
-        }
 
         default:
           toast.error('Esta ação não pode ser revertida');
