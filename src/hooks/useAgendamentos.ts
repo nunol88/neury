@@ -458,7 +458,7 @@ export const useAgendamentos = () => {
       const task = Object.values(allTasks).flat().find(t => t.id === id);
       logActivity(
         currentlyCompleted ? 'Reabriu agendamento' : 'Concluiu agendamento',
-        { client: task?.client, date: task?.date }
+        { agendamento_id: id, client: task?.client, date: task?.date, startTime: task?.startTime, endTime: task?.endTime }
       );
 
       return true;
