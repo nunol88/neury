@@ -1,29 +1,18 @@
 
 
-# Reset de Password para Utilizadores
+## Problema
 
-## Objetivo
-Adicionar funcionalidade de reset de password na gestão de utilizadores, permitindo ao admin definir uma nova password para qualquer utilizador (ex: Nuno).
+O login com Apple falha com erro `provider_disabled` porque o provider Apple não está habilitado no backend de autenticação. O Google foi configurado mas o Apple não.
 
-## Alterações
+## Solução
 
-### 1. Edge Function `manage-users/index.ts` — Nova ação `reset_password`
-- Adicionar handler para `action === "reset_password"`
-- Recebe `user_id` e `new_password`
-- Valida password (mínimo 8 caracteres)
-- Usa `adminClient.auth.admin.updateUserById(user_id, { password })` para atualizar
-- Impede reset da própria conta admin (segurança)
+1. **Ativar o provider Apple** usando a ferramenta `configure_auth` do Lovable Cloud para habilitar o Apple como provider de autenticação
+2. O código no `Login.tsx` já está correto — usa `lovable.auth.signInWithOAuth("apple")` que é o padrão correto
 
-### 2. Página `GestaoUtilizadores.tsx` — Botão e dialog de reset
-- Adicionar botão de reset (ícone `KeyRound`) nos cards de utilizadores não-admin
-- Novo dialog com campo de nova password (com toggle mostrar/esconder)
-- Ao confirmar, chama a edge function com `action: 'reset_password'`
-- Toast de sucesso/erro
+## Passos
 
-## Fluxo
-1. Admin clica no ícone de chave no card do utilizador
-2. Dialog abre pedindo nova password
-3. Admin define password → confirma
-4. Edge function atualiza a password via Admin API
-5. Toast confirma sucesso
+1. Usar a ferramenta de configuração de autenticação para ativar o provider Apple (managed pelo Lovable Cloud)
+2. Testar o login com Apple no site publicado (neury.lovable.app)
+
+Nenhuma alteração de código é necessária — apenas a configuração do backend.
 
