@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const GTFS_URL = "https://gateway.carris.pt/gateway/gtfs/api/v2.11/GTFS";
 
-/* ── ZIP parsing (no external library) ── */
+/* ── ZIP parsing (zero dependencies) ── */
 
 function readU16(b: Uint8Array, o: number) {
   return b[o] | (b[o + 1] << 8);
@@ -17,14 +17,14 @@ function readU32(b: Uint8Array, o: number) {
   return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
 }
 
-interface ZipEntry {
+interface ZipEntryRef {
   name: string;
-  compressedData: Uint8Array;
+  dataOffset: number;
+  compressedSize: number;
   method: number;
 }
 
-function listZipEntries(buf: Uint8Array, wanted: Set<string>): ZipEntry[] {
-  // Find EOCD
+function findZipEntries(buf: Uint8Array, wanted: Set<string>): ZipEntryRef[] {
   let eocd = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
     if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) {
@@ -36,10 +36,10 @@ function listZipEntries(buf: Uint8Array, wanted: Set<string>): ZipEntry[] {
 
   const cdOffset = readU32(buf, eocd + 16);
   const cdSize = readU32(buf, eocd + 12);
-  const results: ZipEntry[] = [];
+  const results: ZipEntryRef[] = [];
   let pos = cdOffset;
 
-  while (pos < cdOffset + cdSize && results.length < wanted.size) {
+  while (pos < cdOffset + cdSize) {
     if (readU32(buf, pos) !== 0x02014b50) break;
     const method = readU16(buf, pos + 10);
     const compSize = readU32(buf, pos + 20);
@@ -52,25 +52,17 @@ function listZipEntries(buf: Uint8Array, wanted: Set<string>): ZipEntry[] {
     if (wanted.has(name)) {
       const localNameLen = readU16(buf, localOffset + 26);
       const localExtraLen = readU16(buf, localOffset + 28);
-      const dataStart = localOffset + 30 + localNameLen + localExtraLen;
-      results.push({
-        name,
-        compressedData: buf.subarray(dataStart, dataStart + compSize),
-        method,
-      });
+      const dataOffset = localOffset + 30 + localNameLen + localExtraLen;
+      results.push({ name, dataOffset, compressedSize: compSize, method });
     }
     pos += 46 + nameLen + extraLen + commentLen;
   }
   return results;
 }
 
-async function decompressEntry(entry: ZipEntry): Promise<string> {
-  if (entry.method === 0) {
-    return new TextDecoder().decode(entry.compressedData);
-  }
-  const stream = new Blob([entry.compressedData])
-    .stream()
-    .pipeThrough(new DecompressionStream("deflate-raw"));
+async function decompressToString(data: Uint8Array, method: number): Promise<string> {
+  if (method === 0) return new TextDecoder().decode(data);
+  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   while (true) {
@@ -80,42 +72,95 @@ async function decompressEntry(entry: ZipEntry): Promise<string> {
   }
   const total = chunks.reduce((s, c) => s + c.length, 0);
   const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const c of chunks) {
-    merged.set(c, offset);
-    offset += c.length;
-  }
+  let off = 0;
+  for (const c of chunks) { merged.set(c, off); off += c.length; }
   return new TextDecoder().decode(merged);
 }
 
-function parseCSV(text: string) {
-  const lines = text.split("\n").filter((l) => l.trim());
-  const headers = lines[0].split(",").map((h) => h.trim());
-  const rows = lines.slice(1).map((l) => l.split(",").map((v) => v.trim()));
-  return { headers, rows };
-}
+/* ── Main processing ── */
 
-/* ── Stream process stop_times without holding full decompressed file ── */
+async function processGTFS() {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
 
-async function streamStopTimes(
-  entry: ZipEntry,
-  trips: Map<string, [string, string]>
-): Promise<Map<string, Set<string>>> {
-  const schedules = new Map<string, Set<string>>();
+  console.log("GTFS: downloading...");
+  const res = await fetch(GTFS_URL);
+  let buf: Uint8Array | null = new Uint8Array(await res.arrayBuffer());
+  console.log(`GTFS: ${buf.length} bytes`);
+
+  const wanted = new Set(["routes.txt", "calendar.txt", "trips.txt", "stop_times.txt"]);
+  const entryRefs = findZipEntries(buf, wanted);
+  const refMap: Record<string, ZipEntryRef> = {};
+  for (const e of entryRefs) refMap[e.name] = e;
+
+  // ── Parse small files (routes, calendar, trips) ──
+  // Use compact objects instead of Maps to save memory
+
+  // Routes: route_id → short_name
+  const rRef = refMap["routes.txt"];
+  const rText = await decompressToString(buf.subarray(rRef.dataOffset, rRef.dataOffset + rRef.compressedSize), rRef.method);
+  const routes: Record<string, string> = {};
+  const rLines = rText.split("\n");
+  const rH = rLines[0].split(",").map(h => h.trim());
+  const rIdIdx = rH.indexOf("route_id"), rSnIdx = rH.indexOf("route_short_name");
+  for (let i = 1; i < rLines.length; i++) {
+    const v = rLines[i].split(",");
+    if (v[rIdIdx]) routes[v[rIdIdx].trim()] = v[rSnIdx]?.trim() || "?";
+  }
+  console.log(`GTFS: ${Object.keys(routes).length} routes`);
+
+  // Calendar: service_id → day type
+  const cRef = refMap["calendar.txt"];
+  const cText = await decompressToString(buf.subarray(cRef.dataOffset, cRef.dataOffset + cRef.compressedSize), cRef.method);
+  const services: Record<string, string> = {};
+  const cLines = cText.split("\n");
+  const cH = cLines[0].split(",").map(h => h.trim());
+  const cSidIdx = cH.indexOf("service_id"), cMonIdx = cH.indexOf("monday"), cSatIdx = cH.indexOf("saturday");
+  for (let i = 1; i < cLines.length; i++) {
+    const v = cLines[i].split(",");
+    if (v[cSidIdx]) services[v[cSidIdx].trim()] = v[cMonIdx]?.trim() === "1" ? "w" : v[cSatIdx]?.trim() === "1" ? "s" : "u";
+  }
+
+  // Trips: trip_id → "route_short_name|day_type" (single string to save memory)
+  const tRef = refMap["trips.txt"];
+  const tText = await decompressToString(buf.subarray(tRef.dataOffset, tRef.dataOffset + tRef.compressedSize), tRef.method);
+  const trips: Record<string, string> = {};
+  const tLines = tText.split("\n");
+  const tH = tLines[0].split(",").map(h => h.trim());
+  const tTidIdx = tH.indexOf("trip_id"), tRidIdx = tH.indexOf("route_id"), tSidIdx = tH.indexOf("service_id");
+  for (let i = 1; i < tLines.length; i++) {
+    const v = tLines[i].split(",");
+    const tid = v[tTidIdx]?.trim();
+    if (!tid) continue;
+    const route = routes[v[tRidIdx]?.trim()] || "?";
+    const dayType = services[v[tSidIdx]?.trim()] || "w";
+    trips[tid] = `${route}|${dayType}`;
+  }
+  console.log(`GTFS: ${Object.keys(trips).length} trips`);
+
+  // ── CRITICAL: Copy stop_times compressed data, then FREE the 35MB zip buffer ──
+  const stRef = refMap["stop_times.txt"];
+  const stCompressed = new Uint8Array(buf.subarray(stRef.dataOffset, stRef.dataOffset + stRef.compressedSize));
+  const stMethod = stRef.method;
+  buf = null; // Free ~35MB
+
+  console.log(`GTFS: streaming stop_times (${stCompressed.length} bytes compressed)...`);
+
+  // ── Stream-decompress stop_times without holding full file ──
+  const schedules: Record<string, Set<string>> = {};
   let lineCount = 0;
 
-  const stream =
-    entry.method === 0
-      ? new Blob([entry.compressedData]).stream()
-      : new Blob([entry.compressedData])
-          .stream()
-          .pipeThrough(new DecompressionStream("deflate-raw"));
+  const stream = stMethod === 0
+    ? new Blob([stCompressed]).stream()
+    : new Blob([stCompressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
 
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let headers: string[] = [];
-  let tripIdx = -1, timeIdx = -1, stopIdx = -1;
+  let hTripIdx = -1, hTimeIdx = -1, hStopIdx = -1;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -130,90 +175,40 @@ async function streamStopTimes(
       if (!trimmed) continue;
 
       if (!headers.length) {
-        headers = trimmed.split(",").map((h) => h.trim());
-        tripIdx = headers.indexOf("trip_id");
-        timeIdx = headers.indexOf("departure_time");
-        stopIdx = headers.indexOf("stop_id");
+        headers = trimmed.split(",").map(h => h.trim());
+        hTripIdx = headers.indexOf("trip_id");
+        hTimeIdx = headers.indexOf("departure_time");
+        hStopIdx = headers.indexOf("stop_id");
         continue;
       }
 
       const vals = trimmed.split(",");
-      if (vals.length <= Math.max(tripIdx, timeIdx, stopIdx)) continue;
-
-      const stopId = vals[stopIdx]?.trim();
-      const tripId = vals[tripIdx]?.trim();
-      const time = vals[timeIdx]?.trim()?.substring(0, 5);
+      const stopId = vals[hStopIdx]?.trim();
+      const tripId = vals[hTripIdx]?.trim();
+      const time = vals[hTimeIdx]?.trim()?.substring(0, 5);
       if (!stopId || !tripId || !time) continue;
 
-      const trip = trips.get(tripId);
-      if (!trip) continue;
+      const tripInfo = trips[tripId];
+      if (!tripInfo) continue;
 
-      const key = `${time}|${trip[0]}|${trip[1]}`;
-      if (!schedules.has(stopId)) schedules.set(stopId, new Set());
-      schedules.get(stopId)!.add(key);
+      const key = `${time}|${tripInfo}`;
+      if (!schedules[stopId]) schedules[stopId] = new Set();
+      schedules[stopId].add(key);
       lineCount++;
     }
   }
 
-  console.log(`GTFS update: streamed ${lineCount} stop_time entries, ${schedules.size} stops`);
-  return schedules;
-}
+  console.log(`GTFS: ${lineCount} entries, ${Object.keys(schedules).length} stops`);
 
-/* ── Main ── */
-
-async function processGTFS() {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-
-  console.log("GTFS update: downloading...");
-  const res = await fetch(GTFS_URL);
-  const buf = new Uint8Array(await res.arrayBuffer());
-  console.log(`GTFS update: downloaded ${buf.length} bytes`);
-
-  // Find all needed ZIP entries (only references into buf, no decompression yet)
-  const wanted = new Set(["routes.txt", "calendar.txt", "trips.txt", "stop_times.txt"]);
-  const entries = listZipEntries(buf, wanted);
-  const entryMap = new Map(entries.map((e) => [e.name, e]));
-
-  // Decompress & parse small files one at a time
-  const routesText = await decompressEntry(entryMap.get("routes.txt")!);
-  const routesCSV = parseCSV(routesText);
-  const ri = (h: string) => routesCSV.headers.indexOf(h);
-  const routes = new Map<string, string>();
-  for (const r of routesCSV.rows) routes.set(r[ri("route_id")], r[ri("route_short_name")]);
-  console.log(`GTFS update: ${routes.size} routes`);
-
-  const calText = await decompressEntry(entryMap.get("calendar.txt")!);
-  const calCSV = parseCSV(calText);
-  const ci = (h: string) => calCSV.headers.indexOf(h);
-  const services = new Map<string, string>();
-  for (const r of calCSV.rows) {
-    services.set(r[ci("service_id")], r[ci("monday")] === "1" ? "w" : r[ci("saturday")] === "1" ? "s" : "u");
-  }
-
-  const tripsText = await decompressEntry(entryMap.get("trips.txt")!);
-  const tripsCSV = parseCSV(tripsText);
-  const ti = (h: string) => tripsCSV.headers.indexOf(h);
-  const trips = new Map<string, [string, string]>();
-  for (const r of tripsCSV.rows) {
-    trips.set(r[ti("trip_id")], [routes.get(r[ti("route_id")]) || "?", services.get(r[ti("service_id")]) || "w"]);
-  }
-  console.log(`GTFS update: ${trips.size} trips`);
-
-  // Stream stop_times (never holds full decompressed file)
-  const schedules = await streamStopTimes(entryMap.get("stop_times.txt")!, trips);
-
-  // Batch upsert
-  const allEntries = Array.from(schedules.entries());
+  // ── Batch upsert ──
+  const stopIds = Object.keys(schedules);
   const BATCH = 100;
   let inserted = 0;
 
-  for (let i = 0; i < allEntries.length; i += BATCH) {
-    const batch = allEntries.slice(i, i + BATCH).map(([stop_id, entrySet]) => ({
+  for (let i = 0; i < stopIds.length; i += BATCH) {
+    const batch = stopIds.slice(i, i + BATCH).map(stop_id => ({
       stop_id,
-      entries: Array.from(entrySet).sort(),
+      entries: Array.from(schedules[stop_id]).sort(),
       updated_at: new Date().toISOString(),
     }));
 
@@ -225,7 +220,7 @@ async function processGTFS() {
     inserted += batch.length;
   }
 
-  console.log(`GTFS update: completed — ${inserted} stops updated`);
+  console.log(`GTFS: completed — ${inserted} stops updated`);
   return { stops: inserted };
 }
 
@@ -235,27 +230,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const resultPromise = processGTFS();
+    const promise = processGTFS();
 
     // @ts-ignore
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
       // @ts-ignore
-      EdgeRuntime.waitUntil(
-        resultPromise.catch((e: Error) => console.error("GTFS background error:", e))
-      );
+      EdgeRuntime.waitUntil(promise.catch((e: Error) => console.error("GTFS error:", e)));
       return new Response(
         JSON.stringify({ status: "processing", timestamp: new Date().toISOString() }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const result = await resultPromise;
+    const result = await promise;
     return new Response(
-      JSON.stringify({ status: "completed", ...result, timestamp: new Date().toISOString() }),
+      JSON.stringify({ status: "completed", ...result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("GTFS update error:", error);
+    console.error("GTFS error:", error);
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
