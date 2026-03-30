@@ -2,10 +2,15 @@ import React, { useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
-import { Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight } from 'lucide-react';
+import {
+  Info, Sparkles, Bug, Wrench, Rocket, Star, ChevronRight,
+  Calendar, Users, CreditCard, BarChart3, FileText, Shield,
+  Heart, Clock, Layers,
+} from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
 
@@ -267,71 +272,139 @@ const typeConfig: Record<ChangeType, { label: string; icon: React.ElementType; v
   improvement: { label: 'Melhoria', icon: Wrench, variant: 'outline' },
 };
 
+const features = [
+  { icon: Calendar, label: 'Agenda', description: 'Agendamentos diários organizados por mês' },
+  { icon: Users, label: 'Clientes', description: 'Base de dados com histórico completo' },
+  { icon: CreditCard, label: 'Pagamentos', description: 'Controlo do que foi pago e pendente' },
+  { icon: BarChart3, label: 'Dashboard', description: 'Números e gráficos do negócio' },
+  { icon: FileText, label: 'Recibos Verdes', description: 'Gestão fiscal e cálculo automático' },
+  { icon: Shield, label: 'Utilizadores', description: 'Gestão de acessos e permissões' },
+];
+
 const Sobre = () => {
   const { theme } = useTheme();
   const [selectedVersion, setSelectedVersion] = useState<VersionEntry | null>(null);
 
+  const totalChanges = changelog.reduce((acc, entry) => acc + entry.changes.length, 0);
+  const monthsSinceLaunch = (() => {
+    const launch = new Date(2025, 9, 1); // Oct 2025
+    const now = new Date();
+    return (now.getFullYear() - launch.getFullYear()) * 12 + (now.getMonth() - launch.getMonth());
+  })();
+
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-8">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <img
-          src={logoMayslimpo}
-          alt="Mayslimpo Logo"
-          className="w-16 h-16 rounded-full object-cover shadow-md border border-border"
-        />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Agenda Mayara Godoi</h1>
-          <p className="text-sm text-muted-foreground">
-            Versão atual: <span className="font-semibold text-primary">{APP_VERSION}</span>
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Gestão de agendamentos · Mayslimpo
-          </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-primary/10 p-6 sm:p-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+        <div className="relative flex flex-col items-center text-center gap-4">
+          <img
+            src={logoMayslimpo}
+            alt="Mayslimpo Logo"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg border-2 border-primary/20"
+          />
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Agenda Mayara Godoi</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gestão completa de agendamentos de limpeza
+            </p>
+            <Badge variant="outline" className="mt-2 text-xs">
+              v{APP_VERSION}
+            </Badge>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-4 w-full max-w-sm">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-1.5">
+                <Layers className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-lg font-bold text-foreground">{changelog.length}</span>
+              <span className="text-[11px] text-muted-foreground">Versões</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-1.5">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-lg font-bold text-foreground">{totalChanges}</span>
+              <span className="text-[11px] text-muted-foreground">Melhorias</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-1.5">
+                <Clock className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-lg font-bold text-foreground">{monthsSinceLaunch}</span>
+              <span className="text-[11px] text-muted-foreground">Meses</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Info className="h-5 w-5 text-primary" />
+          O que faz esta app?
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {features.map((feat) => (
+            <Card key={feat.label} className="border-border hover:border-primary/30 hover:shadow-sm transition-all duration-200">
+              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <feat.icon className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{feat.label}</span>
+                <span className="text-[11px] text-muted-foreground leading-tight">{feat.description}</span>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
       <Separator />
 
-      {/* Changelog */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Info className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">O que há de novo?</h2>
-        </div>
+      {/* Timeline Changelog */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Rocket className="h-5 w-5 text-primary" />
+          Histórico de Versões
+        </h2>
         <p className="text-sm text-muted-foreground">Carregue em qualquer versão para ver os detalhes.</p>
 
-        <div className="space-y-3">
-          {changelog.map((entry, i) => (
-            <button
-              key={entry.version}
-              onClick={() => setSelectedVersion(entry)}
-              className="w-full text-left rounded-xl border border-border bg-card p-4 hover:border-primary/40 hover:shadow-md transition-all duration-200 group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {i === 0 ? (
-                    <Star className="h-5 w-5 text-primary" />
-                  ) : (
-                    <Rocket className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground">v{entry.version}</span>
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-border" />
+
+          <div className="space-y-1">
+            {changelog.map((entry, i) => (
+              <button
+                key={entry.version}
+                onClick={() => setSelectedVersion(entry)}
+                className="w-full text-left relative pl-10 pr-3 py-3 rounded-xl hover:bg-accent/50 transition-all duration-200 group"
+              >
+                {/* Timeline dot */}
+                <div className={`absolute left-[9px] top-[18px] w-[13px] h-[13px] rounded-full border-2 transition-colors ${
+                  i === 0
+                    ? 'border-primary bg-primary shadow-sm shadow-primary/30'
+                    : 'border-muted-foreground/30 bg-card group-hover:border-primary/60'
+                }`} />
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-foreground text-sm">v{entry.version}</span>
                       {i === 0 && (
-                        <Badge variant="default" className="text-xs">Atual</Badge>
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0">Atual</Badge>
                       )}
+                      <span className="text-[11px] text-muted-foreground">{entry.date}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{entry.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">{entry.title}</p>
                   </div>
+                  <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground hidden sm:block">{entry.date}</span>
-                  <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -352,14 +425,12 @@ const Sobre = () => {
               </DialogHeader>
 
               <div className="space-y-4 py-2">
-                {/* Simple explanation */}
                 <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
                   <p className="text-sm text-foreground leading-relaxed">
                     {selectedVersion.summary}
                   </p>
                 </div>
 
-                {/* Changes list */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                     O que mudou:
@@ -387,8 +458,17 @@ const Sobre = () => {
       </Dialog>
 
       {/* Footer */}
-      <div className="text-center text-xs text-muted-foreground pt-4">
-        Desenvolvido com ❤️ para Mayslimpo
+      <div className="rounded-xl border border-border bg-card/50 p-6 text-center space-y-2">
+        <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+          Desenvolvido com <Heart className="h-4 w-4 text-red-500 fill-red-500" /> para Mayslimpo
+        </div>
+        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <span>v{APP_VERSION}</span>
+          <span>•</span>
+          <span>Desde Outubro 2025</span>
+          <span>•</span>
+          <span>Portugal 🇵🇹</span>
+        </div>
       </div>
     </div>
   );
