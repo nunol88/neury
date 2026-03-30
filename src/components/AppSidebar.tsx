@@ -31,6 +31,7 @@ import {
   Info,
   UserCog,
   Mail,
+  Bus,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
