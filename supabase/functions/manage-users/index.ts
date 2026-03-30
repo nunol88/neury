@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
           id: u.id,
           email: u.email,
           name: u.user_metadata?.name || u.email?.split("@")[0] || "",
+          avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
           role: userRole?.role || null,
           is_active: userRole?.is_active ?? true,
           role_id: userRole?.id || null,

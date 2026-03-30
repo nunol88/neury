@@ -36,12 +36,6 @@ import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
 
-// Apple Sign In doesn't provide profile photos, so we map known users manually
-const KNOWN_USER_AVATARS: Record<string, string> = {
-  'mayaracsg@hotmail.com': 'https://ui-avatars.com/api/?name=Mayara&background=e91e63&color=fff&bold=true&size=128',
-  'nunoleitao@me.com': 'https://ui-avatars.com/api/?name=Nuno+Leitão&background=1976d2&color=fff&bold=true&size=128',
-};
-
 const navItems = [
   { title: 'Agendamentos', url: '/admin/agendamentos', icon: CalendarDays },
   { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
@@ -144,25 +138,16 @@ export function AppSidebar() {
         {/* User info */}
         <div className="px-3 py-3">
           <div className="flex items-center gap-2 text-sm">
-            {(() => {
-              const oauthPhoto = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
-              const knownPhoto = user?.email ? KNOWN_USER_AVATARS[user.email] : null;
-              const photoUrl = oauthPhoto || knownPhoto;
-              
-              if (photoUrl) {
-                return (
-                  <img 
-                    src={photoUrl} 
-                    alt={username}
-                    className="w-6 h-6 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                  />
-                );
-              }
-              return null;
-            })()}
-            <ClientAvatar name={username || 'U'} size="sm" className={user?.user_metadata?.avatar_url || user?.user_metadata?.picture || (user?.email && KNOWN_USER_AVATARS[user.email]) ? 'hidden' : ''} />
+            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+              <img 
+                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                alt={username}
+                className="w-6 h-6 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+              />
+            ) : null}
+            <ClientAvatar name={username || 'U'} size="sm" className={user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? 'hidden' : ''} />
             <span className="capitalize font-medium text-sidebar-foreground truncate">
               {username}
             </span>

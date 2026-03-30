@@ -17,11 +17,13 @@ import {
   Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff, KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ClientAvatar from '@/components/ui/client-avatar';
 
 interface ManagedUser {
   id: string;
   email: string;
   name: string;
+  avatar_url: string | null;
   role: string | null;
   is_active: boolean;
   role_id: string | null;
@@ -211,13 +213,16 @@ const GestaoUtilizadores: React.FC = () => {
             <Card key={u.id} className={`transition-all duration-200 hover:shadow-md hover:border-primary/20 ${!u.is_active && !isAdmin ? 'opacity-60' : ''}`}>
               <CardContent className="flex items-center justify-between py-5 px-6">
                 <div className="flex items-center gap-4">
-                  <div className={`rounded-full p-2.5 ${isAdmin ? 'bg-primary/15' : u.is_active ? 'bg-green-100 dark:bg-green-950/40' : 'bg-muted'}`}>
-                    {u.is_active || isAdmin ? (
-                      <UserCheck className={`h-5 w-5 ${isAdmin ? 'text-primary' : 'text-green-600 dark:text-green-400'}`} />
-                    ) : (
-                      <UserX className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
+                  {u.avatar_url ? (
+                    <img 
+                      src={u.avatar_url} 
+                      alt={u.name}
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                    />
+                  ) : null}
+                  <ClientAvatar name={u.name || 'U'} size="lg" className={u.avatar_url ? 'hidden' : ''} />
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">{u.name}</span>
