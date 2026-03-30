@@ -226,6 +226,13 @@ export default function Transportes() {
         </Button>
       </div>
 
+      {!isOnline && (
+        <div className="flex items-center gap-2 text-sm bg-muted rounded-lg p-3">
+          <WifiOff className="h-4 w-4 flex-shrink-0" />
+          <span>Sem internet — a mostrar dados guardados das favoritas.</span>
+        </div>
+      )}
+
       {geoError && (
         <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
