@@ -64,11 +64,20 @@ export function AppSidebar() {
   const [emailLoginEnabled, setEmailLoginEnabled] = useState(
     () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
   );
+  const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(
+    () => localStorage.getItem(NEW_REGISTRATIONS_KEY) !== 'false'
+  );
 
   const toggleEmailLogin = () => {
     const newValue = !emailLoginEnabled;
     setEmailLoginEnabled(newValue);
     localStorage.setItem(EMAIL_LOGIN_KEY, String(newValue));
+  };
+
+  const toggleNewRegistrations = () => {
+    const newValue = !newRegistrationsEnabled;
+    setNewRegistrationsEnabled(newValue);
+    localStorage.setItem(NEW_REGISTRATIONS_KEY, String(newValue));
   };
 
   const handleSignOut = async () => {
