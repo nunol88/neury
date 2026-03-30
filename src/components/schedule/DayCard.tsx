@@ -179,6 +179,19 @@ const DayCard: React.FC<DayCardProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {isAdmin && onCopyDay && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const dayLabel = `${dayObj.dayName} ${dayObj.formatted}`;
+                onCopyDay(dayObj.dateString, dayLabel);
+              }}
+              className="p-1.5 hover:bg-primary/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 print:hidden"
+              title="Copiar dia de outro agendamento"
+            >
+              <Copy size={14} className="text-primary" />
+            </button>
+          )}
           {(tasks.length > 0 || extras.length > 0) && (
             <div className="flex flex-col items-end gap-0.5">
               {tasks.length > 0 && (
