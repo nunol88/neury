@@ -153,7 +153,7 @@ const DayCard: React.FC<DayCardProps> = ({
       )}
 
       {/* Header */}
-      <div className={`p-3 border-b border-border/50 flex justify-between items-center
+      <div className={`p-3 border-b border-border/50 flex justify-between items-center group
         ${isWeekend ? 'bg-muted/50' : 'bg-card'}
         ${isToday ? 'bg-primary/5' : ''}
       `}>

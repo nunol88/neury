@@ -15,3 +15,4 @@ export { ConflictAlert, detectConflicts } from './ConflictAlert';
 export type { Conflict } from './ConflictAlert';
 export { default as DeleteMonthDialog } from './DeleteMonthDialog';
 export { default as ScheduleActionsMenu } from './ScheduleActionsMenu';
+export { default as CopyDayModal } from './CopyDayModal';
