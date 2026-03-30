@@ -44,6 +44,7 @@ const navItems = [
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
   { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
   { title: 'Utilizadores', url: '/admin/utilizadores', icon: UserCog },
+  { title: 'Transportes', url: '/admin/transportes', icon: Bus },
   { title: 'Sobre', url: '/admin/sobre', icon: Info },
 ];
 
