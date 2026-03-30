@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logActivity } from '@/hooks/useActivityLog';
 import type { Database } from '@/integrations/supabase/types';
 import { z } from 'zod';
 
@@ -266,6 +267,8 @@ export const useAgendamentos = () => {
         }));
       }
 
+      logActivity('Criou agendamento', { client: newTask.client, date: newTask.date });
+
       return newTask;
     } catch (error: any) {
       console.error('Error adding agendamento:', error);
@@ -368,6 +371,10 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
+      if (deletedTask) {
+        logActivity('Eliminou agendamento', { client: deletedTask.client, date: deletedTask.date });
+      }
+
       return deletedTask;
     } catch (error: any) {
       console.error('Error deleting agendamento:', error);
@@ -422,6 +429,13 @@ export const useAgendamentos = () => {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Find the task to log client name
+      const task = Object.values(allTasks).flat().find(t => t.id === id);
+      logActivity(
+        currentlyCompleted ? 'Reabriu agendamento' : 'Concluiu agendamento',
+        { client: task?.client, date: task?.date }
+      );
 
       return true;
     } catch (error: any) {

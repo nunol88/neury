@@ -14,10 +14,23 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff, KeyRound, Mail,
+  Clock, ChevronDown, Activity,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ClientAvatar from '@/components/ui/client-avatar';
+import { formatDistanceToNow } from 'date-fns';
+import { pt } from 'date-fns/locale';
+
+interface ActivityLog {
+  id: string;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
 
 interface ManagedUser {
   id: string;
@@ -29,6 +42,8 @@ interface ManagedUser {
   is_active: boolean;
   role_id: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
+  activity_logs: ActivityLog[];
 }
 
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
@@ -49,8 +64,16 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
       </svg>
     );
   }
-  // Email/password fallback
   return <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />;
+};
+
+const formatRelativeTime = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  try {
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: pt });
+  } catch {
+    return null;
+  }
 };
 
 const GestaoUtilizadores: React.FC = () => {
@@ -66,20 +89,17 @@ const GestaoUtilizadores: React.FC = () => {
   const [resetPassword, setResetPassword] = useState('');
   const [resetting, setResetting] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
-  // Form state
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  
 
   const fetchUsers = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke('manage-users', {
         body: { action: 'list' },
       });
-
       if (res.error) throw res.error;
       setUsers(res.data.users || []);
     } catch (err: any) {
@@ -89,9 +109,7 @@ const GestaoUtilizadores: React.FC = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
   const toggleActive = async (user: ManagedUser) => {
     if (user.role === 'admin') {
@@ -108,7 +126,6 @@ const GestaoUtilizadores: React.FC = () => {
 
     if (error) {
       toast.error('Erro ao atualizar estado');
-      console.error(error);
     } else {
       toast.success(user.is_active ? `${user.name} desativado(a)` : `${user.name} ativado(a)`);
       fetchUsers();
@@ -147,7 +164,6 @@ const GestaoUtilizadores: React.FC = () => {
       setNewName('');
       setNewEmail('');
       setNewPassword('');
-      
       fetchUsers();
     } catch (err: any) {
       toast.error(err.message || 'Erro ao criar utilizador');
@@ -232,85 +248,134 @@ const GestaoUtilizadores: React.FC = () => {
       <div className="grid gap-4">
         {users.map((u) => {
           const isAdmin = u.role === 'admin';
+          const lastLogin = formatRelativeTime(u.last_sign_in_at);
+          const isExpanded = expandedUser === u.id;
+          const hasLogs = u.activity_logs && u.activity_logs.length > 0;
+
           return (
             <Card key={u.id} className={`transition-all duration-200 hover:shadow-md hover:border-primary/20 ${!u.is_active && !isAdmin ? 'opacity-60' : ''}`}>
-              <CardContent className="flex items-center justify-between py-5 px-6">
-                <div className="flex items-center gap-4">
-                  {u.avatar_url ? (
-                    <img 
-                      src={u.avatar_url} 
-                      alt={u.name}
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                    />
-                  ) : null}
-                  <ClientAvatar name={u.name || 'U'} size="lg" className={u.avatar_url ? 'hidden' : ''} />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground">{u.name}</span>
-                      {isAdmin ? (
-                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
-                          <ShieldCheck className="h-3 w-3 mr-1" /> Admin
-                        </Badge>
-                      ) : u.is_active ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
-                          Funcionário
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-muted text-muted-foreground border-border">
-                          Funcionário
-                        </Badge>
-                      )}
+              <CardContent className="py-5 px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {u.avatar_url ? (
+                      <img 
+                        src={u.avatar_url} 
+                        alt={u.name}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                      />
+                    ) : null}
+                    <ClientAvatar name={u.name || 'U'} size="lg" className={u.avatar_url ? 'hidden' : ''} />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground">{u.name}</span>
+                        {isAdmin ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                            <ShieldCheck className="h-3 w-3 mr-1" /> Admin
+                          </Badge>
+                        ) : u.is_active ? (
+                          <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
+                            Funcionário
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-muted text-muted-foreground border-border">
+                            Funcionário
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <ProviderIcon provider={u.provider} />
+                        <span className="text-xs text-muted-foreground">{u.email}</span>
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {lastLogin && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
+                            <Clock className="h-3 w-3" />
+                            <span>Último login: {lastLogin}</span>
+                          </div>
+                        )}
+                        <span className="text-xs text-muted-foreground/60">
+                          {isAdmin
+                            ? 'Acesso total — pode gerir tudo'
+                            : u.is_active
+                              ? 'Ativo — pode marcar tarefas'
+                              : 'Inativo — apenas observação'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <ProviderIcon provider={u.provider} />
-                      <span className="text-xs text-muted-foreground">{u.email}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground/80">
-                      {isAdmin
-                        ? 'Acesso total — pode gerir tudo'
-                        : u.is_active
-                          ? 'Ativo — pode marcar tarefas'
-                          : 'Inativo — apenas observação'}
-                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
+                      title="Redefinir password"
+                    >
+                      <KeyRound size={16} />
+                    </Button>
+                    {!isAdmin && (
+                      <>
+                        <div className="text-right hidden sm:block">
+                          <Badge variant="outline" className={`text-xs ${u.is_active ? 'border-green-200 text-green-600 dark:border-green-800 dark:text-green-400' : 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400'}`}>
+                            {u.is_active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                        <Switch
+                          checked={u.is_active}
+                          onCheckedChange={() => toggleActive(u)}
+                          disabled={toggling === u.id}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteUser(u)}
+                          title="Remover utilizador"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-primary hover:text-primary hover:bg-primary/10"
-                    onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
-                    title="Redefinir password"
+                {/* Activity Logs Collapsible */}
+                {hasLogs && (
+                  <Collapsible
+                    open={isExpanded}
+                    onOpenChange={(open) => setExpandedUser(open ? u.id : null)}
+                    className="mt-3"
                   >
-                    <KeyRound size={16} />
-                  </Button>
-                  {!isAdmin && (
-                    <>
-                      <div className="text-right hidden sm:block">
-                        <Badge variant="outline" className={`text-xs ${u.is_active ? 'border-green-200 text-green-600 dark:border-green-800 dark:text-green-400' : 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400'}`}>
-                          {u.is_active ? 'Ativo' : 'Inativo'}
-                        </Badge>
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
+                        <Activity className="h-3 w-3" />
+                        <span>Atividade recente ({u.activity_logs.length})</span>
+                        <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-2 ml-14 space-y-1.5 border-l-2 border-muted pl-3">
+                        {u.activity_logs.map((log) => (
+                          <div key={log.id} className="flex items-start gap-2 text-xs">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-foreground">{log.action}</span>
+                              {log.details && typeof log.details === 'object' && (log.details as any).client && (
+                                <span className="text-muted-foreground ml-1">— {(log.details as any).client}</span>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground/60 shrink-0">
+                              {formatRelativeTime(log.created_at)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      <Switch
-                        checked={u.is_active}
-                        onCheckedChange={() => toggleActive(u)}
-                        disabled={toggling === u.id}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteUser(u)}
-                        title="Remover utilizador"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
               </CardContent>
             </Card>
           );
@@ -339,38 +404,17 @@ const GestaoUtilizadores: React.FC = () => {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Maria Silva"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
+              <Input id="name" placeholder="Ex: Maria Silva" value={newName} onChange={(e) => setNewName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@exemplo.com"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-              />
+              <Input id="email" type="email" placeholder="email@exemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 6 caracteres"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
+                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -378,9 +422,7 @@ const GestaoUtilizadores: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={creating}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={creating}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={creating}>
               {creating ? <Loader2 size={16} className="animate-spin mr-2" /> : <UserPlus size={16} className="mr-2" />}
               Criar
@@ -406,18 +448,8 @@ const GestaoUtilizadores: React.FC = () => {
             <div className="space-y-2">
               <Label htmlFor="reset-password">Nova Password</Label>
               <div className="relative">
-                <Input
-                  id="reset-password"
-                  type={showResetPassword ? 'text' : 'password'}
-                  placeholder="Mínimo 8 caracteres"
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowResetPassword(!showResetPassword)}
-                >
+                <Input id="reset-password" type={showResetPassword ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowResetPassword(!showResetPassword)}>
                   {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -425,9 +457,7 @@ const GestaoUtilizadores: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetUser(null)} disabled={resetting}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setResetUser(null)} disabled={resetting}>Cancelar</Button>
             <Button onClick={handleResetPassword} disabled={resetting || resetPassword.length < 8}>
               {resetting ? <Loader2 size={16} className="animate-spin mr-2" /> : <KeyRound size={16} className="mr-2" />}
               Redefinir
