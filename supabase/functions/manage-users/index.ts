@@ -164,20 +164,33 @@ Deno.serve(async (req) => {
 
       const { data: roles } = await adminClient.from("user_roles").select("*");
 
+      // Fetch recent activity logs for all users (last 10 per user)
+      const { data: activityLogs } = await adminClient
+        .from("user_activity_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+
       const result = users.map((u) => {
         const userRole = roles?.find((r) => r.user_id === u.id);
         // Detect auth provider
         const provider = u.app_metadata?.provider || u.app_metadata?.providers?.[0] || 'email';
+        // Get activity logs for this user (last 10)
+        const userLogs = (activityLogs || [])
+          .filter((l) => l.user_id === u.id)
+          .slice(0, 10);
         return {
           id: u.id,
           email: u.email,
-          name: u.user_metadata?.name || u.email?.split("@")[0] || "",
+          name: u.user_metadata?.name || u.user_metadata?.full_name || u.email?.split("@")[0] || "",
           avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
           provider,
           role: userRole?.role || null,
           is_active: userRole?.is_active ?? true,
           role_id: userRole?.id || null,
           created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at || null,
+          activity_logs: userLogs,
         };
       });
 
