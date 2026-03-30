@@ -1,39 +1,31 @@
 
 
-## Plano: Copiar agendamentos de outro dia (com pré-visualização)
+# Melhorias na Página Sobre
 
-### O que faz
-Ao fazer **long press** (ou clicar num botão de contexto) num dia, abre um modal que lista todos os dias do mês que já têm agendamentos. Cada dia mostra os seus agendamentos (cliente, hora, etc.) para o admin decidir qual copiar. Ao selecionar um dia, todos os agendamentos desse dia são copiados para o dia de destino.
+## O que existe hoje
+A página tem: logo + nome + versão, changelog interativo com dialog de detalhes, e um rodapé simples. É funcional mas puramente focada no changelog — falta identidade e contexto sobre a app.
 
-### Como funciona
+## O que vou adicionar
 
-1. **Novo componente `CopyDayModal`** (`src/components/schedule/CopyDayModal.tsx`)
-   - Recebe: lista de tasks do mês, data de destino, callback para copiar
-   - Agrupa tasks por data e mostra uma lista de dias com agendamentos
-   - Cada dia é um card expandido mostrando: data formatada, número de agendamentos, e lista com cliente + horário
-   - Ao clicar num dia, confirma e copia todos os seus agendamentos para o dia de destino
+### 1. Hero Section com Identidade da App
+Um bloco visual no topo com o logo maior, nome da app, tagline, e estatísticas rápidas (total de versões lançadas, meses desde o lançamento, total de funcionalidades). Fundo com gradiente subtil e estilo glassmorphism consistente com o resto da app.
 
-2. **Long press no DayCard** (`src/components/schedule/DayCard.tsx`)
-   - Adicionar handler de long press (touchstart/touchend com timeout de ~500ms, ou botão de contexto visível no header do dia para desktop)
-   - Ao ativar, passa a data do dia como destino e abre o `CopyDayModal`
-   - Apenas disponível para admins
+### 2. Secção "O que é esta app?"
+Um card com uma descrição curta e clara do que a app faz — gestão de agendamentos de limpeza, controlo de pagamentos, clientes, recibos verdes, dashboard de negócio. Com ícones representativos para cada funcionalidade principal (Agenda, Clientes, Pagamentos, Dashboard, Recibos Verdes, Utilizadores).
 
-3. **Integração no ScheduleView** (`src/components/ScheduleView.tsx`)
-   - Adicionar estado para controlar o modal (open + targetDate)
-   - Passar as tasks do mês ativo ao modal
-   - Implementar a função de cópia que cria os novos agendamentos na data de destino (reutilizando `addTask`)
+### 3. Timeline Visual no Changelog
+Em vez de uma lista plana de botões, transformar o changelog numa timeline vertical com uma linha conectora e pontos/nós para cada versão — mais visual e intuitivo para "percorrer a história" da app.
 
-### UI do Modal
-- Header: "Copiar agendamentos para {dia destino}"
-- Lista scrollável de dias com agendamentos, cada um mostrando:
-  - Nome do dia + data formatada
-  - Mini-cards dos agendamentos (cliente, hora início-fim)
-  - Botão "Copiar este dia" ou clique direto
-- Se não houver dias com agendamentos, mensagem vazia
+### 4. Rodapé Melhorado
+Incluir a versão atual, a data de lançamento inicial (Out 2025), e o texto "Desenvolvido com ❤️" mais estilizado.
 
-### Ficheiros afetados
-- `src/components/schedule/CopyDayModal.tsx` — **novo**
-- `src/components/schedule/DayCard.tsx` — adicionar long press / botão de copiar dia
-- `src/components/ScheduleView.tsx` — estado do modal + lógica de cópia
-- `src/components/schedule/index.ts` — exportar novo componente
+## Ficheiro editado
+- `src/pages/Sobre.tsx` — todas as mudanças ficam neste ficheiro
+
+## Detalhes Técnicos
+- Usar componentes shadcn/ui existentes (Card, Badge, Separator)
+- Ícones do lucide-react (Calendar, Users, CreditCard, BarChart3, FileText, Shield)
+- Calcular estatísticas dinamicamente a partir do array `changelog`
+- Timeline com CSS (border-left + dots posicionados)
+- Manter responsividade mobile
 
