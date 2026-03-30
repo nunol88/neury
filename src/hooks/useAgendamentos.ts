@@ -383,7 +383,20 @@ export const useAgendamentos = () => {
       if (error) throw error;
 
       if (deletedTask) {
-        logActivity('Eliminou agendamento', { client: deletedTask.client, date: deletedTask.date });
+        logActivity('Eliminou agendamento', {
+          agendamento_id: deletedTask.id,
+          client: deletedTask.client,
+          date: deletedTask.date,
+          startTime: deletedTask.startTime,
+          endTime: deletedTask.endTime,
+          address: deletedTask.address,
+          pricePerHour: deletedTask.pricePerHour,
+          price: deletedTask.price,
+          notes: deletedTask.notes,
+          phone: deletedTask.phone,
+          completed: deletedTask.completed,
+          pago: deletedTask.pago,
+        });
       }
 
       return deletedTask;
