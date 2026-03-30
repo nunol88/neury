@@ -13,13 +13,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff, KeyRound, Mail,
-  Clock, ChevronDown, Activity,
+  Clock, Activity,
 } from 'lucide-react';
+import ActivityLogTab from '@/components/admin/ActivityLogTab';
 import { toast } from 'sonner';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -89,7 +88,7 @@ const GestaoUtilizadores: React.FC = () => {
   const [resetPassword, setResetPassword] = useState('');
   const [resetting, setResetting] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  
 
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -241,152 +240,133 @@ const GestaoUtilizadores: React.FC = () => {
         </Button>
       </div>
 
-      <p className="text-muted-foreground text-sm">
-        Gerencie utilizadores da aplicação. Novos utilizadores têm acesso apenas de visualização.
-      </p>
+      <Tabs defaultValue="utilizadores" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="utilizadores" className="gap-2">
+            <Users className="h-4 w-4" />
+            Utilizadores
+          </TabsTrigger>
+          <TabsTrigger value="atividade" className="gap-2">
+            <Activity className="h-4 w-4" />
+            Atividade
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-4">
-        {users.map((u) => {
-          const isAdmin = u.role === 'admin';
-          const lastLogin = formatRelativeTime(u.last_sign_in_at);
-          const isExpanded = expandedUser === u.id;
-          const hasLogs = u.activity_logs && u.activity_logs.length > 0;
+        <TabsContent value="utilizadores" className="mt-4">
+          <p className="text-muted-foreground text-sm mb-4">
+            Gerencie utilizadores da aplicação. Novos utilizadores têm acesso apenas de visualização.
+          </p>
+          <div className="grid gap-4">
+            {users.map((u) => {
+              const isAdmin = u.role === 'admin';
+              const lastLogin = formatRelativeTime(u.last_sign_in_at);
 
-          return (
-            <Card key={u.id} className={`transition-all duration-200 hover:shadow-md hover:border-primary/20 ${!u.is_active && !isAdmin ? 'opacity-60' : ''}`}>
-              <CardContent className="py-5 px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {u.avatar_url ? (
-                      <img 
-                        src={u.avatar_url} 
-                        alt={u.name}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                      />
-                    ) : null}
-                    <ClientAvatar name={u.name || 'U'} size="lg" className={u.avatar_url ? 'hidden' : ''} />
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{u.name}</span>
-                        {isAdmin ? (
-                          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
-                            <ShieldCheck className="h-3 w-3 mr-1" /> Admin
-                          </Badge>
-                        ) : u.is_active ? (
-                          <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
-                            Funcionário
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-muted text-muted-foreground border-border">
-                            Funcionário
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <ProviderIcon provider={u.provider} />
-                        <span className="text-xs text-muted-foreground">{u.email}</span>
-                      </div>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {lastLogin && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
-                            <Clock className="h-3 w-3" />
-                            <span>Último login: {lastLogin}</span>
+              return (
+                <Card key={u.id} className={`transition-all duration-200 hover:shadow-md hover:border-primary/20 ${!u.is_active && !isAdmin ? 'opacity-60' : ''}`}>
+                  <CardContent className="py-5 px-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {u.avatar_url ? (
+                          <img 
+                            src={u.avatar_url} 
+                            alt={u.name}
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                          />
+                        ) : null}
+                        <ClientAvatar name={u.name || 'U'} size="lg" className={u.avatar_url ? 'hidden' : ''} />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{u.name}</span>
+                            {isAdmin ? (
+                              <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                                <ShieldCheck className="h-3 w-3 mr-1" /> Admin
+                              </Badge>
+                            ) : u.is_active ? (
+                              <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800">
+                                Funcionário
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-muted text-muted-foreground border-border">
+                                Funcionário
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                        <span className="text-xs text-muted-foreground/60">
-                          {isAdmin
-                            ? 'Acesso total — pode gerir tudo'
-                            : u.is_active
-                              ? 'Ativo — pode marcar tarefas'
-                              : 'Inativo — apenas observação'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-primary hover:text-primary hover:bg-primary/10"
-                      onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
-                      title="Redefinir password"
-                    >
-                      <KeyRound size={16} />
-                    </Button>
-                    {!isAdmin && (
-                      <>
-                        <div className="text-right hidden sm:block">
-                          <Badge variant="outline" className={`text-xs ${u.is_active ? 'border-green-200 text-green-600 dark:border-green-800 dark:text-green-400' : 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400'}`}>
-                            {u.is_active ? 'Ativo' : 'Inativo'}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <ProviderIcon provider={u.provider} />
+                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                          </div>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {lastLogin && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
+                                <Clock className="h-3 w-3" />
+                                <span>Último login: {lastLogin}</span>
+                              </div>
+                            )}
+                            <span className="text-xs text-muted-foreground/60">
+                              {isAdmin
+                                ? 'Acesso total — pode gerir tudo'
+                                : u.is_active
+                                  ? 'Ativo — pode marcar tarefas'
+                                  : 'Inativo — apenas observação'}
+                            </span>
+                          </div>
                         </div>
-                        <Switch
-                          checked={u.is_active}
-                          onCheckedChange={() => toggleActive(u)}
-                          disabled={toggling === u.id}
-                        />
+                      </div>
+
+                      <div className="flex items-center gap-3">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeleteUser(u)}
-                          title="Remover utilizador"
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
+                          title="Redefinir password"
                         >
-                          <Trash2 size={16} />
+                          <KeyRound size={16} />
                         </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Activity Logs Collapsible */}
-                {hasLogs && (
-                  <Collapsible
-                    open={isExpanded}
-                    onOpenChange={(open) => setExpandedUser(open ? u.id : null)}
-                    className="mt-3"
-                  >
-                    <CollapsibleTrigger asChild>
-                      <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
-                        <Activity className="h-3 w-3" />
-                        <span>Atividade recente ({u.activity_logs.length})</span>
-                        <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-2 ml-14 space-y-1.5 border-l-2 border-muted pl-3">
-                        {u.activity_logs.map((log) => (
-                          <div key={log.id} className="flex items-start gap-2 text-xs">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-foreground">{log.action}</span>
-                              {log.details && typeof log.details === 'object' && (log.details as any).client && (
-                                <span className="text-muted-foreground ml-1">— {(log.details as any).client}</span>
-                              )}
+                        {!isAdmin && (
+                          <>
+                            <div className="text-right hidden sm:block">
+                              <Badge variant="outline" className={`text-xs ${u.is_active ? 'border-green-200 text-green-600 dark:border-green-800 dark:text-green-400' : 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400'}`}>
+                                {u.is_active ? 'Ativo' : 'Inativo'}
+                              </Badge>
                             </div>
-                            <span className="text-muted-foreground/60 shrink-0">
-                              {formatRelativeTime(log.created_at)}
-                            </span>
-                          </div>
-                        ))}
+                            <Switch
+                              checked={u.is_active}
+                              onCheckedChange={() => toggleActive(u)}
+                              disabled={toggling === u.id}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteUser(u)}
+                              title="Remover utilizador"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </>
+                        )}
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
 
-        {users.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">
-            Nenhum utilizador encontrado.
-          </p>
-        )}
-      </div>
+            {users.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum utilizador encontrado.
+              </p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="atividade" className="mt-4">
+          <ActivityLogTab users={users.map(u => ({ id: u.id, name: u.name, email: u.email, avatar_url: u.avatar_url }))} />
+        </TabsContent>
+      </Tabs>
 
       {/* Create User Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
