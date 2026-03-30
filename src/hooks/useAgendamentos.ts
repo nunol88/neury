@@ -371,6 +371,10 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
+      if (deletedTask) {
+        logActivity('Eliminou agendamento', { client: deletedTask.client, date: deletedTask.date });
+      }
+
       return deletedTask;
     } catch (error: any) {
       console.error('Error deleting agendamento:', error);
