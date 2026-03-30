@@ -118,19 +118,21 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
   }, [logs, search, filterAction, users]);
 
   const canRevert = (log: ActivityLog): boolean => {
-    const action = log.action;
-    // Can revert: deletions (re-create), completions (reopen), reopens (re-complete)
-    return ['Agendamento eliminado', 'Agendamento concluído', 'Agendamento reaberto'].includes(action);
+    return ['Eliminou agendamento', 'Concluiu agendamento', 'Reabriu agendamento'].includes(log.action);
   };
 
   const getRevertDescription = (log: ActivityLog): string => {
+    const details = log.details as any;
+    const client = details?.client || 'cliente';
+    const date = details?.date ? formatLogDate(details.date) : '';
+    const dateInfo = date ? ` (${date})` : '';
     switch (log.action) {
-      case 'Agendamento eliminado':
-        return `Restaurar o agendamento de "${(log.details as any)?.client || 'cliente'}" que foi eliminado?`;
-      case 'Agendamento concluído':
-        return `Reabrir o agendamento de "${(log.details as any)?.client || 'cliente'}" que foi marcado como concluído?`;
-      case 'Agendamento reaberto':
-        return `Voltar a marcar como concluído o agendamento de "${(log.details as any)?.client || 'cliente'}"?`;
+      case 'Eliminou agendamento':
+        return `Restaurar o agendamento de "${client}"${dateInfo} que foi eliminado?`;
+      case 'Concluiu agendamento':
+        return `Reabrir o agendamento de "${client}"${dateInfo} que foi marcado como concluído?`;
+      case 'Reabriu agendamento':
+        return `Voltar a marcar como concluído o agendamento de "${client}"${dateInfo}?`;
       default:
         return 'Reverter esta ação?';
     }
