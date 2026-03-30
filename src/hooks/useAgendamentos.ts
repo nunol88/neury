@@ -430,6 +430,13 @@ export const useAgendamentos = () => {
 
       if (error) throw error;
 
+      // Find the task to log client name
+      const task = Object.values(allTasks).flat().find(t => t.id === id);
+      logActivity(
+        currentlyCompleted ? 'Reabriu agendamento' : 'Concluiu agendamento',
+        { client: task?.client, date: task?.date }
+      );
+
       return true;
     } catch (error: any) {
       console.error('Error toggling status:', error);
