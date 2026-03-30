@@ -94,8 +94,9 @@ function EmptyState() {
 
 /* ── Stop card ── */
 
-function StopCard({ stop, onAdd, onRemove, isFav }: {
+function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
+  onOpenTimetable?: () => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -115,6 +116,11 @@ function StopCard({ stop, onAdd, onRemove, isFav }: {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
+          {stop.provider === 'carris' && onOpenTimetable && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenTimetable} title="Ver horário completo">
+              <CalendarDays className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {onAdd && !isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAdd}><Star className="h-3.5 w-3.5" /></Button>}
           {onRemove && isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}><StarOff className="h-3.5 w-3.5" /></Button>}
         </div>
