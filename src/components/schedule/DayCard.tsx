@@ -59,6 +59,22 @@ const DayCard: React.FC<DayCardProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTouchStart = () => {
+    if (!isAdmin || !onCopyDay) return;
+    longPressTimer.current = setTimeout(() => {
+      const dayLabel = `${dayObj.dayName} ${dayObj.formatted}`;
+      onCopyDay(dayObj.dateString, dayLabel);
+    }, 600);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
   
   const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
   const isSunday = dayObj.dateObject.getDay() === 0;
