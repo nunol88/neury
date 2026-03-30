@@ -370,22 +370,22 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowHelpModal(true)}
-              className={`w-full flex items-center justify-center gap-1.5 text-sm transition-colors animate-fade-in animation-delay-600 ${
+              className={`w-full flex items-center justify-center gap-1.5 text-xs transition-colors animate-fade-in animation-delay-700 mt-2 ${
                 theme === 'dark' 
-                  ? 'text-muted-foreground hover:text-foreground' 
-                  : 'text-white/50 hover:text-white/80'
+                  ? 'text-muted-foreground/60 hover:text-muted-foreground' 
+                  : 'text-white/30 hover:text-white/60'
               }`}
             >
-              <HelpCircle size={14} />
+              <HelpCircle size={12} />
               <span>Precisa de ajuda?</span>
             </button>
           </form>
           
           {/* App version */}
-          <div className={`text-center text-xs animate-fade-in animation-delay-700 ${
-            theme === 'dark' ? 'text-muted-foreground/50' : 'text-white/30'
+          <div className={`text-center text-[10px] tracking-widest uppercase animate-fade-in animation-delay-800 ${
+            theme === 'dark' ? 'text-muted-foreground/30' : 'text-white/20'
           }`}>
-            Agenda Mayara Godoi v{APP_VERSION}
+            v{APP_VERSION}
           </div>
         </div>
       </div>
