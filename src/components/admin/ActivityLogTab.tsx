@@ -146,20 +146,27 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
       const details = revertLog.details as any;
 
       switch (revertLog.action) {
-        case 'Agendamento eliminado': {
-          // Re-create the deleted agendamento from stored details
-          if (!details?.agendamento_id) {
-            toast.error('Dados insuficientes para restaurar');
+        case 'Eliminou agendamento': {
+          if (!details?.agendamento_id || !details?.date || !details?.startTime || !details?.endTime) {
+            toast.error('Dados insuficientes para restaurar. Este log não tem toda a informação necessária.');
             break;
           }
+          // Reconstruct the agendamento from stored details
+          const startDateTime = new Date(`${details.date}T${details.startTime}:00Z`);
+          const endDateTime = new Date(`${details.date}T${details.endTime}:00Z`);
           const insertData: any = {
             id: details.agendamento_id,
             cliente_nome: details.client || 'Desconhecido',
-            data_inicio: details.data_inicio,
-            data_fim: details.data_fim,
-            status: details.previous_status || 'agendado',
-            descricao: details.descricao || null,
-            cliente_contacto: details.cliente_contacto || null,
+            cliente_contacto: details.phone || null,
+            data_inicio: startDateTime.toISOString(),
+            data_fim: endDateTime.toISOString(),
+            descricao: JSON.stringify({
+              address: details.address || '',
+              pricePerHour: details.pricePerHour || '7',
+              price: details.price || '0',
+              notes: details.notes || '',
+            }),
+            status: details.completed ? 'concluido' : 'agendado',
             pago: details.pago || false,
           };
           const { error } = await supabase.from('agendamentos').insert(insertData);
@@ -168,7 +175,7 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
           break;
         }
 
-        case 'Agendamento concluído': {
+        case 'Concluiu agendamento': {
           if (!details?.agendamento_id) {
             toast.error('Dados insuficientes para reverter');
             break;
@@ -182,7 +189,7 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
           break;
         }
 
-        case 'Agendamento reaberto': {
+        case 'Reabriu agendamento': {
           if (!details?.agendamento_id) {
             toast.error('Dados insuficientes para reverter');
             break;
@@ -193,6 +200,8 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
             .eq('id', details.agendamento_id);
           if (error) throw error;
           toast.success('Agendamento marcado como concluído!');
+          break;
+        }
           break;
         }
 
