@@ -1626,8 +1626,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onDeleteTask={handleDelete}
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
-              onCopyTask={isAdmin ? handleCopyTask : undefined}
-              onDeleteExtra={deleteExtra}
+               onCopyTask={isAdmin ? handleCopyTask : undefined}
+               onDeleteExtra={deleteExtra}
+               onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
+                 setCopyDayTarget({ date: targetDate, label: targetDayLabel });
+                 setShowCopyDayModal(true);
+               } : undefined}
             />
           );
         })}
