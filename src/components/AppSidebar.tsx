@@ -65,7 +65,7 @@ export function AppSidebar() {
     () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
   );
   const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(
-    () => localStorage.getItem(NEW_REGISTRATIONS_KEY) !== 'false'
+    () => localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true'
   );
 
   const toggleEmailLogin = () => {
