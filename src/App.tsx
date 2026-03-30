@@ -15,6 +15,7 @@ import Pagamentos from "./pages/Pagamentos";
 import RecibosVerdes from "./pages/RecibosVerdes";
 import Sobre from "./pages/Sobre";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
+import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
