@@ -182,6 +182,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "reset_password") {
+      const { user_id, new_password } = payload;
+
+      if (!user_id || typeof user_id !== "string") {
+        return makeErrorResponse("user_id é obrigatório", 400);
+      }
+
+      if (!new_password || typeof new_password !== "string" || new_password.length < MIN_PASSWORD_LENGTH) {
+        return makeErrorResponse(`Password deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres`, 400);
+      }
+
+      if (user_id === caller.id) {
+        return makeErrorResponse("Use as definições da conta para alterar a sua própria password", 400);
+      }
+
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(user_id, {
+        password: new_password,
+      });
+
+      if (updateError) {
+        console.error("Password reset failed:", updateError);
+        return makeErrorResponse(sanitizeErrorMessage(updateError), 400);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return makeErrorResponse("Ação inválida", 400);
   } catch (err) {
     console.error("Unexpected error in manage-users:", err);
