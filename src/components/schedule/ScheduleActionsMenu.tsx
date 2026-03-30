@@ -58,7 +58,21 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
           </DropdownMenuItem>
         )}
         
-        {canCopyFromPrevious && hasTasksInMonth && <DropdownMenuSeparator />}
+        {/* Export to calendar */}
+        {hasTasksInMonth && onExportCalendar && (
+          <>
+            {canCopyFromPrevious && <DropdownMenuSeparator />}
+            <DropdownMenuItem
+              onClick={onExportCalendar}
+              className="gap-2"
+            >
+              <Smartphone size={16} className="text-primary" />
+              <span>Exportar Calendário</span>
+            </DropdownMenuItem>
+          </>
+        )}
+        
+        {(canCopyFromPrevious || (hasTasksInMonth && onExportCalendar)) && hasTasksInMonth && <DropdownMenuSeparator />}
         
         {/* Delete month */}
         <DropdownMenuItem
