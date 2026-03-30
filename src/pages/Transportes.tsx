@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   Bus, Search, Star, StarOff, Clock, MapPin,
-  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed
+  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff
 } from 'lucide-react';
 import {
   useSearchStops,
@@ -19,6 +19,7 @@ import {
   useGeolocation,
   formatMinutesUntil,
   formatTimeUntil,
+  useIsOnline,
   type TransportStop,
   type TransportProvider,
 } from '@/hooks/useTransportes';
@@ -200,6 +201,7 @@ export default function Transportes() {
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
   const { data: nearbyCM, isLoading: cmLoading } = useNearbyCMStops(position);
   const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
+  const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
 
   const cacheStop = (stop: TransportStop) =>
@@ -223,6 +225,13 @@ export default function Transportes() {
           <span className="ml-1.5 hidden sm:inline">Localização</span>
         </Button>
       </div>
+
+      {!isOnline && (
+        <div className="flex items-center gap-2 text-sm bg-muted rounded-lg p-3">
+          <WifiOff className="h-4 w-4 flex-shrink-0" />
+          <span>Sem internet — a mostrar dados guardados das favoritas.</span>
+        </div>
+      )}
 
       {geoError && (
         <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
