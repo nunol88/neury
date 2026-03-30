@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logActivity } from '@/hooks/useActivityLog';
 import type { Database } from '@/integrations/supabase/types';
 import { z } from 'zod';
 
