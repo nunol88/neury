@@ -120,6 +120,9 @@ const DayCard: React.FC<DayCardProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
       style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards' }}
       className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative
         ${isWeekend ? 'bg-muted/50' : ''}
