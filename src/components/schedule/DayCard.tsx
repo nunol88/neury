@@ -32,6 +32,7 @@ interface DayCardProps {
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopyTask?: (task: Task) => void;
   onDeleteExtra?: (id: string) => void;
+  onCopyDay?: (targetDate: string, targetDayLabel: string) => void;
   animationDelay?: number;
 }
 
