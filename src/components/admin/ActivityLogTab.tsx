@@ -348,19 +348,28 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
                                 </span>
                                 {actionStyle && (
                                   <Badge className={`text-[10px] px-1.5 py-0 ${actionStyle.color} border-0`}>
-                                    {actionStyle.label}
+                                    {actionStyle.icon} {actionStyle.label}
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <span>{log.action}</span>
-                                {details?.client && (
-                                  <span>— {details.client}</span>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {details?.client ? (
+                                  <>
+                                    <span className="font-medium text-foreground/80">{details.client}</span>
+                                    {details?.date && (
+                                      <span> · {formatLogDate(details.date)}</span>
+                                    )}
+                                    {details?.startTime && details?.endTime && (
+                                      <span> · {details.startTime}–{details.endTime}</span>
+                                    )}
+                                    {details?.address && (
+                                      <span> · {details.address}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>{log.action}</span>
                                 )}
-                                {details?.date && (
-                                  <span className="text-muted-foreground/60">({details.date})</span>
-                                )}
-                              </div>
+                              </p>
                             </div>
                           </div>
 
