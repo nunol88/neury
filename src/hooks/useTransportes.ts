@@ -208,21 +208,31 @@ export function useSearchStops(query: string) {
   });
 }
 
-// CM Arrivals (real-time)
+// CM Arrivals (real-time, with offline cache)
 export function useCMArrivals(stopId: string | null) {
   return useQuery({
     queryKey: ['cm-arrivals', stopId],
     queryFn: async (): Promise<Arrival[]> => {
       if (!stopId) return [];
-      const res = await fetch(`${CM_API}/arrivals/by_stop/${stopId}`);
-      if (!res.ok) throw new Error('Erro');
-      const json = await res.json();
-      const arrivals: Arrival[] = Array.isArray(json) ? json : json.data || [];
-      const now = Math.floor(Date.now() / 1000);
-      return arrivals
-        .filter(a => (a.estimated_arrival_unix || a.scheduled_arrival_unix) > now)
-        .sort((a, b) => (a.estimated_arrival_unix || a.scheduled_arrival_unix) - (b.estimated_arrival_unix || b.scheduled_arrival_unix))
-        .slice(0, 10);
+      try {
+        const res = await fetch(`${CM_API}/arrivals/by_stop/${stopId}`);
+        if (!res.ok) throw new Error('Erro');
+        const json = await res.json();
+        const arrivals: Arrival[] = Array.isArray(json) ? json : json.data || [];
+        const now = Math.floor(Date.now() / 1000);
+        const filtered = arrivals
+          .filter(a => (a.estimated_arrival_unix || a.scheduled_arrival_unix) > now)
+          .sort((a, b) => (a.estimated_arrival_unix || a.scheduled_arrival_unix) - (b.estimated_arrival_unix || b.scheduled_arrival_unix))
+          .slice(0, 10);
+        // Save to offline cache
+        saveToOfflineCache('cm', stopId, filtered);
+        return filtered;
+      } catch {
+        // Offline fallback
+        const cached = getFromOfflineCache<Arrival[]>('cm', stopId);
+        if (cached) return cached;
+        throw new Error('Offline sem cache');
+      }
     },
     enabled: !!stopId,
     refetchInterval: 30_000,
@@ -230,17 +240,27 @@ export function useCMArrivals(stopId: string | null) {
   });
 }
 
-// Carris Schedule (GTFS via edge function)
+// Carris Schedule (GTFS via edge function, with offline cache)
 export function useCarrisSchedule(stopId: string | null) {
   return useQuery({
     queryKey: ['carris-schedule', stopId],
     queryFn: async (): Promise<{ stop: any; departures: CarrisDeparture[] }> => {
       if (!stopId) return { stop: null, departures: [] };
-      const res = await fetch(`${CARRIS_FN_URL}?action=schedule&stop_id=${stopId}`, {
-        headers: { 'Authorization': `Bearer ${ANON_KEY}` }
-      });
-      if (!res.ok) throw new Error('Erro');
-      return res.json();
+      try {
+        const res = await fetch(`${CARRIS_FN_URL}?action=schedule&stop_id=${stopId}`, {
+          headers: { 'Authorization': `Bearer ${ANON_KEY}` }
+        });
+        if (!res.ok) throw new Error('Erro');
+        const data = await res.json();
+        // Save to offline cache
+        saveToOfflineCache('carris', stopId, data);
+        return data;
+      } catch {
+        // Offline fallback
+        const cached = getFromOfflineCache<{ stop: any; departures: CarrisDeparture[] }>('carris', stopId);
+        if (cached) return cached;
+        throw new Error('Offline sem cache');
+      }
     },
     enabled: !!stopId,
     refetchInterval: 5 * 60_000,
