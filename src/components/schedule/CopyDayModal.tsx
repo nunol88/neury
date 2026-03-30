@@ -2,7 +2,7 @@ import React from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Clock, User, CalendarCopy, MapPin } from 'lucide-react';
+import { Copy, Clock, User, CalendarRange, MapPin } from 'lucide-react';
 
 interface CopyDayModalProps {
   open: boolean;
