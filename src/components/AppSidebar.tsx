@@ -50,6 +50,7 @@ const navItems = [
 
 const neurySidebarItems = [
   { title: 'Agendamentos', url: '/neury/agendamentos', icon: CalendarDays },
+  { title: 'Transportes', url: '/neury/transportes', icon: Bus },
   { title: 'Sobre', url: '/neury/sobre', icon: Info },
 ];
 

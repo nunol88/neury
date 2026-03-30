@@ -100,6 +100,26 @@ const App = () => (
               } 
             />
             <Route 
+              path="/admin/transportes" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Transportes />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/neury/transportes" 
+              element={
+                <ProtectedRoute allowedRoles={['neury']}>
+                  <AppLayout>
+                    <Transportes />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/admin/sobre"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
