@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { CalendarPlus, Check, Euro, StickyNote, Trash2 } from 'lucide-react';
+import { CalendarPlus, Check, Copy, Euro, StickyNote, Trash2 } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -32,6 +32,7 @@ interface DayCardProps {
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopyTask?: (task: Task) => void;
   onDeleteExtra?: (id: string) => void;
+  onCopyDay?: (targetDate: string, targetDayLabel: string) => void;
   animationDelay?: number;
 }
 
@@ -53,10 +54,27 @@ const DayCard: React.FC<DayCardProps> = ({
   onTogglePayment,
   onCopyTask,
   onDeleteExtra,
+  onCopyDay,
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTouchStart = () => {
+    if (!isAdmin || !onCopyDay) return;
+    longPressTimer.current = setTimeout(() => {
+      const dayLabel = `${dayObj.dayName} ${dayObj.formatted}`;
+      onCopyDay(dayObj.dateString, dayLabel);
+    }, 600);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
   
   const isWeekend = dayObj.dateObject.getDay() === 0 || dayObj.dateObject.getDay() === 6;
   const isSunday = dayObj.dateObject.getDay() === 0;
@@ -102,6 +120,9 @@ const DayCard: React.FC<DayCardProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
       style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards' }}
       className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative
         ${isWeekend ? 'bg-muted/50' : ''}
@@ -132,7 +153,7 @@ const DayCard: React.FC<DayCardProps> = ({
       )}
 
       {/* Header */}
-      <div className={`p-3 border-b border-border/50 flex justify-between items-center
+      <div className={`p-3 border-b border-border/50 flex justify-between items-center group
         ${isWeekend ? 'bg-muted/50' : 'bg-card'}
         ${isToday ? 'bg-primary/5' : ''}
       `}>
@@ -158,6 +179,19 @@ const DayCard: React.FC<DayCardProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {isAdmin && onCopyDay && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const dayLabel = `${dayObj.dayName} ${dayObj.formatted}`;
+                onCopyDay(dayObj.dateString, dayLabel);
+              }}
+              className="p-1.5 hover:bg-primary/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 print:hidden"
+              title="Copiar dia de outro agendamento"
+            >
+              <Copy size={14} className="text-primary" />
+            </button>
+          )}
           {(tasks.length > 0 || extras.length > 0) && (
             <div className="flex flex-col items-end gap-0.5">
               {tasks.length > 0 && (

@@ -33,6 +33,7 @@ import {
   detectConflicts,
   DeleteMonthDialog,
   ScheduleActionsMenu,
+  CopyDayModal,
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
@@ -134,6 +135,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   // State for extra value modal
   const [showExtraModal, setShowExtraModal] = useState(false);
+
+  // State for copy day modal
+  const [showCopyDayModal, setShowCopyDayModal] = useState(false);
+  const [copyDayTarget, setCopyDayTarget] = useState<{ date: string; label: string }>({ date: '', label: '' });
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -1621,8 +1626,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onDeleteTask={handleDelete}
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
-              onCopyTask={isAdmin ? handleCopyTask : undefined}
-              onDeleteExtra={deleteExtra}
+               onCopyTask={isAdmin ? handleCopyTask : undefined}
+               onDeleteExtra={deleteExtra}
+               onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
+                 setCopyDayTarget({ date: targetDate, label: targetDayLabel });
+                 setShowCopyDayModal(true);
+               } : undefined}
             />
           );
         })}
@@ -2192,6 +2201,43 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         onSelectDate={handlePasteTask}
         clientName={copiedTask?.client || ''}
         themeGradient={themeGradient}
+      />
+
+      {/* Copy Day Modal */}
+      <CopyDayModal
+        open={showCopyDayModal}
+        onClose={() => setShowCopyDayModal(false)}
+        targetDate={copyDayTarget.date}
+        targetDayLabel={copyDayTarget.label}
+        monthTasks={getTasksForMonth(activeMonth)}
+        onCopyDay={async (sourceTasks) => {
+          setShowCopyDayModal(false);
+          setSaving(true);
+          const newIds: string[] = [];
+          for (const task of sourceTasks) {
+            const result = await addTask({
+              date: copyDayTarget.date,
+              client: task.client,
+              phone: task.phone,
+              startTime: task.startTime,
+              endTime: task.endTime,
+              address: task.address,
+              pricePerHour: task.pricePerHour,
+              price: task.price,
+              notes: task.notes,
+              completed: false,
+              pago: false,
+            });
+            if (result) newIds.push(result.id);
+          }
+          setSaving(false);
+          if (newIds.length > 0) {
+            toast({
+              title: 'Dia copiado',
+              description: `${newIds.length} agendamentos copiados para ${copyDayTarget.label}.`,
+            });
+          }
+        }}
       />
 
       <style>{`
