@@ -88,7 +88,7 @@ const GestaoUtilizadores: React.FC = () => {
   const [resetPassword, setResetPassword] = useState('');
   const [resetting, setResetting] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  
 
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
