@@ -14,6 +14,7 @@ import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
 
 const REMEMBER_USER_KEY = 'agenda_mayslimpo_remembered_user';
+export const EMAIL_LOGIN_KEY = 'agenda_mayslimpo_email_login_enabled';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
