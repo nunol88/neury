@@ -1510,7 +1510,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
-              {isAdmin ? `Agenda de ${username}` : 'A minha Agenda'}
+              {isAdmin ? 'Agenda da Mayara' : 'A minha Agenda'}
             </h1>
             <p className="text-muted-foreground mt-0.5 flex items-center gap-2 text-base font-medium">
               {activeConfig?.label}
