@@ -267,6 +267,8 @@ export const useAgendamentos = () => {
         }));
       }
 
+      logActivity('Criou agendamento', { client: newTask.client, date: newTask.date });
+
       return newTask;
     } catch (error: any) {
       console.error('Error adding agendamento:', error);
