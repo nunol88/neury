@@ -332,10 +332,10 @@ const Login = () => {
             <Button
               type="button"
               variant="outline"
-              className={`w-full h-12 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 flex items-center justify-center gap-3 ${
+              className={`w-full h-13 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-600 flex items-center justify-center gap-3 hover:-translate-y-0.5 ${
                 theme === 'dark'
-                  ? 'bg-card border-border hover:bg-accent text-foreground'
-                  : 'bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
+                  ? 'bg-foreground border-foreground hover:bg-foreground/90 text-background hover:shadow-lg'
+                  : 'bg-black text-white border-black hover:bg-black/90 hover:shadow-xl hover:shadow-black/30'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
               onClick={async () => {
