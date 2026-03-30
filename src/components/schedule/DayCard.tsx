@@ -145,6 +145,7 @@ const DayCard: React.FC<DayCardProps> = ({
         ${isPast && !isAdmin ? 'opacity-60' : ''}
         ${isDragOver ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-xl border-primary/50' : ''}
         ${isEmpty && !isToday && !isPastBlocked ? 'opacity-50' : ''}
+        ${isLongPressing ? 'scale-[0.97] ring-2 ring-primary/60 shadow-lg' : ''}
       `}
     >
       {/* Simple check for fully completed days */}
