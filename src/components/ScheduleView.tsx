@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
+import { downloadICSFile } from '@/utils/exportCalendar';
 
 // Import refactored components
 import {
