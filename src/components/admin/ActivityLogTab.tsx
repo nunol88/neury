@@ -37,11 +37,21 @@ interface Props {
   users: UserInfo[];
 }
 
-const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  'Agendamento criado': { label: 'Criação', color: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400' },
-  'Agendamento eliminado': { label: 'Eliminação', color: 'bg-destructive/10 text-destructive' },
-  'Agendamento concluído': { label: 'Conclusão', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400' },
-  'Agendamento reaberto': { label: 'Reabertura', color: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400' },
+const ACTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  'Criou agendamento': { label: 'Criação', icon: '🟢', color: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400' },
+  'Eliminou agendamento': { label: 'Eliminação', icon: '🔴', color: 'bg-destructive/10 text-destructive' },
+  'Concluiu agendamento': { label: 'Conclusão', icon: '🔵', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400' },
+  'Reabriu agendamento': { label: 'Reabertura', icon: '🟠', color: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400' },
+};
+
+const formatLogDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  // Handle "YYYY-MM-DD" format
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
 };
 
 const PAGE_SIZE = 30;
