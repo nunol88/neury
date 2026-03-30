@@ -117,7 +117,7 @@ const CopyDayModal: React.FC<CopyDayModalProps> = ({
             Sem agendamentos em {browsingConfig?.label || browsingMonth}.
           </div>
         ) : (
-          <ScrollArea className="flex-1 px-4 py-3">
+          <ScrollArea className="flex-1 px-4 py-3 max-h-[55vh] overflow-y-auto">
             <div className="space-y-2.5 pb-2">
               {sortedDates.map((date, index) => {
                 const dayTasks = tasksByDate[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
