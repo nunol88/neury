@@ -59,7 +59,7 @@ const CopyDayModal: React.FC<CopyDayModalProps> = ({
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center animate-scale-in">
-                <CalendarCopy size={20} className="text-primary" />
+                <CalendarRange size={20} className="text-primary" />
               </div>
               <div>
                 <DialogTitle className="text-base">Copiar agendamentos para</DialogTitle>
