@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { NavLink } from '@/components/NavLink';
+import { EMAIL_LOGIN_KEY } from '@/pages/Login';
 import {
   Sidebar,
   SidebarContent,
