@@ -17,11 +17,13 @@ import {
   Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff, KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ClientAvatar from '@/components/ui/client-avatar';
 
 interface ManagedUser {
   id: string;
   email: string;
   name: string;
+  avatar_url: string | null;
   role: string | null;
   is_active: boolean;
   role_id: string | null;
