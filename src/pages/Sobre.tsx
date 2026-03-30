@@ -26,6 +26,20 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.5.0',
+    date: '2026-03-30',
+    title: '🍎 Login com Google e Apple',
+    summary: 'Agora é possível entrar na app usando a conta Google ou Apple — mais rápido e seguro, sem precisar de lembrar passwords. O login por email pode ser ativado ou desativado pela Mayara diretamente na sidebar. A foto do perfil do Google/Apple aparece na sidebar após o login.',
+    changes: [
+      { text: 'Login com conta Google (um clique)', type: 'new' },
+      { text: 'Login com conta Apple (um clique)', type: 'new' },
+      { text: 'Foto do perfil Google/Apple visível na sidebar', type: 'new' },
+      { text: 'Toggle na sidebar para ativar/desativar login por email', type: 'new' },
+      { text: 'Login por email desativado por defeito (mais seguro)', type: 'improvement' },
+      { text: 'Atribuição automática de roles para contas OAuth', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.4.0',
     date: '2026-03-01',
     title: '🎯 Polimento Global da App',
