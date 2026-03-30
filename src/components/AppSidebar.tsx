@@ -70,6 +70,8 @@ export function AppSidebar() {
     setEmailLoginEnabled(newValue);
     localStorage.setItem(EMAIL_LOGIN_KEY, String(newValue));
   };
+
+  const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
