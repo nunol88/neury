@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2, Trash2, Euro } from 'lucide-react';
+import { Plus, Calendar, CalendarRange, Repeat, X, CalendarDays, CalendarCheck, Copy, Loader2, Undo2, Trash2, Euro, Smartphone } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -24,6 +24,7 @@ interface FloatingActionMenuProps {
   onUndo: () => void;
   onDeleteMonth: () => void;
   onAddExtra?: () => void;
+  onExportCalendar?: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
@@ -47,6 +48,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   onUndo,
   onDeleteMonth,
   onAddExtra,
+  onExportCalendar,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { open: sidebarOpen } = useSidebar();
@@ -105,6 +107,20 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
       {/* Expanded Options - Cascade upwards */}
       {isExpanded && (
         <div className="flex flex-col gap-2 animate-slide-up mb-2">
+          {/* Export to Calendar */}
+          {onExportCalendar && (
+            <button
+              onClick={() => handleOptionClick(onExportCalendar)}
+              className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
+              style={{ animationDelay: '150ms' }}
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Smartphone size={20} className="text-primary" />
+              </div>
+              <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Exportar Calendário</span>
+            </button>
+          )}
+
           {/* Extra Value - Available for all users */}
           {onAddExtra && (
             <button

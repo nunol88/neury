@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addProfessionalHeader, addProfessionalFooter, getContentStartY } from '@/utils/pdfHelpers';
+import { downloadICSFile } from '@/utils/exportCalendar';
 
 // Import refactored components
 import {
@@ -1537,6 +1538,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
                   onCopyFromPrevious={handleCopyFromPreviousMonth}
                   onDeleteMonth={handleDeleteMonth}
+                  onExportCalendar={() => {
+                    const tasks = allTasks[activeMonth as keyof AllTasks] || [];
+                    if (tasks.length === 0) {
+                      toast({ title: 'Sem agendamentos', description: 'Não há agendamentos para exportar neste mês.', variant: 'destructive' });
+                      return;
+                    }
+                    downloadICSFile(tasks, activeConfig?.label || '');
+                    toast({ title: 'Calendário exportado', description: `${tasks.length} agendamentos exportados com sucesso.` });
+                  }}
                 />
               </div>
             )}
@@ -2152,6 +2162,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
         onAddExtra={() => setShowExtraModal(true)}
+        onExportCalendar={() => {
+          const tasks = allTasks[activeMonth as keyof AllTasks] || [];
+          if (tasks.length === 0) {
+            toast({ title: 'Sem agendamentos', description: 'Não há agendamentos para exportar neste mês.', variant: 'destructive' });
+            return;
+          }
+          downloadICSFile(tasks, activeConfig?.label || '');
+          toast({ title: 'Calendário exportado', description: `${tasks.length} agendamentos exportados com sucesso.` });
+        }}
       />
 
       {/* Delete Month Confirmation Dialog */}
