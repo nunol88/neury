@@ -126,7 +126,16 @@ export function AppSidebar() {
         {/* User info */}
         <div className="px-3 py-3">
           <div className="flex items-center gap-2 text-sm">
-            <ClientAvatar name={username || 'U'} size="sm" />
+            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+              <img 
+                src={user.user_metadata.avatar_url || user.user_metadata.picture} 
+                alt={username}
+                className="w-6 h-6 rounded-full object-cover ring-2 ring-background shadow-sm shrink-0"
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+              />
+            ) : null}
+            <ClientAvatar name={username || 'U'} size="sm" className={user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? 'hidden' : ''} />
             <span className="capitalize font-medium text-sidebar-foreground truncate">
               {username}
             </span>
