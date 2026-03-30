@@ -113,7 +113,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then(result => {
+        fetchUserRole(session.user.id).then(async (result) => {
+          // Block new users if registrations are disabled
+          if (!result.role) {
+            const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) !== 'false';
+            if (!registrationsEnabled) {
+              await supabase.auth.signOut();
+              setUser(null);
+              setSession(null);
+              setRole(null);
+              setLoading(false);
+              return;
+            }
+          }
           setRole(result.role);
           setIsActive(result.active);
           setLoading(false);
