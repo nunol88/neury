@@ -7,6 +7,44 @@ const CARRIS_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/carris-
 const METRO_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/metro-status`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const FAVORITES_KEY = 'transportes_paragens_favoritas';
+const OFFLINE_CACHE_KEY = 'transportes_offline_cache';
+
+// ── Offline cache helpers ──
+interface OfflineCache {
+  cm: Record<string, { data: Arrival[]; ts: number }>;
+  carris: Record<string, { data: { stop: any; departures: CarrisDeparture[] }; ts: number }>;
+}
+
+function getOfflineCache(): OfflineCache {
+  try { return JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) || '{}'); }
+  catch { return { cm: {}, carris: {} }; }
+}
+
+function saveToOfflineCache(provider: 'cm' | 'carris', stopId: string, data: any) {
+  try {
+    const cache = getOfflineCache();
+    if (!cache[provider]) cache[provider] = {};
+    cache[provider][stopId] = { data, ts: Date.now() };
+    localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify(cache));
+  } catch { /* localStorage full — ignore */ }
+}
+
+function getFromOfflineCache<T>(provider: 'cm' | 'carris', stopId: string): T | null {
+  const cache = getOfflineCache();
+  return (cache[provider]?.[stopId]?.data as T) ?? null;
+}
+
+export function useIsOnline() {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+  return online;
+}
 
 export type TransportProvider = 'cm' | 'carris';
 
