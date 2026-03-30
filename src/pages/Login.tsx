@@ -13,9 +13,10 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
 
-const REMEMBER_USER_KEY = 'agenda_mayslimpo_remembered_user';
-export const EMAIL_LOGIN_KEY = 'agenda_mayslimpo_email_login_enabled';
-export const NEW_REGISTRATIONS_KEY = 'agenda_mayslimpo_new_registrations_enabled';
+import { REMEMBER_USER_KEY, EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
+
+// Re-export for backward compatibility
+export { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY };
 
 const getGreeting = () => {
   const hour = new Date().getHours();
