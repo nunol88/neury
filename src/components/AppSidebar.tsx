@@ -36,12 +36,6 @@ import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
 
-// Apple Sign In doesn't provide profile photos, so we map known users manually
-const KNOWN_USER_AVATARS: Record<string, string> = {
-  'mayaracsg@hotmail.com': 'https://ui-avatars.com/api/?name=Mayara&background=e91e63&color=fff&bold=true&size=128',
-  'nunoleitao@me.com': 'https://ui-avatars.com/api/?name=Nuno+Leitão&background=1976d2&color=fff&bold=true&size=128',
-};
-
 const navItems = [
   { title: 'Agendamentos', url: '/admin/agendamentos', icon: CalendarDays },
   { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
