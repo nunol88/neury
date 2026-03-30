@@ -247,16 +247,16 @@ export function useCarrisSchedule(stopId: string | null) {
     queryFn: async (): Promise<{ stop: any; departures: CarrisDeparture[] }> => {
       if (!stopId) return { stop: null, departures: [] };
       try {
-        const res = await fetch(`${CARRIS_FN_URL}?action=schedule&stop_id=${stopId}`, {
+        const res = await fetch(`${CARRIS_FN_URL}?stop_id=${stopId}`, {
           headers: { 'Authorization': `Bearer ${ANON_KEY}` }
         });
         if (!res.ok) throw new Error('Erro');
         const data = await res.json();
-        // Save to offline cache
-        saveToOfflineCache('carris', stopId, data);
-        return data;
+        const stopInfo = carrisStops.find(s => s.id === stopId) || null;
+        const result = { stop: stopInfo, departures: data.departures || [] };
+        saveToOfflineCache('carris', stopId, result);
+        return result;
       } catch {
-        // Offline fallback
         const cached = getFromOfflineCache<{ stop: any; departures: CarrisDeparture[] }>('carris', stopId);
         if (cached) return cached;
         throw new Error('Offline sem cache');
