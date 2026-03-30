@@ -372,6 +372,15 @@ export default function Transportes() {
         <RefreshCw className="h-3 w-3" />
         CM: tempo real (30s) · Carris: horário previsto (GTFS)
       </p>
+
+      {timetableStop && (
+        <CarrisTimetableModal
+          open={!!timetableStop}
+          onClose={() => setTimetableStop(null)}
+          stopId={timetableStop.id}
+          stopName={timetableStop.name}
+        />
+      )}
     </div>
   );
 }
