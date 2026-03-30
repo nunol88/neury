@@ -138,8 +138,8 @@ const DayCard: React.FC<DayCardProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchEnd}
-      style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards', WebkitTouchCallout: 'none', WebkitUserSelect: isLongPressing ? 'none' : 'auto', userSelect: isLongPressing ? 'none' : 'auto' }}
-      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative select-none
+      style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards', WebkitTouchCallout: 'none' }}
+      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative touch-none-select
         ${isWeekend ? 'bg-muted/50' : ''}
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
         ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
