@@ -107,6 +107,20 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
       {/* Expanded Options - Cascade upwards */}
       {isExpanded && (
         <div className="flex flex-col gap-2 animate-slide-up mb-2">
+          {/* Export to Calendar */}
+          {onExportCalendar && (
+            <button
+              onClick={() => handleOptionClick(onExportCalendar)}
+              className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
+              style={{ animationDelay: '150ms' }}
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Smartphone size={20} className="text-primary" />
+              </div>
+              <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Exportar Calendário</span>
+            </button>
+          )}
+
           {/* Extra Value - Available for all users */}
           {onAddExtra && (
             <button
