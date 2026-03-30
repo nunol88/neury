@@ -1,31 +1,39 @@
 
 
-# Melhorias na Página Sobre
+# Transportes Lisboa — Widget no Sidebar
 
-## O que existe hoje
-A página tem: logo + nome + versão, changelog interativo com dialog de detalhes, e um rodapé simples. É funcional mas puramente focada no changelog — falta identidade e contexto sobre a app.
+Adicionar uma secção no sidebar (e opcionalmente uma página dedicada) que mostra tempos de espera em tempo real para os transportes públicos de Lisboa.
 
-## O que vou adicionar
+## APIs Disponíveis (gratuitas, sem chave)
 
-### 1. Hero Section com Identidade da App
-Um bloco visual no topo com o logo maior, nome da app, tagline, e estatísticas rápidas (total de versões lançadas, meses desde o lançamento, total de funcionalidades). Fundo com gradiente subtil e estilo glassmorphism consistente com o resto da app.
+- **Carris Metropolitana**: `https://api.carrismetropolitana.pt/v2/` — paragens, chegadas em tempo real, veículos
+- **Metro de Lisboa**: `http://app.metrolisboa.pt/status/getLinhas.php` — estado das linhas
 
-### 2. Secção "O que é esta app?"
-Um card com uma descrição curta e clara do que a app faz — gestão de agendamentos de limpeza, controlo de pagamentos, clientes, recibos verdes, dashboard de negócio. Com ícones representativos para cada funcionalidade principal (Agenda, Clientes, Pagamentos, Dashboard, Recibos Verdes, Utilizadores).
+## O que vou construir
 
-### 3. Timeline Visual no Changelog
-Em vez de uma lista plana de botões, transformar o changelog numa timeline vertical com uma linha conectora e pontos/nós para cada versão — mais visual e intuitivo para "percorrer a história" da app.
+### 1. Página "Transportes" (`/admin/transportes` e `/neury/transportes`)
+- Campo de pesquisa de paragens por nome ou ID
+- Lista de paragens favoritas (guardadas em `localStorage`)
+- Para cada paragem favorita, mostrar os próximos autocarros/metros com tempo estimado de chegada em tempo real (ex: "3 min", "12 min")
+- Estado das linhas do Metro (Azul, Amarela, Verde, Vermelha) — se há perturbações
+- Auto-refresh a cada 30 segundos
 
-### 4. Rodapé Melhorado
-Incluir a versão atual, a data de lançamento inicial (Out 2025), e o texto "Desenvolvido com ❤️" mais estilizado.
+### 2. Sidebar — novo item de navegação
+- Ícone `Bus` do lucide-react
+- Link "Transportes" para admin e neury
 
-## Ficheiro editado
-- `src/pages/Sobre.tsx` — todas as mudanças ficam neste ficheiro
+### 3. Implementação técnica
+- **Chamadas diretas do frontend** — as APIs são públicas e suportam CORS, não precisam de edge function
+- Hook `useTransportes.ts` com:
+  - `useQuery` para buscar chegadas por paragem (`/v2/arrivals/by_stop/:id`)
+  - `useQuery` para estado do metro
+  - Refetch automático a cada 30s
+- Paragens favoritas em `localStorage`
+- Pesquisa de paragens via `/v2/stops` (filtrado client-side ou com query param)
 
-## Detalhes Técnicos
-- Usar componentes shadcn/ui existentes (Card, Badge, Separator)
-- Ícones do lucide-react (Calendar, Users, CreditCard, BarChart3, FileText, Shield)
-- Calcular estatísticas dinamicamente a partir do array `changelog`
-- Timeline com CSS (border-left + dots posicionados)
-- Manter responsividade mobile
+### Ficheiros a criar/editar
+- `src/pages/Transportes.tsx` — página principal
+- `src/hooks/useTransportes.ts` — hook com queries
+- `src/components/AppSidebar.tsx` — adicionar item "Transportes"
+- `src/App.tsx` — adicionar rotas
 
