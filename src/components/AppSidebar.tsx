@@ -29,8 +29,10 @@ import {
   Moon,
   Receipt,
   Info,
-  UserCog
+  UserCog,
+  Mail,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
 
