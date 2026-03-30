@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchUserRole(session.user.id).then(async (result) => {
           // Block new users if registrations are disabled
           if (!result.role) {
-            const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) !== 'false';
+            const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true';
             if (!registrationsEnabled) {
               await supabase.auth.signOut();
               setUser(null);
