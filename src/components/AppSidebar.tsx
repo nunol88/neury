@@ -171,11 +171,11 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Email login toggle - admin only */}
+        {/* Login settings - admin only */}
         {isAdmin && (
           <>
             <SidebarSeparator />
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Mail size={14} />
@@ -184,6 +184,17 @@ export function AppSidebar() {
                 <Switch
                   checked={emailLoginEnabled}
                   onCheckedChange={toggleEmailLogin}
+                  className="scale-75"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Users size={14} />
+                  <span>Novos registos</span>
+                </div>
+                <Switch
+                  checked={newRegistrationsEnabled}
+                  onCheckedChange={toggleNewRegistrations}
                   className="scale-75"
                 />
               </div>
