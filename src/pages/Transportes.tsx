@@ -19,6 +19,7 @@ import {
   useGeolocation,
   formatMinutesUntil,
   formatTimeUntil,
+  useIsOnline,
   type TransportStop,
   type TransportProvider,
 } from '@/hooks/useTransportes';
