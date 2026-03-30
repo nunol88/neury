@@ -212,9 +212,12 @@ export default function Transportes() {
   const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
   const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
+  const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
 
   const cacheStop = (stop: TransportStop) =>
     setStopNameCache(prev => ({ ...prev, [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider } }));
+
+  const openTimetable = (stop: TransportStop) => setTimetableStop({ id: stop.id, name: stop.name });
 
   return (
     <div className="space-y-6">
