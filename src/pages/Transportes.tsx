@@ -314,6 +314,7 @@ export default function Transportes() {
             addFavorite={addFavorite}
             removeFavorite={removeFavorite}
             cacheStop={cacheStop}
+            onOpenTimetable={openTimetable}
           />
 
           <NearbySection
@@ -326,6 +327,7 @@ export default function Transportes() {
             addFavorite={addFavorite}
             removeFavorite={removeFavorite}
             cacheStop={cacheStop}
+            onOpenTimetable={openTimetable}
           />
         </>
       )}
