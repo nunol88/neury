@@ -14,6 +14,7 @@ import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
 
 const REMEMBER_USER_KEY = 'agenda_mayslimpo_remembered_user';
+export const EMAIL_LOGIN_KEY = 'agenda_mayslimpo_email_login_enabled';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -36,6 +37,7 @@ const Login = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const emailLoginEnabled = localStorage.getItem(EMAIL_LOGIN_KEY) === 'true';
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
@@ -169,110 +171,111 @@ const Login = () => {
               </div>
             )}
             
-            <div className="space-y-2 animate-fade-in animation-delay-300">
-              <Label htmlFor="username" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Utilizador</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="O seu nome de utilizador"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={isLoading}
-                className={`h-12 rounded-xl backdrop-blur-sm ${
-                  theme === 'dark' 
-                    ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
-                    : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
-                }`}
-                autoComplete="username"
-              />
-            </div>
-            
-            <div className="space-y-2 animate-fade-in animation-delay-400">
-              <Label htmlFor="password" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Palavra-passe</Label>
-              <div className="relative">
-                <Input
-                  ref={passwordInputRef}
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onKeyUp={handleKeyDown}
-                  required
-                  disabled={isLoading}
-                  className={`h-12 rounded-xl backdrop-blur-sm pr-12 ${
-                    theme === 'dark' 
-                      ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
-                      : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
-                  }`}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
-                    theme === 'dark' 
-                      ? 'text-muted-foreground hover:text-foreground' 
-                      : 'text-white/50 hover:text-white/80'
-                  }`}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              
-              {/* Caps Lock indicator */}
-              {capsLockOn && (
-                <div className="flex items-center gap-1.5 text-amber-500 animate-fade-in">
-                  <AlertTriangle size={14} />
-                  <span className="text-xs font-medium">Caps Lock está ativo</span>
+            {emailLoginEnabled && (
+              <>
+                <div className="space-y-2 animate-fade-in animation-delay-300">
+                  <Label htmlFor="username" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Utilizador</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="O seu nome de utilizador"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className={`h-12 rounded-xl backdrop-blur-sm ${
+                      theme === 'dark' 
+                        ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
+                        : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
+                    }`}
+                    autoComplete="username"
+                  />
                 </div>
-              )}
-            </div>
-            
-            {/* Remember user checkbox */}
-            <div className="flex items-center space-x-2 animate-fade-in animation-delay-400">
-              <Checkbox 
-                id="remember" 
-                checked={rememberUser}
-                onCheckedChange={(checked) => setRememberUser(checked === true)}
-                className={theme === 'dark' ? '' : 'border-white/40 data-[state=checked]:bg-white/20 data-[state=checked]:border-white/40'}
-              />
-              <label 
-                htmlFor="remember" 
-                className={`text-sm cursor-pointer select-none ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}
-              >
-                Lembrar utilizador
-              </label>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 ${
-                theme === 'dark'
-                  ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                  : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm hover:shadow-lg hover:shadow-white/10'
-              }`}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  A entrar...
-                </>
-              ) : (
-              'Entrar'
-              )}
-            </Button>
+                
+                <div className="space-y-2 animate-fade-in animation-delay-400">
+                  <Label htmlFor="password" className={`text-sm font-medium ${theme === 'dark' ? 'text-foreground' : 'text-white/80'}`}>Palavra-passe</Label>
+                  <div className="relative">
+                    <Input
+                      ref={passwordInputRef}
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onKeyUp={handleKeyDown}
+                      required
+                      disabled={isLoading}
+                      className={`h-12 rounded-xl backdrop-blur-sm pr-12 ${
+                        theme === 'dark' 
+                          ? 'bg-input border-border text-foreground placeholder:text-muted-foreground' 
+                          : 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20'
+                      }`}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
+                        theme === 'dark' 
+                          ? 'text-muted-foreground hover:text-foreground' 
+                          : 'text-white/50 hover:text-white/80'
+                      }`}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  
+                  {capsLockOn && (
+                    <div className="flex items-center gap-1.5 text-amber-500 animate-fade-in">
+                      <AlertTriangle size={14} />
+                      <span className="text-xs font-medium">Caps Lock está ativo</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2 animate-fade-in animation-delay-400">
+                  <Checkbox 
+                    id="remember" 
+                    checked={rememberUser}
+                    onCheckedChange={(checked) => setRememberUser(checked === true)}
+                    className={theme === 'dark' ? '' : 'border-white/40 data-[state=checked]:bg-white/20 data-[state=checked]:border-white/40'}
+                  />
+                  <label 
+                    htmlFor="remember" 
+                    className={`text-sm cursor-pointer select-none ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}
+                  >
+                    Lembrar utilizador
+                  </label>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className={`w-full h-12 font-semibold rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 ${
+                    theme === 'dark'
+                      ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                      : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm hover:shadow-lg hover:shadow-white/10'
+                  }`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      A entrar...
+                    </>
+                  ) : (
+                  'Entrar'
+                  )}
+                </Button>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3 animate-fade-in animation-delay-500">
-              <div className={`flex-1 h-px ${theme === 'dark' ? 'bg-border' : 'bg-white/20'}`} />
-              <span className={`text-xs ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/50'}`}>ou</span>
-              <div className={`flex-1 h-px ${theme === 'dark' ? 'bg-border' : 'bg-white/20'}`} />
-            </div>
+                <div className="flex items-center gap-3 animate-fade-in animation-delay-500">
+                  <div className={`flex-1 h-px ${theme === 'dark' ? 'bg-border' : 'bg-white/20'}`} />
+                  <span className={`text-xs ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/50'}`}>ou</span>
+                  <div className={`flex-1 h-px ${theme === 'dark' ? 'bg-border' : 'bg-white/20'}`} />
+                </div>
+              </>
+            )}
 
             {/* Google Sign-In */}
             <Button

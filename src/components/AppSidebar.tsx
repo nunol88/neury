@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { NavLink } from '@/components/NavLink';
+import { EMAIL_LOGIN_KEY } from '@/pages/Login';
 import {
   Sidebar,
   SidebarContent,
@@ -28,8 +29,10 @@ import {
   Moon,
   Receipt,
   Info,
-  UserCog
+  UserCog,
+  Mail,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
 
@@ -58,6 +61,15 @@ export function AppSidebar() {
   const items = isAdmin ? navItems : neurySidebarItems;
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = isAdmin ? 'Administrador' : 'Funcionário/a';
+  const [emailLoginEnabled, setEmailLoginEnabled] = useState(
+    () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
+  );
+
+  const toggleEmailLogin = () => {
+    const newValue = !emailLoginEnabled;
+    setEmailLoginEnabled(newValue);
+    localStorage.setItem(EMAIL_LOGIN_KEY, String(newValue));
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -149,9 +161,28 @@ export function AppSidebar() {
             </span>
           )}
         </div>
+
+        {/* Email login toggle - admin only */}
+        {isAdmin && (
+          <>
+            <SidebarSeparator />
+            <div className="px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Mail size={14} />
+                  <span>Login por email</span>
+                </div>
+                <Switch
+                  checked={emailLoginEnabled}
+                  onCheckedChange={toggleEmailLogin}
+                  className="scale-75"
+                />
+              </div>
+            </div>
+          </>
+        )}
         
         <SidebarSeparator />
-        
         {/* Action buttons - icon only */}
         <div className="flex flex-row gap-1 p-3 justify-center">
           <TooltipProvider delayDuration={200}>
