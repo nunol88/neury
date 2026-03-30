@@ -267,7 +267,18 @@ export const useAgendamentos = () => {
         }));
       }
 
-      logActivity('Criou agendamento', { client: newTask.client, date: newTask.date });
+      logActivity('Criou agendamento', {
+        agendamento_id: newTask.id,
+        client: newTask.client,
+        date: newTask.date,
+        startTime: newTask.startTime,
+        endTime: newTask.endTime,
+        address: newTask.address,
+        pricePerHour: newTask.pricePerHour,
+        price: newTask.price,
+        notes: newTask.notes,
+        phone: newTask.phone,
+      });
 
       return newTask;
     } catch (error: any) {
@@ -372,7 +383,20 @@ export const useAgendamentos = () => {
       if (error) throw error;
 
       if (deletedTask) {
-        logActivity('Eliminou agendamento', { client: deletedTask.client, date: deletedTask.date });
+        logActivity('Eliminou agendamento', {
+          agendamento_id: deletedTask.id,
+          client: deletedTask.client,
+          date: deletedTask.date,
+          startTime: deletedTask.startTime,
+          endTime: deletedTask.endTime,
+          address: deletedTask.address,
+          pricePerHour: deletedTask.pricePerHour,
+          price: deletedTask.price,
+          notes: deletedTask.notes,
+          phone: deletedTask.phone,
+          completed: deletedTask.completed,
+          pago: deletedTask.pago,
+        });
       }
 
       return deletedTask;
@@ -434,7 +458,7 @@ export const useAgendamentos = () => {
       const task = Object.values(allTasks).flat().find(t => t.id === id);
       logActivity(
         currentlyCompleted ? 'Reabriu agendamento' : 'Concluiu agendamento',
-        { client: task?.client, date: task?.date }
+        { agendamento_id: id, client: task?.client, date: task?.date, startTime: task?.startTime, endTime: task?.endTime }
       );
 
       return true;

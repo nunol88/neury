@@ -37,11 +37,21 @@ interface Props {
   users: UserInfo[];
 }
 
-const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  'Agendamento criado': { label: 'Criação', color: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400' },
-  'Agendamento eliminado': { label: 'Eliminação', color: 'bg-destructive/10 text-destructive' },
-  'Agendamento concluído': { label: 'Conclusão', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400' },
-  'Agendamento reaberto': { label: 'Reabertura', color: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400' },
+const ACTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  'Criou agendamento': { label: 'Criação', icon: '🟢', color: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400' },
+  'Eliminou agendamento': { label: 'Eliminação', icon: '🔴', color: 'bg-destructive/10 text-destructive' },
+  'Concluiu agendamento': { label: 'Conclusão', icon: '🔵', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400' },
+  'Reabriu agendamento': { label: 'Reabertura', icon: '🟠', color: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400' },
+};
+
+const formatLogDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  // Handle "YYYY-MM-DD" format
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
 };
 
 const PAGE_SIZE = 30;
@@ -108,19 +118,21 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
   }, [logs, search, filterAction, users]);
 
   const canRevert = (log: ActivityLog): boolean => {
-    const action = log.action;
-    // Can revert: deletions (re-create), completions (reopen), reopens (re-complete)
-    return ['Agendamento eliminado', 'Agendamento concluído', 'Agendamento reaberto'].includes(action);
+    return ['Eliminou agendamento', 'Concluiu agendamento', 'Reabriu agendamento'].includes(log.action);
   };
 
   const getRevertDescription = (log: ActivityLog): string => {
+    const details = log.details as any;
+    const client = details?.client || 'cliente';
+    const date = details?.date ? formatLogDate(details.date) : '';
+    const dateInfo = date ? ` (${date})` : '';
     switch (log.action) {
-      case 'Agendamento eliminado':
-        return `Restaurar o agendamento de "${(log.details as any)?.client || 'cliente'}" que foi eliminado?`;
-      case 'Agendamento concluído':
-        return `Reabrir o agendamento de "${(log.details as any)?.client || 'cliente'}" que foi marcado como concluído?`;
-      case 'Agendamento reaberto':
-        return `Voltar a marcar como concluído o agendamento de "${(log.details as any)?.client || 'cliente'}"?`;
+      case 'Eliminou agendamento':
+        return `Restaurar o agendamento de "${client}"${dateInfo} que foi eliminado?`;
+      case 'Concluiu agendamento':
+        return `Reabrir o agendamento de "${client}"${dateInfo} que foi marcado como concluído?`;
+      case 'Reabriu agendamento':
+        return `Voltar a marcar como concluído o agendamento de "${client}"${dateInfo}?`;
       default:
         return 'Reverter esta ação?';
     }
@@ -134,20 +146,27 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
       const details = revertLog.details as any;
 
       switch (revertLog.action) {
-        case 'Agendamento eliminado': {
-          // Re-create the deleted agendamento from stored details
-          if (!details?.agendamento_id) {
-            toast.error('Dados insuficientes para restaurar');
+        case 'Eliminou agendamento': {
+          if (!details?.agendamento_id || !details?.date || !details?.startTime || !details?.endTime) {
+            toast.error('Dados insuficientes para restaurar. Este log não tem toda a informação necessária.');
             break;
           }
+          // Reconstruct the agendamento from stored details
+          const startDateTime = new Date(`${details.date}T${details.startTime}:00Z`);
+          const endDateTime = new Date(`${details.date}T${details.endTime}:00Z`);
           const insertData: any = {
             id: details.agendamento_id,
             cliente_nome: details.client || 'Desconhecido',
-            data_inicio: details.data_inicio,
-            data_fim: details.data_fim,
-            status: details.previous_status || 'agendado',
-            descricao: details.descricao || null,
-            cliente_contacto: details.cliente_contacto || null,
+            cliente_contacto: details.phone || null,
+            data_inicio: startDateTime.toISOString(),
+            data_fim: endDateTime.toISOString(),
+            descricao: JSON.stringify({
+              address: details.address || '',
+              pricePerHour: details.pricePerHour || '7',
+              price: details.price || '0',
+              notes: details.notes || '',
+            }),
+            status: details.completed ? 'concluido' : 'agendado',
             pago: details.pago || false,
           };
           const { error } = await supabase.from('agendamentos').insert(insertData);
@@ -156,7 +175,7 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
           break;
         }
 
-        case 'Agendamento concluído': {
+        case 'Concluiu agendamento': {
           if (!details?.agendamento_id) {
             toast.error('Dados insuficientes para reverter');
             break;
@@ -170,7 +189,7 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
           break;
         }
 
-        case 'Agendamento reaberto': {
+        case 'Reabriu agendamento': {
           if (!details?.agendamento_id) {
             toast.error('Dados insuficientes para reverter');
             break;
@@ -329,19 +348,28 @@ const ActivityLogTab: React.FC<Props> = ({ users }) => {
                                 </span>
                                 {actionStyle && (
                                   <Badge className={`text-[10px] px-1.5 py-0 ${actionStyle.color} border-0`}>
-                                    {actionStyle.label}
+                                    {actionStyle.icon} {actionStyle.label}
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <span>{log.action}</span>
-                                {details?.client && (
-                                  <span>— {details.client}</span>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {details?.client ? (
+                                  <>
+                                    <span className="font-medium text-foreground/80">{details.client}</span>
+                                    {details?.date && (
+                                      <span> · {formatLogDate(details.date)}</span>
+                                    )}
+                                    {details?.startTime && details?.endTime && (
+                                      <span> · {details.startTime}–{details.endTime}</span>
+                                    )}
+                                    {details?.address && (
+                                      <span> · {details.address}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>{log.action}</span>
                                 )}
-                                {details?.date && (
-                                  <span className="text-muted-foreground/60">({details.date})</span>
-                                )}
-                              </div>
+                              </p>
                             </div>
                           </div>
 
