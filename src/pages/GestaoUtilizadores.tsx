@@ -13,13 +13,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users, ShieldCheck, UserCheck, UserX, Loader2, UserPlus, Trash2, Eye, EyeOff, KeyRound, Mail,
-  Clock, ChevronDown, Activity,
+  Clock, Activity,
 } from 'lucide-react';
+import ActivityLogTab from '@/components/admin/ActivityLogTab';
 import { toast } from 'sonner';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { formatDistanceToNow } from 'date-fns';
