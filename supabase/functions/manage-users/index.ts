@@ -166,11 +166,14 @@ Deno.serve(async (req) => {
 
       const result = users.map((u) => {
         const userRole = roles?.find((r) => r.user_id === u.id);
+        // Detect auth provider
+        const provider = u.app_metadata?.provider || u.app_metadata?.providers?.[0] || 'email';
         return {
           id: u.id,
           email: u.email,
           name: u.user_metadata?.name || u.email?.split("@")[0] || "",
           avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
+          provider,
           role: userRole?.role || null,
           is_active: userRole?.is_active ?? true,
           role_id: userRole?.id || null,
