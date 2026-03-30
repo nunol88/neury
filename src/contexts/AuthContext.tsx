@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { NEW_REGISTRATIONS_KEY } from '@/pages/Login';
-import { supabase } from '@/integrations/supabase/client';
 
 type AppRole = 'admin' | 'neury' | null;
 
