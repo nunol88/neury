@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
+import carrisStopsRaw from '@/data/carrisStops.json';
 
 const CM_API = 'https://api.carrismetropolitana.pt/v2';
 const CARRIS_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/carris-schedule`;
@@ -41,6 +42,13 @@ export interface GeoPosition {
   lat: number;
   lon: number;
 }
+
+// Pre-parsed Carris stops (embedded, instant)
+const carrisStops: TransportStop[] = (carrisStopsRaw as any[]).map(
+  (s: [string, string, number, number]) => ({
+    id: s[0], name: s[1], lat: s[2], lon: s[3], provider: 'carris' as TransportProvider
+  })
+);
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -91,27 +99,6 @@ async function fetchCMStops(): Promise<TransportStop[]> {
   return cmFetchPromise;
 }
 
-// Carris stops cache
-let carrisStopsCache: TransportStop[] | null = null;
-let carrisFetchPromise: Promise<TransportStop[]> | null = null;
-
-async function fetchCarrisStops(): Promise<TransportStop[]> {
-  if (carrisStopsCache) return carrisStopsCache;
-  if (carrisFetchPromise) return carrisFetchPromise;
-  carrisFetchPromise = fetch(`${CARRIS_FN_URL}?action=stops`, {
-    headers: { 'Authorization': `Bearer ${ANON_KEY}` }
-  }).then(async (res) => {
-    if (!res.ok) throw new Error('Erro');
-    const data = await res.json();
-    const stops = (Array.isArray(data) ? data : []).map((s: any) => ({
-      ...s, provider: 'carris' as TransportProvider
-    }));
-    carrisStopsCache = stops;
-    return stops;
-  }).catch(() => [] as TransportStop[]).finally(() => { carrisFetchPromise = null; });
-  return carrisFetchPromise;
-}
-
 function addDistanceAndSort(stops: TransportStop[], position: GeoPosition, max: number): TransportStop[] {
   return stops
     .map(s => ({ ...s, distance: haversine(position.lat, position.lon, s.lat, s.lon) }))
@@ -133,17 +120,16 @@ export function useNearbyCMStops(position: GeoPosition | null, max = 6) {
   });
 }
 
-// Nearby Carris stops
+// Nearby Carris stops (INSTANT - embedded data)
 export function useNearbyCarrisStops(position: GeoPosition | null, max = 6) {
   return useQuery({
     queryKey: ['carris-nearby', position?.lat, position?.lon],
-    queryFn: async () => {
+    queryFn: () => {
       if (!position) return [];
-      const stops = await fetchCarrisStops();
-      return addDistanceAndSort(stops, position, max);
+      return addDistanceAndSort(carrisStops, position, max);
     },
     enabled: !!position,
-    staleTime: 60_000,
+    staleTime: Infinity, // static data, never stale
   });
 }
 
@@ -172,8 +158,8 @@ export function useSearchStops(query: string) {
     queryKey: ['all-stops-search', query],
     queryFn: async (): Promise<TransportStop[]> => {
       if (!query || query.length < 2) return [];
-      const [cm, carris] = await Promise.all([fetchCMStops().catch(() => []), fetchCarrisStops().catch(() => [])]);
-      const all = [...cm, ...carris];
+      const cm = await fetchCMStops().catch(() => [] as TransportStop[]);
+      const all = [...carrisStops, ...cm];
       const q = query.toLowerCase();
       return all
         .filter(s => s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q) || s.locality?.toLowerCase().includes(q))
@@ -206,7 +192,7 @@ export function useCMArrivals(stopId: string | null) {
   });
 }
 
-// Carris Schedule (GTFS)
+// Carris Schedule (GTFS via edge function)
 export function useCarrisSchedule(stopId: string | null) {
   return useQuery({
     queryKey: ['carris-schedule', stopId],
@@ -221,6 +207,7 @@ export function useCarrisSchedule(stopId: string | null) {
     enabled: !!stopId,
     refetchInterval: 5 * 60_000,
     staleTime: 60_000,
+    retry: 2,
   });
 }
 
