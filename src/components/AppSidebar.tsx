@@ -161,9 +161,28 @@ export function AppSidebar() {
             </span>
           )}
         </div>
+
+        {/* Email login toggle - admin only */}
+        {isAdmin && (
+          <>
+            <SidebarSeparator />
+            <div className="px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Mail size={14} />
+                  <span>Login por email</span>
+                </div>
+                <Switch
+                  checked={emailLoginEnabled}
+                  onCheckedChange={toggleEmailLogin}
+                  className="scale-75"
+                />
+              </div>
+            </div>
+          </>
+        )}
         
         <SidebarSeparator />
-        
         {/* Action buttons - icon only */}
         <div className="flex flex-row gap-1 p-3 justify-center">
           <TooltipProvider delayDuration={200}>
