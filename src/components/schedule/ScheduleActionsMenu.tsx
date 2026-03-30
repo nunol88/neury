@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreVertical, Copy, Trash2, Loader2 } from 'lucide-react';
+import { MoreVertical, Copy, Trash2, Loader2, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ interface ScheduleActionsMenuProps {
   hasTasksInMonth: boolean;
   onCopyFromPrevious: () => void;
   onDeleteMonth: () => void;
+  onExportCalendar?: () => void;
 }
 
 const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
@@ -57,15 +58,12 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
             </span>
           </DropdownMenuItem>
         )}
-        
+
         {/* Export to calendar */}
         {hasTasksInMonth && onExportCalendar && (
           <>
             {canCopyFromPrevious && <DropdownMenuSeparator />}
-            <DropdownMenuItem
-              onClick={onExportCalendar}
-              className="gap-2"
-            >
+            <DropdownMenuItem onClick={onExportCalendar} className="gap-2">
               <Smartphone size={16} className="text-primary" />
               <span>Exportar Calendário</span>
             </DropdownMenuItem>
