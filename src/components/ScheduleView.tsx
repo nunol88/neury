@@ -33,6 +33,7 @@ import {
   detectConflicts,
   DeleteMonthDialog,
   ScheduleActionsMenu,
+  CopyDayModal,
 } from '@/components/schedule';
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
