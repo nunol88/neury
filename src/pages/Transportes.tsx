@@ -201,6 +201,7 @@ export default function Transportes() {
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
   const { data: nearbyCM, isLoading: cmLoading } = useNearbyCMStops(position);
   const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
+  const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
 
   const cacheStop = (stop: TransportStop) =>
