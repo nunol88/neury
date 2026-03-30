@@ -247,6 +247,15 @@ const GestaoUtilizadores: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
+                    title="Redefinir password"
+                  >
+                    <KeyRound size={16} />
+                  </Button>
                   {!isAdmin && (
                     <>
                       <div className="text-right hidden sm:block">
@@ -259,15 +268,6 @@ const GestaoUtilizadores: React.FC = () => {
                         onCheckedChange={() => toggleActive(u)}
                         disabled={toggling === u.id}
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={() => { setResetUser(u); setResetPassword(''); setShowResetPassword(false); }}
-                        title="Redefinir password"
-                      >
-                        <KeyRound size={16} />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
