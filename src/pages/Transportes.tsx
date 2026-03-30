@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   Bus, Search, Star, StarOff, Clock, MapPin,
-  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed
+  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff
 } from 'lucide-react';
 import {
   useSearchStops,
