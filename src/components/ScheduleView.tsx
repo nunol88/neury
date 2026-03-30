@@ -2162,6 +2162,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
         onAddExtra={() => setShowExtraModal(true)}
+        onExportCalendar={() => {
+          const tasks = allTasks[activeMonth as keyof AllTasks] || [];
+          if (tasks.length === 0) {
+            toast({ title: 'Sem agendamentos', description: 'Não há agendamentos para exportar neste mês.', variant: 'destructive' });
+            return;
+          }
+          downloadICSFile(tasks, activeConfig?.label || '');
+          toast({ title: 'Calendário exportado', description: `${tasks.length} agendamentos exportados com sucesso.` });
+        }}
       />
 
       {/* Delete Month Confirmation Dialog */}
