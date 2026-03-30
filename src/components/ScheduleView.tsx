@@ -2209,7 +2209,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         onClose={() => setShowCopyDayModal(false)}
         targetDate={copyDayTarget.date}
         targetDayLabel={copyDayTarget.label}
-        monthTasks={getTasksForMonth(activeMonth)}
+        allTasks={allTasks}
+        monthsConfig={monthsConfig}
+        activeMonth={activeMonth}
         onCopyDay={async (sourceTasks) => {
           setShowCopyDayModal(false);
           setSaving(true);
