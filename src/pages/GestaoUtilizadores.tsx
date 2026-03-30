@@ -130,6 +130,33 @@ const GestaoUtilizadores: React.FC = () => {
     setCreating(false);
   };
 
+  const handleResetPassword = async () => {
+    if (!resetUser || !resetPassword) return;
+    if (resetPassword.length < 8) {
+      toast.error('Password deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    setResetting(true);
+    try {
+      const res = await supabase.functions.invoke('manage-users', {
+        body: { action: 'reset_password', user_id: resetUser.id, new_password: resetPassword },
+      });
+
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || res.error?.message || 'Erro ao redefinir password');
+      }
+
+      toast.success(`Password de ${resetUser.name} atualizada com sucesso!`);
+      setResetUser(null);
+      setResetPassword('');
+      setShowResetPassword(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao redefinir password');
+    }
+    setResetting(false);
+  };
+
   const handleDelete = async () => {
     if (!deleteUser) return;
 
