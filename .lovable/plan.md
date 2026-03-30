@@ -1,32 +1,39 @@
 
 
-## Plano: Exportar agendamentos do mês para calendário (ficheiro .ics)
+## Plano: Copiar agendamentos de outro dia (com pré-visualização)
 
 ### O que faz
-Adiciona um botão no menu flutuante (FAB) e/ou no menu de ações (3 pontos) que gera um ficheiro `.ics` com todos os agendamentos do mês ativo. O utilizador descarrega o ficheiro e ao abri-lo no iPhone, os eventos são adicionados automaticamente ao Calendário.
+Ao fazer **long press** (ou clicar num botão de contexto) num dia, abre um modal que lista todos os dias do mês que já têm agendamentos. Cada dia mostra os seus agendamentos (cliente, hora, etc.) para o admin decidir qual copiar. Ao selecionar um dia, todos os agendamentos desse dia são copiados para o dia de destino.
 
 ### Como funciona
-1. **Gerar ficheiro .ics** — Criar uma função utilitária (`src/utils/exportCalendar.ts`) que recebe a lista de tasks do mês e gera uma string no formato iCalendar (RFC 5545) com:
-   - Nome do evento: nome do cliente
-   - Data/hora início e fim
-   - Localização: morada do cliente
-   - Notas: observações do agendamento
 
-2. **Botão no FloatingActionMenu** — Adicionar uma nova opção "Exportar Calendário" com ícone de smartphone/calendário no menu flutuante, disponível para todos os utilizadores (admin e neury).
+1. **Novo componente `CopyDayModal`** (`src/components/schedule/CopyDayModal.tsx`)
+   - Recebe: lista de tasks do mês, data de destino, callback para copiar
+   - Agrupa tasks por data e mostra uma lista de dias com agendamentos
+   - Cada dia é um card expandido mostrando: data formatada, número de agendamentos, e lista com cliente + horário
+   - Ao clicar num dia, confirma e copia todos os seus agendamentos para o dia de destino
 
-3. **Botão no ScheduleActionsMenu** — Adicionar também a opção no menu de 3 pontos do header para acesso alternativo.
+2. **Long press no DayCard** (`src/components/schedule/DayCard.tsx`)
+   - Adicionar handler de long press (touchstart/touchend com timeout de ~500ms, ou botão de contexto visível no header do dia para desktop)
+   - Ao ativar, passa a data do dia como destino e abre o `CopyDayModal`
+   - Apenas disponível para admins
 
-4. **Download automático** — Ao clicar, o ficheiro `.ics` é descarregado. No iPhone, basta abrir o ficheiro para adicionar todos os eventos ao calendário nativo.
+3. **Integração no ScheduleView** (`src/components/ScheduleView.tsx`)
+   - Adicionar estado para controlar o modal (open + targetDate)
+   - Passar as tasks do mês ativo ao modal
+   - Implementar a função de cópia que cria os novos agendamentos na data de destino (reutilizando `addTask`)
+
+### UI do Modal
+- Header: "Copiar agendamentos para {dia destino}"
+- Lista scrollável de dias com agendamentos, cada um mostrando:
+  - Nome do dia + data formatada
+  - Mini-cards dos agendamentos (cliente, hora início-fim)
+  - Botão "Copiar este dia" ou clique direto
+- Se não houver dias com agendamentos, mensagem vazia
 
 ### Ficheiros afetados
-- `src/utils/exportCalendar.ts` — **novo** — função que converte tasks em formato .ics
-- `src/components/schedule/FloatingActionMenu.tsx` — adicionar botão de exportar
-- `src/components/schedule/ScheduleActionsMenu.tsx` — adicionar opção de exportar
-- `src/components/ScheduleView.tsx` — passar callback de exportação aos componentes
-
-### Detalhes técnicos
-- Formato iCalendar padrão (VCALENDAR/VEVENT), compatível com iOS, Google Calendar e Outlook
-- Datas convertidas para formato UTC (DTSTART/DTEND)
-- Ficheiro nomeado como `agendamentos-{mes}-{ano}.ics`
-- Sem dependências externas — geração pura em string
+- `src/components/schedule/CopyDayModal.tsx` — **novo**
+- `src/components/schedule/DayCard.tsx` — adicionar long press / botão de copiar dia
+- `src/components/ScheduleView.tsx` — estado do modal + lógica de cópia
+- `src/components/schedule/index.ts` — exportar novo componente
 
