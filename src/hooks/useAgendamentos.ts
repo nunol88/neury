@@ -267,7 +267,18 @@ export const useAgendamentos = () => {
         }));
       }
 
-      logActivity('Criou agendamento', { client: newTask.client, date: newTask.date });
+      logActivity('Criou agendamento', {
+        agendamento_id: newTask.id,
+        client: newTask.client,
+        date: newTask.date,
+        startTime: newTask.startTime,
+        endTime: newTask.endTime,
+        address: newTask.address,
+        pricePerHour: newTask.pricePerHour,
+        price: newTask.price,
+        notes: newTask.notes,
+        phone: newTask.phone,
+      });
 
       return newTask;
     } catch (error: any) {
