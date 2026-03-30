@@ -15,6 +15,7 @@ import Pagamentos from "./pages/Pagamentos";
 import RecibosVerdes from "./pages/RecibosVerdes";
 import Sobre from "./pages/Sobre";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
+import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,26 @@ const App = () => (
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AppLayout>
                     <GestaoUtilizadores />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/transportes" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Transportes />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/neury/transportes" 
+              element={
+                <ProtectedRoute allowedRoles={['neury']}>
+                  <AppLayout>
+                    <Transportes />
                   </AppLayout>
                 </ProtectedRoute>
               } 

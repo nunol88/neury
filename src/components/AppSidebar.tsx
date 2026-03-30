@@ -31,6 +31,7 @@ import {
   Info,
   UserCog,
   Mail,
+  Bus,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
@@ -43,11 +44,13 @@ const navItems = [
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
   { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
   { title: 'Utilizadores', url: '/admin/utilizadores', icon: UserCog },
+  { title: 'Transportes', url: '/admin/transportes', icon: Bus },
   { title: 'Sobre', url: '/admin/sobre', icon: Info },
 ];
 
 const neurySidebarItems = [
   { title: 'Agendamentos', url: '/neury/agendamentos', icon: CalendarDays },
+  { title: 'Transportes', url: '/neury/transportes', icon: Bus },
   { title: 'Sobre', url: '/neury/sobre', icon: Info },
 ];
 
