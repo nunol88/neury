@@ -26,6 +26,21 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.5.1',
+    date: '2026-03-30',
+    title: '📋 Log de Atividade Melhorado',
+    summary: 'O registo de atividade ficou mais completo e fácil de ler. Os logs agora guardam todos os detalhes dos agendamentos, permitindo restauros completos. A interface mostra ações com ícones coloridos, agrupadas por dia, com filtros por utilizador e tipo de ação.',
+    changes: [
+      { text: 'Logs guardam todos os dados do agendamento (morada, preço, notas, contacto)', type: 'new' },
+      { text: 'Restauro completo de agendamentos eliminados com todos os campos', type: 'new' },
+      { text: 'Ações com ícones e badges coloridos (🟢 Criação, 🔴 Eliminação, 🔵 Conclusão, 🟠 Reabertura)', type: 'improvement' },
+      { text: 'Logs agrupados por dia com data por extenso em português', type: 'improvement' },
+      { text: 'Filtros por utilizador e tipo de ação', type: 'new' },
+      { text: 'Paginação e contagem total de registos', type: 'improvement' },
+      { text: 'Detalhes do agendamento visíveis diretamente no log (hora, morada, cliente)', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.5.0',
     date: '2026-03-30',
     title: '🍎 Login com Google e Apple',
