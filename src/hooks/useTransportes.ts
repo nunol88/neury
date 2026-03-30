@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 const CM_API = 'https://api.carrismetropolitana.pt/v2';
+const CARRIS_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/carris-schedule`;
+const METRO_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/metro-status`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const FAVORITES_KEY = 'transportes_paragens_favoritas';
 
 export type TransportProvider = 'cm' | 'carris';
@@ -13,25 +15,21 @@ export interface TransportStop {
   lat: number;
   lon: number;
   locality?: string;
-  municipality_name?: string;
   distance?: number;
   provider: TransportProvider;
 }
 
 export interface Arrival {
-  estimated_arrival: string;
   estimated_arrival_unix: number;
-  scheduled_arrival: string;
   scheduled_arrival_unix: number;
   route_id: string;
   pattern_id: string;
-  stop_sequence: number;
 }
 
 export interface CarrisDeparture {
-  t: string; // HH:MM
-  r: string; // route number
-  s: string; // service type
+  t: string;
+  r: string;
+  s: string;
 }
 
 export interface MetroLine {
@@ -100,48 +98,49 @@ let carrisFetchPromise: Promise<TransportStop[]> | null = null;
 async function fetchCarrisStops(): Promise<TransportStop[]> {
   if (carrisStopsCache) return carrisStopsCache;
   if (carrisFetchPromise) return carrisFetchPromise;
-  carrisFetchPromise = supabase.functions.invoke('carris-schedule', {
-    body: null,
-    headers: {},
-  }).then(({ data, error }) => {
-    if (error) throw error;
+  carrisFetchPromise = fetch(`${CARRIS_FN_URL}?action=stops`, {
+    headers: { 'Authorization': `Bearer ${ANON_KEY}` }
+  }).then(async (res) => {
+    if (!res.ok) throw new Error('Erro');
+    const data = await res.json();
     const stops = (Array.isArray(data) ? data : []).map((s: any) => ({
       ...s, provider: 'carris' as TransportProvider
     }));
     carrisStopsCache = stops;
     return stops;
-  }).catch(() => {
-    // Fallback: try with query param
-    return fetch(`${window.location.origin}/functions/v1/carris-schedule?action=stops`)
-      .then(r => r.json())
-      .then(data => {
-        const stops = (Array.isArray(data) ? data : []).map((s: any) => ({
-          ...s, provider: 'carris' as TransportProvider
-        }));
-        carrisStopsCache = stops;
-        return stops;
-      }).catch(() => []);
-  }).finally(() => { carrisFetchPromise = null; });
+  }).catch(() => [] as TransportStop[]).finally(() => { carrisFetchPromise = null; });
   return carrisFetchPromise;
 }
 
-// All stops (both providers)
-async function fetchAllStops(): Promise<TransportStop[]> {
-  const [cm, carris] = await Promise.all([fetchCMStops().catch(() => []), fetchCarrisStops().catch(() => [])]);
-  return [...cm, ...carris];
+function addDistanceAndSort(stops: TransportStop[], position: GeoPosition, max: number): TransportStop[] {
+  return stops
+    .map(s => ({ ...s, distance: haversine(position.lat, position.lon, s.lat, s.lon) }))
+    .sort((a, b) => a.distance! - b.distance!)
+    .slice(0, max);
 }
 
-// Nearby stops
-export function useNearbyStops(position: GeoPosition | null, maxResults = 10) {
+// Nearby CM stops
+export function useNearbyCMStops(position: GeoPosition | null, max = 6) {
   return useQuery({
-    queryKey: ['all-nearby', position?.lat, position?.lon],
-    queryFn: async (): Promise<TransportStop[]> => {
+    queryKey: ['cm-nearby', position?.lat, position?.lon],
+    queryFn: async () => {
       if (!position) return [];
-      const stops = await fetchAllStops();
-      return stops
-        .map(s => ({ ...s, distance: haversine(position.lat, position.lon, s.lat, s.lon) }))
-        .sort((a, b) => a.distance! - b.distance!)
-        .slice(0, maxResults);
+      const stops = await fetchCMStops();
+      return addDistanceAndSort(stops, position, max);
+    },
+    enabled: !!position,
+    staleTime: 60_000,
+  });
+}
+
+// Nearby Carris stops
+export function useNearbyCarrisStops(position: GeoPosition | null, max = 6) {
+  return useQuery({
+    queryKey: ['carris-nearby', position?.lat, position?.lon],
+    queryFn: async () => {
+      if (!position) return [];
+      const stops = await fetchCarrisStops();
+      return addDistanceAndSort(stops, position, max);
     },
     enabled: !!position,
     staleTime: 60_000,
@@ -167,15 +166,16 @@ export function useFavoriteStops() {
   return { favorites, addFavorite, removeFavorite, isFavorite };
 }
 
-// Search stops (both providers)
+// Search stops (both)
 export function useSearchStops(query: string) {
   return useQuery({
     queryKey: ['all-stops-search', query],
     queryFn: async (): Promise<TransportStop[]> => {
       if (!query || query.length < 2) return [];
-      const stops = await fetchAllStops();
+      const [cm, carris] = await Promise.all([fetchCMStops().catch(() => []), fetchCarrisStops().catch(() => [])]);
+      const all = [...cm, ...carris];
       const q = query.toLowerCase();
-      return stops
+      return all
         .filter(s => s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q) || s.locality?.toLowerCase().includes(q))
         .slice(0, 25);
     },
@@ -206,26 +206,20 @@ export function useCMArrivals(stopId: string | null) {
   });
 }
 
-// Carris Schedule (static GTFS)
+// Carris Schedule (GTFS)
 export function useCarrisSchedule(stopId: string | null) {
   return useQuery({
     queryKey: ['carris-schedule', stopId],
     queryFn: async (): Promise<{ stop: any; departures: CarrisDeparture[] }> => {
       if (!stopId) return { stop: null, departures: [] };
-      const { data, error } = await supabase.functions.invoke('carris-schedule', {
-        headers: {},
-        body: null,
-      });
-      // Need to call with query params - use fetch directly
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/carris-schedule?action=schedule&stop_id=${stopId}`;
-      const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` }
+      const res = await fetch(`${CARRIS_FN_URL}?action=schedule&stop_id=${stopId}`, {
+        headers: { 'Authorization': `Bearer ${ANON_KEY}` }
       });
       if (!res.ok) throw new Error('Erro');
       return res.json();
     },
     enabled: !!stopId,
-    refetchInterval: 5 * 60_000, // 5 min - it's static data
+    refetchInterval: 5 * 60_000,
     staleTime: 60_000,
   });
 }
@@ -236,8 +230,11 @@ export function useMetroStatus() {
     queryKey: ['metro-status'],
     queryFn: async (): Promise<MetroLine[]> => {
       try {
-        const { data, error } = await supabase.functions.invoke('metro-status');
-        if (error) throw error;
+        const res = await fetch(METRO_FN_URL, {
+          headers: { 'Authorization': `Bearer ${ANON_KEY}` }
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
         const parsed = typeof data === 'string' ? JSON.parse(data) : data;
         return Array.isArray(parsed?.resposta) ? parsed.resposta : [];
       } catch { return []; }

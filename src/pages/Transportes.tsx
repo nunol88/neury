@@ -14,7 +14,8 @@ import {
   useCarrisSchedule,
   useMetroStatus,
   useFavoriteStops,
-  useNearbyStops,
+  useNearbyCMStops,
+  useNearbyCarrisStops,
   useGeolocation,
   formatMinutesUntil,
   formatTimeUntil,
@@ -23,15 +24,7 @@ import {
 } from '@/hooks/useTransportes';
 
 const metroColors: Record<string, string> = {
-  Azul: 'bg-blue-500',
-  Amarela: 'bg-yellow-400',
-  Verde: 'bg-green-500',
-  Vermelha: 'bg-red-500',
-};
-
-const providerLabel: Record<TransportProvider, string> = {
-  cm: 'Carris Metropolitana',
-  carris: 'Carris',
+  Azul: 'bg-blue-500', Amarela: 'bg-yellow-400', Verde: 'bg-green-500', Vermelha: 'bg-red-500',
 };
 
 const providerBadgeClass: Record<TransportProvider, string> = {
@@ -39,21 +32,21 @@ const providerBadgeClass: Record<TransportProvider, string> = {
   carris: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 };
 
+/* ── Arrival sub-components ── */
+
 function CMStopArrivals({ stopId }: { stopId: string }) {
   const { data: arrivals, isLoading, isError } = useCMArrivals(stopId);
-
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState />;
   if (!arrivals || arrivals.length === 0) return <EmptyState />;
-
   return (
     <div className="space-y-1.5">
-      {arrivals.map((arrival, idx) => {
-        const time = arrival.estimated_arrival_unix || arrival.scheduled_arrival_unix;
-        const routeLabel = arrival.route_id?.replace(/_\d+$/, '') || '—';
+      {arrivals.map((a, i) => {
+        const time = a.estimated_arrival_unix || a.scheduled_arrival_unix;
+        const route = a.route_id?.replace(/_\d+$/, '') || '—';
         return (
-          <div key={`${arrival.pattern_id}-${idx}`} className="flex items-center justify-between text-sm py-1">
-            <Badge variant="secondary" className="text-xs font-mono px-1.5">{routeLabel}</Badge>
+          <div key={`${a.pattern_id}-${i}`} className="flex items-center justify-between text-sm py-1">
+            <Badge variant="secondary" className="text-xs font-mono px-1.5">{route}</Badge>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span className="font-medium text-foreground">{formatMinutesUntil(time)}</span>
@@ -67,20 +60,18 @@ function CMStopArrivals({ stopId }: { stopId: string }) {
 
 function CarrisStopSchedule({ stopId }: { stopId: string }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
-
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState />;
   if (!data?.departures || data.departures.length === 0) return <EmptyState />;
-
   return (
     <div className="space-y-1.5">
-      {data.departures.map((dep, idx) => (
-        <div key={`${dep.r}-${dep.t}-${idx}`} className="flex items-center justify-between text-sm py-1">
+      {data.departures.map((dep, i) => (
+        <div key={`${dep.r}-${dep.t}-${i}`} className="flex items-center justify-between text-sm py-1">
           <Badge variant="secondary" className="text-xs font-mono px-1.5">{dep.r}</Badge>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span className="font-medium text-foreground">{formatTimeUntil(dep.t)}</span>
-            <span className="text-xs text-muted-foreground">({dep.t})</span>
+            <span className="text-xs">({dep.t})</span>
           </div>
         </div>
       ))}
@@ -90,30 +81,19 @@ function CarrisStopSchedule({ stopId }: { stopId: string }) {
 }
 
 function LoadingState() {
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-      <Loader2 className="h-3.5 w-3.5 animate-spin" /><span>A carregar...</span>
-    </div>
-  );
+  return <div className="flex items-center gap-2 text-sm text-muted-foreground py-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>A carregar...</span></div>;
 }
-
 function ErrorState() {
-  return (
-    <div className="flex items-center gap-2 text-sm text-destructive py-2">
-      <AlertCircle className="h-3.5 w-3.5" /><span>Erro ao carregar</span>
-    </div>
-  );
+  return <div className="flex items-center gap-2 text-sm text-destructive py-2"><AlertCircle className="h-3.5 w-3.5" /><span>Erro ao carregar</span></div>;
 }
-
 function EmptyState() {
   return <p className="text-sm text-muted-foreground py-2">Sem próximas partidas</p>;
 }
 
+/* ── Stop card ── */
+
 function StopCard({ stop, onAdd, onRemove, isFav }: {
-  stop: TransportStop;
-  onAdd?: () => void;
-  onRemove?: () => void;
-  isFav?: boolean;
+  stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -129,55 +109,41 @@ function StopCard({ stop, onAdd, onRemove, isFav }: {
                   · {stop.distance < 1 ? `${Math.round(stop.distance * 1000)}m` : `${stop.distance.toFixed(1)}km`}
                 </span>
               )}
-              <Badge className={`text-[10px] px-1 py-0 ${providerBadgeClass[stop.provider]}`}>
-                {stop.provider === 'carris' ? 'Carris' : 'CM'}
-              </Badge>
             </div>
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          {onAdd && !isFav && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAdd}><Star className="h-3.5 w-3.5" /></Button>
-          )}
-          {onRemove && isFav && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}><StarOff className="h-3.5 w-3.5" /></Button>
-          )}
+          {onAdd && !isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAdd}><Star className="h-3.5 w-3.5" /></Button>}
+          {onRemove && isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}><StarOff className="h-3.5 w-3.5" /></Button>}
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {stop.provider === 'cm' ? (
-          <CMStopArrivals stopId={stop.id} />
-        ) : (
-          <CarrisStopSchedule stopId={stop.id} />
-        )}
+        {stop.provider === 'cm' ? <CMStopArrivals stopId={stop.id} /> : <CarrisStopSchedule stopId={stop.id} />}
       </CardContent>
     </Card>
   );
 }
 
+/* ── Metro ── */
+
 function MetroStatusCard() {
   const { data: lines, isLoading, isError } = useMetroStatus();
   if (isError || (!isLoading && (!lines || lines.length === 0))) return null;
-
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Train className="h-4 w-4" /> Metro de Lisboa
-        </CardTitle>
+        <CardTitle className="text-sm font-medium flex items-center gap-2"><Train className="h-4 w-4" /> Metro de Lisboa</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         {isLoading ? <LoadingState /> : (
           <div className="space-y-2">
-            {lines?.map((line) => (
+            {lines?.map(line => (
               <div key={line.nome} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${metroColors[line.nome] || 'bg-muted'}`} />
                   <span>{line.nome}</span>
                 </div>
-                <Badge variant={line.estado === 'Aberta' ? 'default' : 'destructive'} className="text-xs">
-                  {line.estado}
-                </Badge>
+                <Badge variant={line.estado === 'Aberta' ? 'default' : 'destructive'} className="text-xs">{line.estado}</Badge>
               </div>
             ))}
           </div>
@@ -187,17 +153,57 @@ function MetroStatusCard() {
   );
 }
 
+/* ── Section for a provider's nearby stops ── */
+
+function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop }: {
+  title: string; badgeLabel: string; badgeClass: string;
+  stops: TransportStop[] | undefined; isLoading: boolean;
+  isFavorite: (id: string, p: TransportProvider) => boolean;
+  addFavorite: (id: string, p: TransportProvider) => void;
+  removeFavorite: (id: string, p: TransportProvider) => void;
+  cacheStop: (s: TransportStop) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Bus className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <Badge className={`text-[10px] px-1.5 py-0 ${badgeClass}`}>{badgeLabel}</Badge>
+      </div>
+      {isLoading && <LoadingState />}
+      {stops && stops.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {stops.map(stop => (
+            <StopCard
+              key={`${stop.provider}-${stop.id}`}
+              stop={stop}
+              isFav={isFavorite(stop.id, stop.provider)}
+              onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
+              onRemove={() => removeFavorite(stop.id, stop.provider)}
+            />
+          ))}
+        </div>
+      )}
+      {stops && stops.length === 0 && !isLoading && (
+        <p className="text-sm text-muted-foreground">Nenhuma paragem encontrada por perto.</p>
+      )}
+    </div>
+  );
+}
+
+/* ── Main page ── */
+
 export default function Transportes() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: searchResults, isLoading: searching } = useSearchStops(searchQuery);
   const { favorites, addFavorite, removeFavorite, isFavorite } = useFavoriteStops();
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
-  const { data: nearbyStops, isLoading: nearbyLoading } = useNearbyStops(position);
+  const { data: nearbyCM, isLoading: cmLoading } = useNearbyCMStops(position);
+  const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
 
-  const cacheStop = (stop: TransportStop) => {
+  const cacheStop = (stop: TransportStop) =>
     setStopNameCache(prev => ({ ...prev, [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider } }));
-  };
 
   return (
     <div className="space-y-6">
@@ -230,12 +236,12 @@ export default function Transportes() {
         <CardContent className="pt-4 pb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Pesquisar paragem por nome ou ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="Pesquisar paragem por nome ou ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
           {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3"><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>A pesquisar...</span></div>}
           {searchResults && searchResults.length > 0 && (
             <div className="mt-3 space-y-1 max-h-60 overflow-y-auto">
-              {searchResults.map((stop) => (
+              {searchResults.map(stop => (
                 <button
                   key={`${stop.provider}-${stop.id}`}
                   onClick={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); setSearchQuery(''); }}
@@ -268,27 +274,38 @@ export default function Transportes() {
       {/* Metro */}
       <MetroStatusCard />
 
-      {/* Nearby */}
-      {(position || nearbyLoading) && (
+      {/* Nearby — separated by provider */}
+      {position && (
         <>
+          <Separator />
           <div className="flex items-center gap-2">
             <Navigation className="h-4 w-4 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Paragens próximas</h2>
           </div>
-          {nearbyLoading && <LoadingState />}
-          {nearbyStops && nearbyStops.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {nearbyStops.map((stop) => (
-                <StopCard
-                  key={`${stop.provider}-${stop.id}`}
-                  stop={stop}
-                  isFav={isFavorite(stop.id, stop.provider)}
-                  onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
-                  onRemove={() => removeFavorite(stop.id, stop.provider)}
-                />
-              ))}
-            </div>
-          )}
+
+          <NearbySection
+            title="Carris"
+            badgeLabel="Lisboa"
+            badgeClass={providerBadgeClass.carris}
+            stops={nearbyCarris}
+            isLoading={carrisLoading}
+            isFavorite={isFavorite}
+            addFavorite={addFavorite}
+            removeFavorite={removeFavorite}
+            cacheStop={cacheStop}
+          />
+
+          <NearbySection
+            title="Carris Metropolitana"
+            badgeLabel="Área Metropolitana"
+            badgeClass={providerBadgeClass.cm}
+            stops={nearbyCM}
+            isLoading={cmLoading}
+            isFavorite={isFavorite}
+            addFavorite={addFavorite}
+            removeFavorite={removeFavorite}
+            cacheStop={cacheStop}
+          />
         </>
       )}
 
@@ -302,14 +319,9 @@ export default function Transportes() {
             <Badge variant="secondary" className="text-xs">{favorites.length}</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {favorites.map((fav) => {
+            {favorites.map(fav => {
               const cached = stopNameCache[`${fav.provider}-${fav.id}`];
-              const stop: TransportStop = {
-                id: fav.id,
-                name: cached?.name || fav.id,
-                lat: 0, lon: 0,
-                provider: fav.provider,
-              };
+              const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
               return (
                 <StopCard
                   key={`fav-${fav.provider}-${fav.id}`}
@@ -327,9 +339,7 @@ export default function Transportes() {
         <Card className="border-dashed">
           <CardContent className="py-8 text-center">
             <Bus className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
-              Ative a localização para ver paragens próximas, ou pesquise manualmente.
-            </p>
+            <p className="text-sm text-muted-foreground">Ative a localização para ver paragens próximas, ou pesquise manualmente.</p>
           </CardContent>
         </Card>
       )}
