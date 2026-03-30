@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Bus, Search, Star, StarOff, Clock, MapPin, 
-  RefreshCw, Train, Loader2, AlertCircle 
+import {
+  Bus, Search, Star, StarOff, Clock, MapPin,
+  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed
 } from 'lucide-react';
 import {
   useSearchStops,
@@ -14,11 +14,12 @@ import {
   useStopInfo,
   useMetroStatus,
   useFavoriteStops,
+  useNearbyStops,
+  useGeolocation,
   formatMinutesUntil,
   type CarrisStop,
 } from '@/hooks/useTransportes';
 
-// Metro line colors
 const metroColors: Record<string, string> = {
   Azul: 'bg-blue-500',
   Amarela: 'bg-yellow-400',
@@ -26,10 +27,16 @@ const metroColors: Record<string, string> = {
   Vermelha: 'bg-red-500',
 };
 
-function StopArrivals({ stopId, stopName, onRemove }: { stopId: string; stopName?: string; onRemove?: () => void }) {
+function StopArrivals({ stopId, stopName, distance, onRemove, onAdd, isFav }: {
+  stopId: string;
+  stopName?: string;
+  distance?: number;
+  onRemove?: () => void;
+  onAdd?: () => void;
+  isFav?: boolean;
+}) {
   const { data: arrivals, isLoading, isError } = useStopArrivals(stopId);
   const { data: stopInfo } = useStopInfo(stopId);
-  
   const name = stopName || stopInfo?.name || stopId;
 
   return (
@@ -39,14 +46,24 @@ function StopArrivals({ stopId, stopName, onRemove }: { stopId: string; stopName
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <div className="min-w-0">
             <CardTitle className="text-sm font-medium truncate">{name}</CardTitle>
-            <p className="text-xs text-muted-foreground">{stopId}</p>
+            <p className="text-xs text-muted-foreground">
+              {stopId}
+              {distance != null && ` · ${distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}`}
+            </p>
           </div>
         </div>
-        {onRemove && (
-          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={onRemove}>
-            <StarOff className="h-3.5 w-3.5" />
-          </Button>
-        )}
+        <div className="flex gap-1 flex-shrink-0">
+          {onAdd && !isFav && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAdd}>
+              <Star className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {onRemove && isFav && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
+              <StarOff className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         {isLoading && (
@@ -71,11 +88,9 @@ function StopArrivals({ stopId, stopName, onRemove }: { stopId: string; stopName
               const routeLabel = arrival.route_id?.replace(/_\d+$/, '') || '—';
               return (
                 <div key={`${arrival.pattern_id}-${idx}`} className="flex items-center justify-between text-sm py-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs font-mono px-1.5">
-                      {routeLabel}
-                    </Badge>
-                  </div>
+                  <Badge variant="secondary" className="text-xs font-mono px-1.5">
+                    {routeLabel}
+                  </Badge>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     <span className="font-medium text-foreground">{formatMinutesUntil(time)}</span>
@@ -92,10 +107,7 @@ function StopArrivals({ stopId, stopName, onRemove }: { stopId: string; stopName
 
 function MetroStatusCard() {
   const { data: lines, isLoading, isError } = useMetroStatus();
-
-  if (isError || (!isLoading && (!lines || lines.length === 0))) {
-    return null; // Don't show metro card if API is unavailable (CORS)
-  }
+  if (isError || (!isLoading && (!lines || lines.length === 0))) return null;
 
   return (
     <Card>
@@ -135,6 +147,8 @@ export default function Transportes() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: searchResults, isLoading: searching } = useSearchStops(searchQuery);
   const { favorites, addFavorite, removeFavorite, isFavorite } = useFavoriteStops();
+  const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
+  const { data: nearbyStops, isLoading: nearbyLoading } = useNearbyStops(position);
   const [stopNames, setStopNames] = useState<Record<string, string>>({});
 
   const handleAddFavorite = (stop: CarrisStop) => {
@@ -146,17 +160,31 @@ export default function Transportes() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <Bus className="h-6 w-6 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Bus className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Transportes</h1>
+            <p className="text-sm text-muted-foreground">
+              Tempos de espera em tempo real
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Transportes</h1>
-          <p className="text-sm text-muted-foreground">
-            Tempos de espera em tempo real — Carris Metropolitana
-          </p>
-        </div>
+        <Button variant="outline" size="sm" onClick={requestLocation} disabled={geoLoading}>
+          {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+          <span className="ml-1.5 hidden sm:inline">Localização</span>
+        </Button>
       </div>
+
+      {/* Geo status */}
+      {geoError && (
+        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{geoError}. Pode pesquisar paragens manualmente.</span>
+        </div>
+      )}
 
       {/* Search */}
       <Card>
@@ -170,7 +198,7 @@ export default function Transportes() {
               className="pl-9"
             />
           </div>
-          
+
           {searching && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -189,7 +217,7 @@ export default function Transportes() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{stop.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {stop.id} {stop.locality ? `· ${stop.locality}` : ''}
+                      {stop.id}{stop.locality ? ` · ${stop.locality}` : ''}
                     </p>
                   </div>
                   {isFavorite(stop.id) ? (
@@ -211,7 +239,38 @@ export default function Transportes() {
       {/* Metro Status */}
       <MetroStatusCard />
 
-      {/* Favorite stops with arrivals */}
+      {/* Nearby Stops */}
+      {(position || nearbyLoading) && (
+        <>
+          <div className="flex items-center gap-2">
+            <Navigation className="h-4 w-4 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Paragens próximas</h2>
+          </div>
+          {nearbyLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>A encontrar paragens próximas...</span>
+            </div>
+          )}
+          {nearbyStops && nearbyStops.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {nearbyStops.map((stop) => (
+                <StopArrivals
+                  key={stop.id}
+                  stopId={stop.id}
+                  stopName={stop.name}
+                  distance={stop.distance}
+                  isFav={isFavorite(stop.id)}
+                  onAdd={() => { addFavorite(stop.id); setStopNames(prev => ({ ...prev, [stop.id]: stop.name })); }}
+                  onRemove={() => removeFavorite(stop.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Favorite stops */}
       {favorites.length > 0 && (
         <>
           <Separator />
@@ -222,23 +281,24 @@ export default function Transportes() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {favorites.map((stopId) => (
-              <StopArrivals 
-                key={stopId} 
-                stopId={stopId} 
+              <StopArrivals
+                key={stopId}
+                stopId={stopId}
                 stopName={stopNames[stopId]}
-                onRemove={() => removeFavorite(stopId)} 
+                isFav
+                onRemove={() => removeFavorite(stopId)}
               />
             ))}
           </div>
         </>
       )}
 
-      {favorites.length === 0 && (
+      {favorites.length === 0 && !position && (
         <Card className="border-dashed">
           <CardContent className="py-8 text-center">
             <Bus className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              Pesquise e adicione paragens favoritas para ver os tempos de espera em tempo real.
+              Ative a localização para ver paragens próximas, ou pesquise manualmente.
             </p>
           </CardContent>
         </Card>

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const CARRIS_API = 'https://api.carrismetropolitana.pt/v2';
-const METRO_API = 'http://app.metrolisboa.pt/status/getLinhas.php';
 const FAVORITES_KEY = 'transportes_paragens_favoritas';
 
 export interface CarrisStop {
@@ -12,6 +12,7 @@ export interface CarrisStop {
   lon: number;
   locality?: string;
   municipality_name?: string;
+  distance?: number; // km from user
 }
 
 export interface Arrival {
@@ -34,26 +35,109 @@ export interface MetroLine {
   tempo?: string;
 }
 
+export interface GeoPosition {
+  lat: number;
+  lon: number;
+}
+
+// Haversine distance in km
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Geolocation hook
+export function useGeolocation() {
+  const [position, setPosition] = useState<GeoPosition | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError('Geolocalização não suportada');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPosition({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.code === 1 ? 'Permissão negada' : 'Erro ao obter localização');
+        setLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  // Auto-request on mount
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
+
+  return { position, error, loading, requestLocation };
+}
+
+// All stops cache (for nearby + search)
+let stopsCache: CarrisStop[] | null = null;
+let stopsFetchPromise: Promise<CarrisStop[]> | null = null;
+
+async function fetchAllStops(): Promise<CarrisStop[]> {
+  if (stopsCache) return stopsCache;
+  if (stopsFetchPromise) return stopsFetchPromise;
+  
+  stopsFetchPromise = fetch(`${CARRIS_API}/stops`)
+    .then(async (res) => {
+      if (!res.ok) throw new Error('Erro ao buscar paragens');
+      const json = await res.json();
+      const stops: CarrisStop[] = Array.isArray(json) ? json : json.data || [];
+      stopsCache = stops;
+      return stops;
+    })
+    .finally(() => { stopsFetchPromise = null; });
+  
+  return stopsFetchPromise;
+}
+
+// Nearby stops based on geolocation
+export function useNearbyStops(position: GeoPosition | null, maxResults = 8) {
+  return useQuery({
+    queryKey: ['carris-nearby', position?.lat, position?.lon],
+    queryFn: async (): Promise<CarrisStop[]> => {
+      if (!position) return [];
+      const stops = await fetchAllStops();
+      return stops
+        .map(s => ({ ...s, distance: haversine(position.lat, position.lon, s.lat, s.lon) }))
+        .sort((a, b) => a.distance! - b.distance!)
+        .slice(0, maxResults);
+    },
+    enabled: !!position,
+    staleTime: 60_000,
+  });
+}
+
 // Favorites management
 export function useFavoriteStops() {
   const [favorites, setFavorites] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); }
+    catch { return []; }
   });
 
   useEffect(() => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   }, [favorites]);
 
-  const addFavorite = (stopId: string) => {
+  const addFavorite = (stopId: string) =>
     setFavorites(prev => prev.includes(stopId) ? prev : [...prev, stopId]);
-  };
-
-  const removeFavorite = (stopId: string) => {
+  const removeFavorite = (stopId: string) =>
     setFavorites(prev => prev.filter(id => id !== stopId));
-  };
-
   const isFavorite = (stopId: string) => favorites.includes(stopId);
 
   return { favorites, addFavorite, removeFavorite, isFavorite };
@@ -65,21 +149,18 @@ export function useSearchStops(query: string) {
     queryKey: ['carris-stops-search', query],
     queryFn: async (): Promise<CarrisStop[]> => {
       if (!query || query.length < 2) return [];
-      const res = await fetch(`${CARRIS_API}/stops`);
-      if (!res.ok) throw new Error('Erro ao buscar paragens');
-      const json = await res.json();
-      const stops: CarrisStop[] = Array.isArray(json) ? json : json.data || [];
+      const stops = await fetchAllStops();
       const q = query.toLowerCase();
       return stops
-        .filter((s: CarrisStop) => 
-          s.name?.toLowerCase().includes(q) || 
+        .filter(s =>
+          s.name?.toLowerCase().includes(q) ||
           s.id?.toLowerCase().includes(q) ||
           s.locality?.toLowerCase().includes(q)
         )
         .slice(0, 20);
     },
     enabled: query.length >= 2,
-    staleTime: 5 * 60 * 1000, // cache stops for 5 min
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -109,12 +190,11 @@ export function useStopArrivals(stopId: string | null) {
       if (!res.ok) throw new Error('Erro ao buscar chegadas');
       const json = await res.json();
       const arrivals: Arrival[] = Array.isArray(json) ? json : json.data || [];
-      
       const now = Math.floor(Date.now() / 1000);
       return arrivals
         .filter(a => (a.estimated_arrival_unix || a.scheduled_arrival_unix) > now)
-        .sort((a, b) => 
-          (a.estimated_arrival_unix || a.scheduled_arrival_unix) - 
+        .sort((a, b) =>
+          (a.estimated_arrival_unix || a.scheduled_arrival_unix) -
           (b.estimated_arrival_unix || b.scheduled_arrival_unix)
         )
         .slice(0, 10);
@@ -125,18 +205,17 @@ export function useStopArrivals(stopId: string | null) {
   });
 }
 
-// Metro status
+// Metro status via edge function proxy
 export function useMetroStatus() {
   return useQuery({
     queryKey: ['metro-status'],
     queryFn: async (): Promise<MetroLine[]> => {
       try {
-        const res = await fetch(METRO_API);
-        if (!res.ok) throw new Error('Erro');
-        const data = await res.json();
-        return Array.isArray(data?.resposta) ? data.resposta : [];
+        const { data, error } = await supabase.functions.invoke('metro-status');
+        if (error) throw error;
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        return Array.isArray(parsed?.resposta) ? parsed.resposta : [];
       } catch {
-        // Fallback: return empty if CORS blocked
         return [];
       }
     },
