@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   Bus, Search, Star, StarOff, Clock, MapPin,
-  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff
+  RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff, CalendarDays
 } from 'lucide-react';
+import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
 import {
   useSearchStops,
   useCMArrivals,
@@ -93,8 +94,9 @@ function EmptyState() {
 
 /* ── Stop card ── */
 
-function StopCard({ stop, onAdd, onRemove, isFav }: {
+function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
+  onOpenTimetable?: () => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -114,6 +116,11 @@ function StopCard({ stop, onAdd, onRemove, isFav }: {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
+          {stop.provider === 'carris' && onOpenTimetable && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenTimetable} title="Ver horário completo">
+              <CalendarDays className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {onAdd && !isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAdd}><Star className="h-3.5 w-3.5" /></Button>}
           {onRemove && isFav && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}><StarOff className="h-3.5 w-3.5" /></Button>}
         </div>
@@ -156,13 +163,14 @@ function MetroStatusCard() {
 
 /* ── Section for a provider's nearby stops ── */
 
-function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop }: {
+function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop, onOpenTimetable }: {
   title: string; badgeLabel: string; badgeClass: string;
   stops: TransportStop[] | undefined; isLoading: boolean;
   isFavorite: (id: string, p: TransportProvider) => boolean;
   addFavorite: (id: string, p: TransportProvider) => void;
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
+  onOpenTimetable: (stop: TransportStop) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -181,6 +189,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               isFav={isFavorite(stop.id, stop.provider)}
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
+              onOpenTimetable={() => onOpenTimetable(stop)}
             />
           ))}
         </div>
@@ -203,9 +212,12 @@ export default function Transportes() {
   const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
   const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
+  const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
 
   const cacheStop = (stop: TransportStop) =>
     setStopNameCache(prev => ({ ...prev, [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider } }));
+
+  const openTimetable = (stop: TransportStop) => setTimetableStop({ id: stop.id, name: stop.name });
 
   return (
     <div className="space-y-6">
@@ -302,6 +314,7 @@ export default function Transportes() {
             addFavorite={addFavorite}
             removeFavorite={removeFavorite}
             cacheStop={cacheStop}
+            onOpenTimetable={openTimetable}
           />
 
           <NearbySection
@@ -314,6 +327,7 @@ export default function Transportes() {
             addFavorite={addFavorite}
             removeFavorite={removeFavorite}
             cacheStop={cacheStop}
+            onOpenTimetable={openTimetable}
           />
         </>
       )}
@@ -337,6 +351,7 @@ export default function Transportes() {
                   stop={stop}
                   isFav
                   onRemove={() => removeFavorite(fav.id, fav.provider)}
+                  onOpenTimetable={() => openTimetable(stop)}
                 />
               );
             })}
@@ -357,6 +372,15 @@ export default function Transportes() {
         <RefreshCw className="h-3 w-3" />
         CM: tempo real (30s) · Carris: horário previsto (GTFS)
       </p>
+
+      {timetableStop && (
+        <CarrisTimetableModal
+          open={!!timetableStop}
+          onClose={() => setTimetableStop(null)}
+          stopId={timetableStop.id}
+          stopName={timetableStop.name}
+        />
+      )}
     </div>
   );
 }
