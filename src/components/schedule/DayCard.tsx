@@ -63,11 +63,13 @@ const DayCard: React.FC<DayCardProps> = ({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (!isAdmin || !onCopyDay) return;
     feedbackTimer.current = setTimeout(() => {
       setIsLongPressing(true);
       if (navigator.vibrate) navigator.vibrate(30);
+      // Prevent text selection during long press
+      window.getSelection()?.removeAllRanges();
     }, 300);
     longPressTimer.current = setTimeout(() => {
       setIsLongPressing(false);
@@ -136,8 +138,8 @@ const DayCard: React.FC<DayCardProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchEnd}
-      style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards' }}
-      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative
+      style={{ animationDelay: `${animationDelay}ms`, animationFillMode: 'backwards', WebkitTouchCallout: 'none' }}
+      className={`glass-card rounded-xl overflow-hidden flex flex-col print:mb-4 print:break-inside-avoid h-full transition-all duration-300 animate-slide-up relative select-none
         ${isWeekend ? 'bg-muted/50' : ''}
         ${isSunday ? 'border-l-4 border-l-destructive/50' : ''}
         ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
