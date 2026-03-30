@@ -121,44 +121,53 @@ const Login = () => {
 
   const bgClass = theme === 'dark' 
     ? 'bg-background' 
-    : 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800';
+    : 'bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950';
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute top-[10%] left-[15%] w-32 h-32 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/5' : 'bg-white/5'}`} />
+        <div className={`absolute top-[60%] right-[10%] w-48 h-48 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/8' : 'bg-blue-400/8'}`} style={{ animationDelay: '2s' }} />
+        <div className={`absolute bottom-[15%] left-[5%] w-24 h-24 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/6' : 'bg-indigo-400/6'}`} style={{ animationDelay: '4s' }} />
+        <div className={`absolute top-[25%] right-[25%] w-16 h-16 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/4' : 'bg-cyan-400/8'}`} style={{ animationDelay: '1s' }} />
+        <div className={`absolute bottom-[40%] right-[35%] w-20 h-20 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/3' : 'bg-purple-400/5'}`} style={{ animationDelay: '3s' }} />
+        <div className={`absolute top-[5%] left-[50%] w-40 h-40 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/4' : 'bg-teal-400/5'}`} style={{ animationDelay: '5s' }} />
+      </div>
+
       {/* Theme toggle button */}
       <button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 z-10 backdrop-blur-sm hover:scale-110"
         title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
       >
         {theme === 'dark' ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-white" />}
       </button>
 
-      {/* Subtle background gradient */}
-
       {/* Glass card */}
-      <div className={`relative w-full max-w-md ${shake ? 'animate-shake' : ''}`}>
-        <div className={`absolute inset-0 backdrop-blur-xl rounded-3xl ${theme === 'dark' ? 'bg-card' : 'bg-white/10'}`} />
-        <div className={`absolute inset-0 rounded-3xl ${theme === 'dark' ? 'bg-gradient-to-br from-card via-card to-card' : 'bg-gradient-to-br from-white/20 via-white/5 to-transparent'}`} />
+      <div className={`relative w-full max-w-md animate-login-card-entry ${shake ? 'animate-shake' : ''}`}>
+        <div className={`absolute inset-0 backdrop-blur-2xl rounded-3xl ${theme === 'dark' ? 'bg-card/95' : 'bg-white/10'}`} />
+        <div className={`absolute inset-0 rounded-3xl ${theme === 'dark' ? 'bg-gradient-to-br from-card via-card to-card' : 'bg-gradient-to-br from-white/15 via-white/5 to-white/10'}`} />
         <div className={`absolute inset-[1px] rounded-3xl border ${theme === 'dark' ? 'border-border' : 'border-white/20'}`} />
+        <div className={`absolute -inset-[1px] rounded-3xl opacity-50 ${theme === 'dark' ? '' : 'bg-gradient-to-br from-white/20 via-transparent to-white/10'}`} style={{ mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'xor', WebkitMaskComposite: 'xor', padding: '1px', borderRadius: '1.5rem' }} />
         
-        <div className="relative p-8 space-y-6">
+        <div className="relative p-10 space-y-8">
           {/* Logo */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className={`w-20 h-20 rounded-full overflow-hidden ring-2 shadow-lg animate-fade-in ${theme === 'dark' ? 'ring-primary/30' : 'ring-white/20'}`}>
+          <div className="flex flex-col items-center space-y-5">
+            <div className={`w-24 h-24 rounded-full overflow-hidden ring-3 shadow-xl animate-logo-glow ${theme === 'dark' ? 'ring-primary/40' : 'ring-white/30'}`}>
               <img src={logoMayslimpo} alt="Mayslimpo Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
-              <h1 className={`text-2xl font-bold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
+              <h1 className={`text-3xl font-extrabold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
                 Agenda Mayara Godoi
               </h1>
-              <div className={`mt-2 flex items-center justify-center gap-2 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/70'}`}>
+              <div className={`mt-3 flex items-center justify-center gap-2 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/60'}`}>
                 {greeting.icon === 'night' ? (
                   <Moon size={16} className="text-amber-300" />
                 ) : (
                   <Sun size={16} className="text-amber-400" />
                 )}
-                <span className="text-sm font-medium">{greeting.text}! Bem-vindo de volta.</span>
+                <span className="text-sm font-light tracking-wide">{greeting.text}! Bem-vindo de volta.</span>
               </div>
             </div>
           </div>
@@ -282,10 +291,10 @@ const Login = () => {
             <Button
               type="button"
               variant="outline"
-              className={`w-full h-12 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 flex items-center justify-center gap-3 ${
+              className={`w-full h-13 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 flex items-center justify-center gap-3 hover:-translate-y-0.5 ${
                 theme === 'dark'
-                  ? 'bg-card border-border hover:bg-accent text-foreground'
-                  : 'bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
+                  ? 'bg-card border-border hover:bg-accent text-foreground hover:shadow-lg'
+                  : 'bg-white text-gray-700 border-white/80 hover:shadow-xl hover:shadow-white/20'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
               onClick={async () => {
@@ -323,10 +332,10 @@ const Login = () => {
             <Button
               type="button"
               variant="outline"
-              className={`w-full h-12 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-500 flex items-center justify-center gap-3 ${
+              className={`w-full h-13 font-medium rounded-xl transition-all duration-300 animate-fade-in animation-delay-600 flex items-center justify-center gap-3 hover:-translate-y-0.5 ${
                 theme === 'dark'
-                  ? 'bg-card border-border hover:bg-accent text-foreground'
-                  : 'bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm'
+                  ? 'bg-foreground border-foreground hover:bg-foreground/90 text-background hover:shadow-lg'
+                  : 'bg-black text-white border-black hover:bg-black/90 hover:shadow-xl hover:shadow-black/30'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
               onClick={async () => {
@@ -361,22 +370,22 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowHelpModal(true)}
-              className={`w-full flex items-center justify-center gap-1.5 text-sm transition-colors animate-fade-in animation-delay-600 ${
+              className={`w-full flex items-center justify-center gap-1.5 text-xs transition-colors animate-fade-in animation-delay-700 mt-2 ${
                 theme === 'dark' 
-                  ? 'text-muted-foreground hover:text-foreground' 
-                  : 'text-white/50 hover:text-white/80'
+                  ? 'text-muted-foreground/60 hover:text-muted-foreground' 
+                  : 'text-white/30 hover:text-white/60'
               }`}
             >
-              <HelpCircle size={14} />
+              <HelpCircle size={12} />
               <span>Precisa de ajuda?</span>
             </button>
           </form>
           
           {/* App version */}
-          <div className={`text-center text-xs animate-fade-in animation-delay-700 ${
-            theme === 'dark' ? 'text-muted-foreground/50' : 'text-white/30'
+          <div className={`text-center text-[10px] tracking-widest uppercase animate-fade-in animation-delay-800 ${
+            theme === 'dark' ? 'text-muted-foreground/30' : 'text-white/20'
           }`}>
-            Agenda Mayara Godoi v{APP_VERSION}
+            v{APP_VERSION}
           </div>
         </div>
       </div>
