@@ -263,7 +263,10 @@ const GestaoUtilizadores: React.FC = () => {
                         </Badge>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground block">{u.email}</span>
+                    <div className="flex items-center gap-1.5">
+                      <ProviderIcon provider={u.provider} />
+                      <span className="text-xs text-muted-foreground">{u.email}</span>
+                    </div>
                     <div className="text-xs text-muted-foreground/80">
                       {isAdmin
                         ? 'Acesso total — pode gerir tudo'
