@@ -27,6 +27,7 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
   hasTasksInMonth,
   onCopyFromPrevious,
   onDeleteMonth,
+  onExportCalendar,
 }) => {
   const monthName = currentMonthLabel?.split(' ')[0] || 'Mês';
   const prevMonthName = previousMonthLabel?.split(' ')[0] || 'Anterior';
