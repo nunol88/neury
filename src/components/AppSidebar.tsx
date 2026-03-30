@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { NavLink } from '@/components/NavLink';
-import { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/pages/Login';
+import { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
 import {
   Sidebar,
   SidebarContent,
