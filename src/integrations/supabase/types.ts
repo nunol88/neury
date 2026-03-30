@@ -86,6 +86,24 @@ export type Database = {
         }
         Relationships: []
       }
+      carris_schedules: {
+        Row: {
+          entries: string[]
+          stop_id: string
+          updated_at: string
+        }
+        Insert: {
+          entries: string[]
+          stop_id: string
+          updated_at?: string
+        }
+        Update: {
+          entries?: string[]
+          stop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           created_at: string
