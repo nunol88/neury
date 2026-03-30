@@ -61,8 +61,15 @@ export function AppSidebar() {
   const items = isAdmin ? navItems : neurySidebarItems;
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = isAdmin ? 'Administrador' : 'Funcionário/a';
+  const [emailLoginEnabled, setEmailLoginEnabled] = useState(
+    () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
+  );
 
-  const handleSignOut = async () => {
+  const toggleEmailLogin = () => {
+    const newValue = !emailLoginEnabled;
+    setEmailLoginEnabled(newValue);
+    localStorage.setItem(EMAIL_LOGIN_KEY, String(newValue));
+  };
     await signOut();
     navigate('/');
   };
