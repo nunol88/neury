@@ -54,6 +54,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onTogglePayment,
   onCopyTask,
   onDeleteExtra,
+  onCopyDay,
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
