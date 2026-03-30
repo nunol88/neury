@@ -1,37 +1,32 @@
 
 
-## Plano: Melhorar Visual da Página de Login
+## Plano: Exportar agendamentos do mês para calendário (ficheiro .ics)
 
-### O que muda
+### O que faz
+Adiciona um botão no menu flutuante (FAB) e/ou no menu de ações (3 pontos) que gera um ficheiro `.ics` com todos os agendamentos do mês ativo. O utilizador descarrega o ficheiro e ao abri-lo no iPhone, os eventos são adicionados automaticamente ao Calendário.
 
-**1. Fundo animado com partículas/formas geométricas**
-- Adicionar círculos/bolhas semi-transparentes animados a flutuar no fundo (CSS puro)
-- Gradiente mais rico com mais camadas de cor (azul/teal/purple)
+### Como funciona
+1. **Gerar ficheiro .ics** — Criar uma função utilitária (`src/utils/exportCalendar.ts`) que recebe a lista de tasks do mês e gera uma string no formato iCalendar (RFC 5545) com:
+   - Nome do evento: nome do cliente
+   - Data/hora início e fim
+   - Localização: morada do cliente
+   - Notas: observações do agendamento
 
-**2. Botões de login com identidade visual dos providers**
-- **Google**: fundo branco, texto escuro, sombra suave (como o botão oficial)
-- **Apple**: fundo preto sólido, texto branco (como o botão oficial)
-- Hover com elevação (shadow + translateY)
+2. **Botão no FloatingActionMenu** — Adicionar uma nova opção "Exportar Calendário" com ícone de smartphone/calendário no menu flutuante, disponível para todos os utilizadores (admin e neury).
 
-**3. Card com glassmorphism mais pronunciado**
-- Aumentar blur e opacidade do vidro
-- Adicionar borda com gradiente subtil (shimmer na borda)
-- Animação de entrada slide-up com bounce suave
+3. **Botão no ScheduleActionsMenu** — Adicionar também a opção no menu de 3 pontos do header para acesso alternativo.
 
-**4. Logo com glow animado**
-- Adicionar um halo/glow pulsante à volta do logo
-- Escala ligeiramente maior (24x24 → ring mais visível)
-
-**5. Tipografia e espaçamento**
-- Título maior e com peso mais forte
-- Maior espaçamento entre elementos para respirar
-- Greeting com estilo mais elegante
-
-**6. Versão e ajuda mais discretos**
-- Versão mais pequena e translúcida
-- Link de ajuda com estilo mais minimalista
+4. **Download automático** — Ao clicar, o ficheiro `.ics` é descarregado. No iPhone, basta abrir o ficheiro para adicionar todos os eventos ao calendário nativo.
 
 ### Ficheiros afetados
-- `src/pages/Login.tsx` — reestruturar layout e estilos
-- `src/index.css` — adicionar keyframes para partículas flutuantes e glow pulsante
+- `src/utils/exportCalendar.ts` — **novo** — função que converte tasks em formato .ics
+- `src/components/schedule/FloatingActionMenu.tsx` — adicionar botão de exportar
+- `src/components/schedule/ScheduleActionsMenu.tsx` — adicionar opção de exportar
+- `src/components/ScheduleView.tsx` — passar callback de exportação aos componentes
+
+### Detalhes técnicos
+- Formato iCalendar padrão (VCALENDAR/VEVENT), compatível com iOS, Google Calendar e Outlook
+- Datas convertidas para formato UTC (DTSTART/DTEND)
+- Ficheiro nomeado como `agendamentos-{mes}-{ano}.ics`
+- Sem dependências externas — geração pura em string
 
