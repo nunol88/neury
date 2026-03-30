@@ -24,6 +24,7 @@ interface FloatingActionMenuProps {
   onUndo: () => void;
   onDeleteMonth: () => void;
   onAddExtra?: () => void;
+  onExportCalendar?: () => void;
 }
 
 const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
