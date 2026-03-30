@@ -37,6 +37,8 @@ const Login = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const emailLoginEnabled = localStorage.getItem(EMAIL_LOGIN_KEY) === 'true';
+  const { theme, toggleTheme } = useTheme();
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
