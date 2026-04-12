@@ -333,6 +333,27 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
 
 /* ── Main page ── */
 
+/* ── CM Stop Map Wrapper (fetches arrivals + vehicle positions) ── */
+function CMStopMapWrapper({ stop, onClose }: { stop: TransportStop; onClose: () => void }) {
+  const { data: arrivals } = useCMArrivals(stop.provider === 'cm' ? stop.id : null);
+  // Get the first route_id from arrivals
+  const firstRouteId = arrivals?.[0]?.route_id || null;
+  const { data: vehicles, isLoading } = useVehiclePositions(firstRouteId);
+
+  return (
+    <VehicleMapModal
+      open
+      onClose={onClose}
+      title={`${stop.name} (${stop.provider === 'cm' ? 'Carris Metropolitana' : 'Carris'})`}
+      centerLat={stop.lat || 38.7223}
+      centerLon={stop.lon || -9.1393}
+      stopName={stop.name}
+      vehicles={vehicles || []}
+      isLoading={isLoading}
+    />
+  );
+}
+
 export default function Transportes() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: searchResults, isLoading: searching } = useSearchStops(searchQuery);
