@@ -745,6 +745,8 @@ export default function Transportes() {
           metroPositions={metroMapPositions}
           userLat={position?.lat}
           userLon={position?.lon}
+          metroStations={metroStations}
+          showMetroNetwork
         />
       )}
 
