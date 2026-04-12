@@ -367,112 +367,106 @@ export default function Transportes() {
         </div>
       )}
 
-      {/* Favorites */}
-      {favorites.length > 0 && (
-        <>
-          <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            <h2 className="text-lg font-semibold text-foreground">Paragens favoritas</h2>
-            <Badge variant="secondary" className="text-xs">{favorites.length}</Badge>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {favorites.map(fav => {
-              const cached = stopNameCache[`${fav.provider}-${fav.id}`];
-              const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
-              return (
-                <StopCard
-                  key={`fav-${fav.provider}-${fav.id}`}
-                  stop={stop}
-                  isFav
-                  onRemove={() => removeFavorite(fav.id, fav.provider)}
-                  onOpenTimetable={() => openTimetable(stop)}
-                />
-              );
-            })}
-          </div>
-          <Separator />
-        </>
-      )}
+      {/* Reorderable sections */}
+      {sectionOrder.map((sectionId, idx) => {
+        const isDragging = draggedSection === sectionId;
+        const isDragOver = dragOverSection === sectionId;
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Pesquisar paragem por nome ou ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
-          </div>
-          {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3"><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>A pesquisar...</span></div>}
-          {searchResults && searchResults.length > 0 && (
-            <div className="mt-3 space-y-1 max-h-60 overflow-y-auto">
-              {searchResults.map(stop => (
-                <button
-                  key={`${stop.provider}-${stop.id}`}
-                  onClick={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); setSearchQuery(''); }}
-                  className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{stop.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {stop.id}{stop.locality ? ` · ${stop.locality}` : ''}
-                      <Badge className={`ml-1.5 text-[10px] px-1 py-0 ${providerBadgeClass[stop.provider]}`}>
-                        {stop.provider === 'carris' ? 'Carris' : 'CM'}
-                      </Badge>
-                    </p>
-                  </div>
-                  {isFavorite(stop.id, stop.provider) ? (
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                  ) : (
-                    <Star className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  )}
-                </button>
-              ))}
+        const dragHandleProps = {
+          draggable: true,
+          onDragStart: (e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; setDraggedSection(sectionId); },
+          onDragEnd: () => { setDraggedSection(null); setDragOverSection(null); },
+          onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverSection(sectionId); },
+          onDragLeave: () => setDragOverSection(null),
+          onDrop: (e: React.DragEvent) => { e.preventDefault(); handleDrop(sectionId); },
+        };
+
+        const wrapperClass = `transition-all duration-200 ${isDragging ? 'opacity-40 scale-[0.98]' : ''} ${isDragOver && !isDragging ? 'ring-2 ring-primary/30 rounded-lg' : ''}`;
+
+        if (sectionId === 'favorites' && favorites.length > 0) {
+          return (
+            <div key="favorites" className={wrapperClass} {...dragHandleProps}>
+              <div className="flex items-center gap-2 mb-4 cursor-grab active:cursor-grabbing">
+                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <h2 className="text-lg font-semibold text-foreground">Paragens favoritas</h2>
+                <Badge variant="secondary" className="text-xs">{favorites.length}</Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {favorites.map(fav => {
+                  const cached = stopNameCache[`${fav.provider}-${fav.id}`];
+                  const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
+                  return (
+                    <StopCard
+                      key={`fav-${fav.provider}-${fav.id}`}
+                      stop={stop}
+                      isFav
+                      onRemove={() => removeFavorite(fav.id, fav.provider)}
+                      onOpenTimetable={() => openTimetable(stop)}
+                    />
+                  );
+                })}
+              </div>
+              {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
             </div>
-          )}
-          {searchQuery.length >= 2 && searchResults && searchResults.length === 0 && !searching && (
-            <p className="text-sm text-muted-foreground mt-3">Nenhuma paragem encontrada</p>
-          )}
-        </CardContent>
-      </Card>
+          );
+        }
 
-      {/* Metro */}
-      <MetroStatusCard position={position} />
+        if (sectionId === 'metro') {
+          return (
+            <div key="metro" className={wrapperClass} {...dragHandleProps}>
+              <div className="flex items-center gap-2 mb-4 cursor-grab active:cursor-grabbing">
+                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                <Train className="h-4 w-4 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Metro</h2>
+              </div>
+              <MetroStatusCard position={position} />
+              {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
+            </div>
+          );
+        }
 
-      {/* Nearby — separated by provider */}
-      {position && (
-        <>
-          <Separator />
-          <div className="flex items-center gap-2">
-            <Navigation className="h-4 w-4 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Paragens próximas</h2>
-          </div>
+        if (sectionId === 'nearby' && position) {
+          return (
+            <div key="nearby" className={wrapperClass} {...dragHandleProps}>
+              <div className="flex items-center gap-2 mb-4 cursor-grab active:cursor-grabbing">
+                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                <Navigation className="h-4 w-4 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Paragens próximas</h2>
+              </div>
 
-          <NearbySection
-            title="Carris"
-            badgeLabel="Lisboa"
-            badgeClass={providerBadgeClass.carris}
-            stops={nearbyCarris}
-            isLoading={carrisLoading}
-            isFavorite={isFavorite}
-            addFavorite={addFavorite}
-            removeFavorite={removeFavorite}
-            cacheStop={cacheStop}
-            onOpenTimetable={openTimetable}
-          />
+              <NearbySection
+                title="Carris"
+                badgeLabel="Lisboa"
+                badgeClass={providerBadgeClass.carris}
+                stops={nearbyCarris}
+                isLoading={carrisLoading}
+                isFavorite={isFavorite}
+                addFavorite={addFavorite}
+                removeFavorite={removeFavorite}
+                cacheStop={cacheStop}
+                onOpenTimetable={openTimetable}
+              />
 
-          <NearbySection
-            title="Carris Metropolitana"
-            badgeLabel="Área Metropolitana"
-            badgeClass={providerBadgeClass.cm}
-            stops={nearbyCM}
-            isLoading={cmLoading}
-            isFavorite={isFavorite}
-            addFavorite={addFavorite}
-            removeFavorite={removeFavorite}
-            cacheStop={cacheStop}
-            onOpenTimetable={openTimetable}
-          />
-        </>
-      )}
+              <NearbySection
+                title="Carris Metropolitana"
+                badgeLabel="Área Metropolitana"
+                badgeClass={providerBadgeClass.cm}
+                stops={nearbyCM}
+                isLoading={cmLoading}
+                isFavorite={isFavorite}
+                addFavorite={addFavorite}
+                removeFavorite={removeFavorite}
+                cacheStop={cacheStop}
+                onOpenTimetable={openTimetable}
+              />
+              {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
+            </div>
+          );
+        }
+
+        return null;
+      })}
 
       {favorites.length === 0 && !position && (
         <Card className="border-dashed">
