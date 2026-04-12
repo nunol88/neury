@@ -66,8 +66,9 @@ function groupEntries(entries: string[]): GroupedTimetable {
     const [time, route, dayType] = entry.split('|');
     const dt = dayType as 'w' | 's' | 'u';
     if (!result[dt]) continue;
-    if (!result[dt][route]) result[dt][route] = [];
-    result[dt][route].push(time);
+    const routeKey = route;
+    if (!result[dt][routeKey]) result[dt][routeKey] = [];
+    result[dt][routeKey].push(time);
   }
   // Sort times within each route
   for (const dt of ['w', 's', 'u'] as const) {
