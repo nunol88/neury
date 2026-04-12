@@ -68,9 +68,12 @@ function CarrisStopSchedule({ stopId }: { stopId: string }) {
   return (
     <div className="space-y-1.5">
       {data.departures.map((dep, i) => (
-        <div key={`${dep.r}-${dep.t}-${i}`} className="flex items-center justify-between text-sm py-1">
-          <Badge variant="secondary" className="text-xs font-mono px-1.5">{dep.r}</Badge>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
+        <div key={`${dep.r}-${dep.t}-${i}`} className="flex items-center justify-between text-sm py-1 gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Badge variant="secondary" className="text-xs font-mono px-1.5 shrink-0">{dep.r}</Badge>
+            {dep.d && <span className="text-xs text-muted-foreground truncate">→ {dep.d}</span>}
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
             <Clock className="h-3 w-3" />
             <span className="font-medium text-foreground">{formatTimeUntil(dep.t)}</span>
             <span className="text-xs">({dep.t})</span>
