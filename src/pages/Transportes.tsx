@@ -343,6 +343,66 @@ export default function Transportes() {
   const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
   const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
+  const [mapTarget, setMapTarget] = useState<{
+    type: 'stop' | 'metro';
+    stop?: TransportStop;
+    routeId?: string;
+    stationId?: string;
+    stationName?: string;
+    stationLat?: number;
+    stationLon?: number;
+  } | null>(null);
+
+  // Vehicle positions for map (only fetch when map is open and for CM stops)
+  const activeRouteId = mapTarget?.type === 'stop' && mapTarget.stop?.provider === 'cm'
+    ? null // We'll get route from arrivals — for now fetch all nearby
+    : null;
+
+  // Metro data for map
+  const { data: metroStations } = useMetroStations();
+  const { data: nearestStation } = useNearestMetroStation(position);
+  const { data: metroWaitForMap } = useMetroWaitTimes(
+    mapTarget?.type === 'metro' ? (mapTarget.stationId || null) : null
+  );
+
+  const metroMapPositions = useMemo<MetroEstimatedPosition[]>(() => {
+    if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations) return [];
+    const stationLat = mapTarget.stationLat || 0;
+    const stationLon = mapTarget.stationLon || 0;
+    return metroWaitForMap.flatMap(wt => {
+      const destStation = metroStations.find(s => s.name.toLowerCase() === wt.destination.name.toLowerCase());
+      if (!destStation || !wt.arrivalTimes?.[0]) return [];
+      const timeLeft = wt.arrivalTimes[0].timeLeft;
+      const [m, s] = timeLeft.split(':').map(Number);
+      const totalSec = m * 60 + (s || 0);
+      // Estimate 3 min between stations; interpolate position
+      const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
+      const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * (1 - progress);
+      const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * (1 - progress);
+      return [{
+        lat, lon,
+        destination: wt.destination.name,
+        timeLeft: formatMetroTimeLeft(timeLeft),
+        live: wt.live,
+      }];
+    });
+  }, [mapTarget, metroWaitForMap, metroStations]);
+
+  const openStopMap = (stop: TransportStop) => {
+    setMapTarget({ type: 'stop', stop });
+  };
+
+  const openMetroMap = () => {
+    if (nearestStation) {
+      setMapTarget({
+        type: 'metro',
+        stationId: nearestStation.id,
+        stationName: nearestStation.name,
+        stationLat: parseFloat(nearestStation.lat),
+        stationLon: parseFloat(nearestStation.lon),
+      });
+    }
+  };
 
   // Section ordering (persisted in localStorage)
   type SectionId = 'favorites' | 'metro' | 'nearby';
