@@ -62,12 +62,19 @@ function CMStopArrivals({ stopId }: { stopId: string }) {
 
 function CarrisStopSchedule({ stopId }: { stopId: string }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
+  const [expanded, setExpanded] = useState(false);
+  const COLLAPSED_COUNT = 3;
+
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState />;
   if (!data?.departures || data.departures.length === 0) return <EmptyState />;
+
+  const shown = expanded ? data.departures : data.departures.slice(0, COLLAPSED_COUNT);
+  const hasMore = data.departures.length > COLLAPSED_COUNT;
+
   return (
-    <div className="space-y-1.5">
-      {data.departures.map((dep, i) => (
+    <div className="space-y-1">
+      {shown.map((dep, i) => (
         <div key={`${dep.r}-${dep.t}-${i}`} className="flex items-center justify-between text-sm py-1 gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <Badge variant="secondary" className="text-xs font-mono px-1.5 shrink-0">{dep.r}</Badge>
@@ -80,6 +87,14 @@ function CarrisStopSchedule({ stopId }: { stopId: string }) {
           </div>
         </div>
       ))}
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-primary hover:underline w-full text-center py-1"
+        >
+          {expanded ? 'Mostrar menos ▲' : `Ver mais (${data.departures.length - COLLAPSED_COUNT}) ▼`}
+        </button>
+      )}
       <p className="text-[10px] text-muted-foreground mt-1">⏱ Horário previsto (GTFS)</p>
     </div>
   );
