@@ -170,6 +170,7 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
 
   const hasStatus = lines && lines.length > 0;
   const hasWait = waitTimes && waitTimes.length > 0;
+  const hasLiveWaitTimes = waitTimes?.some((wt) => wt.live) ?? false;
   const stationLines = (nearestStation as any)?.lines as string[] | undefined;
   const stationLineName = stationLines?.[0] ? stationLines[0].charAt(0).toUpperCase() + stationLines[0].slice(1) : null;
 
@@ -197,7 +198,17 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
                 </span>
               )}
             </div>
-            <div className="text-lg font-bold text-foreground mb-2">{nearestStation.name}</div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="text-lg font-bold text-foreground">{nearestStation.name}</div>
+              {hasLiveWaitTimes && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 whitespace-nowrap border border-primary/20 bg-primary/10 px-1.5 text-[10px] font-medium text-primary"
+                >
+                  Tempo real
+                </Badge>
+              )}
+            </div>
 
             {waitLoading ? <LoadingState /> : hasWait ? (
               <div className="space-y-2">
@@ -207,10 +218,17 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
                   return (
                     <div key={`${wt.destination.id}-${i}`} className="bg-background/50 rounded-md p-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm">→</span>
                           <span className="text-sm font-medium text-foreground">{wt.destination.name}</span>
-                          {wt.live && <span className="text-[9px] text-green-500">● em tempo real</span>}
+                          {wt.live && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 whitespace-nowrap border border-primary/20 bg-primary/10 px-1.5 text-[10px] font-medium text-primary"
+                            >
+                              Em tempo real
+                            </Badge>
+                          )}
                         </div>
                         <span className="text-lg font-bold text-primary">{nextMin}</span>
                       </div>
@@ -467,7 +485,7 @@ export default function Transportes() {
 
       <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
         <RefreshCw className="h-3 w-3" />
-        CM: tempo real (30s) · Carris: horário previsto (GTFS)
+        CM: tempo real (30s) · Metro: tempo real · Carris: horário previsto (GTFS)
       </p>
 
       {timetableStop && (
