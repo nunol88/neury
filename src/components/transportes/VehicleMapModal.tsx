@@ -43,6 +43,13 @@ const stopIcon = L.divIcon({
   iconAnchor: [16, 16],
 });
 
+const userIcon = L.divIcon({
+  className: 'transport-map-marker',
+  html: `<div style="background:#3b82f6;border-radius:9999px;width:18px;height:18px;border:3px solid white;box-shadow:0 0 0 2px #3b82f6, 0 4px 12px rgba(59,130,246,0.4);"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
 function syncMapContent({
   map,
   markersLayer,
@@ -52,6 +59,8 @@ function syncMapContent({
   vehicles,
   metroPositions,
   allPositions,
+  userLat,
+  userLon,
 }: {
   map: L.Map;
   markersLayer: L.LayerGroup;
@@ -61,6 +70,8 @@ function syncMapContent({
   vehicles: VehiclePosition[];
   metroPositions: MetroEstimatedPosition[];
   allPositions: [number, number][];
+  userLat?: number;
+  userLon?: number;
 }) {
   markersLayer.clearLayers();
 
