@@ -367,6 +367,33 @@ export default function Transportes() {
         </div>
       )}
 
+      {/* Favorites */}
+      {favorites.length > 0 && (
+        <>
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            <h2 className="text-lg font-semibold text-foreground">Paragens favoritas</h2>
+            <Badge variant="secondary" className="text-xs">{favorites.length}</Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {favorites.map(fav => {
+              const cached = stopNameCache[`${fav.provider}-${fav.id}`];
+              const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
+              return (
+                <StopCard
+                  key={`fav-${fav.provider}-${fav.id}`}
+                  stop={stop}
+                  isFav
+                  onRemove={() => removeFavorite(fav.id, fav.provider)}
+                  onOpenTimetable={() => openTimetable(stop)}
+                />
+              );
+            })}
+          </div>
+          <Separator />
+        </>
+      )}
+
       {/* Search */}
       <Card>
         <CardContent className="pt-4 pb-4">
@@ -406,33 +433,6 @@ export default function Transportes() {
           )}
         </CardContent>
       </Card>
-
-      {/* Favorites */}
-      {favorites.length > 0 && (
-        <>
-          <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            <h2 className="text-lg font-semibold text-foreground">Paragens favoritas</h2>
-            <Badge variant="secondary" className="text-xs">{favorites.length}</Badge>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {favorites.map(fav => {
-              const cached = stopNameCache[`${fav.provider}-${fav.id}`];
-              const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
-              return (
-                <StopCard
-                  key={`fav-${fav.provider}-${fav.id}`}
-                  stop={stop}
-                  isFav
-                  onRemove={() => removeFavorite(fav.id, fav.provider)}
-                  onOpenTimetable={() => openTimetable(stop)}
-                />
-              );
-            })}
-          </div>
-          <Separator />
-        </>
-      )}
 
       {/* Metro */}
       <MetroStatusCard position={position} />
