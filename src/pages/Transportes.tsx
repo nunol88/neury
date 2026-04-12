@@ -603,6 +603,30 @@ export default function Transportes() {
           stopName={timetableStop.name}
         />
       )}
+
+      {mapTarget && (
+        <VehicleMapModal
+          open={!!mapTarget}
+          onClose={() => setMapTarget(null)}
+          title={
+            mapTarget.type === 'metro'
+              ? `Metro — ${mapTarget.stationName}`
+              : `${mapTarget.stop?.name} (${mapTarget.stop?.provider === 'cm' ? 'CM' : 'Carris'})`
+          }
+          centerLat={
+            mapTarget.type === 'metro'
+              ? (mapTarget.stationLat || 38.7223)
+              : (mapTarget.stop?.lat || 38.7223)
+          }
+          centerLon={
+            mapTarget.type === 'metro'
+              ? (mapTarget.stationLon || -9.1393)
+              : (mapTarget.stop?.lon || -9.1393)
+          }
+          stopName={mapTarget.type === 'metro' ? mapTarget.stationName : mapTarget.stop?.name}
+          metroPositions={mapTarget.type === 'metro' ? metroMapPositions : []}
+        />
+      )}
     </div>
   );
 }
