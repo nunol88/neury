@@ -32,6 +32,12 @@ import {
 const metroColors: Record<string, string> = {
   Azul: 'bg-blue-500', Amarela: 'bg-yellow-400', Verde: 'bg-green-500', Vermelha: 'bg-red-500',
 };
+const metroTextColors: Record<string, string> = {
+  Azul: 'text-blue-500', Amarela: 'text-yellow-500', Verde: 'text-green-500', Vermelha: 'text-red-500',
+};
+const metroBorderColors: Record<string, string> = {
+  Azul: 'border-blue-500', Amarela: 'border-yellow-400', Verde: 'border-green-500', Vermelha: 'border-red-500',
+};
 
 const providerBadgeClass: Record<TransportProvider, string> = {
   cm: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -164,6 +170,8 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
 
   const hasStatus = lines && lines.length > 0;
   const hasWait = waitTimes && waitTimes.length > 0;
+  const stationLines = (nearestStation as any)?.lines as string[] | undefined;
+  const stationLineName = stationLines?.[0] ? stationLines[0].charAt(0).toUpperCase() + stationLines[0].slice(1) : null;
 
   if (!hasStatus && !hasWait && !statusLoading && !waitLoading) return null;
 
@@ -175,72 +183,75 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
-        {/* Line status */}
-        {statusLoading ? <LoadingState /> : hasStatus && (
-          <div className="space-y-1.5">
-            {lines?.map(line => (
-              <div key={line.nome} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${metroColors[line.nome] || 'bg-muted'}`} />
-                  <span>{line.nome}</span>
-                </div>
-                <Badge variant={line.estado.toLowerCase().includes('ok') || line.estado === 'Aberta' ? 'default' : 'destructive'} className="text-xs">{line.estado}</Badge>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Nearest station wait times */}
+        {/* Nearest station - prominent display */}
         {nearestStation && (
-          <>
-            <Separator />
-            <div>
-              <div className="flex items-center gap-1.5 mb-2">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium">
-                  Estação mais próxima: <span className="text-foreground">{nearestStation.name}</span>
+          <div className={`rounded-lg border-2 ${stationLineName ? metroBorderColors[stationLineName] || 'border-muted' : 'border-muted'} p-3`}>
+            <div className="flex items-center gap-2 mb-1">
+              {stationLineName && <div className={`w-3.5 h-3.5 rounded-full ${metroColors[stationLineName] || 'bg-muted'}`} />}
+              <span className="text-xs font-medium text-muted-foreground">
+                {stationLineName ? `Linha ${stationLineName}` : 'Estação próxima'}
+              </span>
+              {(nearestStation as any).distance != null && (
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  📍 {((nearestStation as any).distance * 1000).toFixed(0)}m
                 </span>
-                {(nearestStation as any).distance != null && (
-                  <span className="text-[10px] text-muted-foreground">
-                    ({((nearestStation as any).distance * 1000).toFixed(0)}m)
-                  </span>
-                )}
-              </div>
-              {waitLoading ? <LoadingState /> : hasWait ? (
-                <div className="space-y-2">
-                  {waitTimes!.map((wt, i) => (
-                    <div key={`${wt.destination.id}-${i}`}>
-                      <div className="flex items-center justify-between text-sm py-0.5">
-                        <span className="text-xs text-muted-foreground">→ {wt.destination.name}</span>
+              )}
+            </div>
+            <div className="text-lg font-bold text-foreground mb-2">{nearestStation.name}</div>
+
+            {waitLoading ? <LoadingState /> : hasWait ? (
+              <div className="space-y-2">
+                {waitTimes!.map((wt, i) => {
+                  const nextTime = wt.arrivalTimes?.[0]?.timeLeft;
+                  const nextMin = nextTime ? formatMetroTimeLeft(nextTime) : '—';
+                  return (
+                    <div key={`${wt.destination.id}-${i}`} className="bg-background/50 rounded-md p-2">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium text-foreground">
-                            {wt.arrivalTimes?.[0] ? formatMetroTimeLeft(wt.arrivalTimes[0].timeLeft) : '—'}
-                          </span>
-                          {wt.live && <span className="text-[9px] text-green-500">●</span>}
+                          <span className="text-sm">→</span>
+                          <span className="text-sm font-medium text-foreground">{wt.destination.name}</span>
+                          {wt.live && <span className="text-[9px] text-green-500">● em tempo real</span>}
                         </div>
+                        <span className="text-lg font-bold text-primary">{nextMin}</span>
                       </div>
                       {expanded && wt.arrivalTimes?.slice(1).map((at, j) => (
-                        <div key={j} className="flex justify-end text-xs text-muted-foreground py-0.5">
-                          {formatMetroTimeLeft(at.timeLeft)}
+                        <div key={j} className="flex justify-between text-xs text-muted-foreground mt-1 pl-5">
+                          <span>Seguinte</span>
+                          <span>{formatMetroTimeLeft(at.timeLeft)}</span>
                         </div>
                       ))}
                     </div>
-                  ))}
-                  {waitTimes!.some(wt => wt.arrivalTimes?.length > 1) && (
-                    <button
-                      onClick={() => setExpanded(!expanded)}
-                      className="text-xs text-primary hover:underline w-full text-center py-1"
-                    >
-                      {expanded ? 'Mostrar menos ▲' : 'Ver mais horários ▼'}
-                    </button>
-                  )}
+                  );
+                })}
+                {waitTimes!.some(wt => wt.arrivalTimes?.length > 1) && (
+                  <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="text-xs text-primary hover:underline w-full text-center py-1"
+                  >
+                    {expanded ? 'Mostrar menos ▲' : 'Ver próximos comboios ▼'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Sem tempos de espera disponíveis</p>
+            )}
+          </div>
+        )}
+
+        {/* All lines status - compact */}
+        {statusLoading ? <LoadingState /> : hasStatus && (
+          <div className="flex flex-wrap gap-2">
+            {lines?.map(line => {
+              const isOk = line.estado.toLowerCase().includes('ok') || line.estado === 'Aberta';
+              return (
+                <div key={line.nome} className="flex items-center gap-1.5 text-xs">
+                  <div className={`w-2.5 h-2.5 rounded-full ${metroColors[line.nome] || 'bg-muted'}`} />
+                  <span className="text-muted-foreground">{line.nome}</span>
+                  <span className={isOk ? 'text-green-500' : 'text-destructive font-medium'}>{isOk ? '✓' : line.estado}</span>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Sem tempos de espera disponíveis</p>
-              )}
-            </div>
-          </>
+              );
+            })}
+          </div>
         )}
       </CardContent>
     </Card>
