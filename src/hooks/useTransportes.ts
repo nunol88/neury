@@ -88,6 +88,7 @@ export interface MetroWaitTime {
   destination: { id: string; name: string };
   time: string;
   live: boolean;
+  ut: number;
 }
 
 export interface GeoPosition {
@@ -389,13 +390,8 @@ export function useMetroWaitTimes(stationId: string | null) {
   });
 }
 
-export function formatMetroWaitTime(timeStr: string): string {
-  const [h, m, s] = timeStr.split(':').map(Number);
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(h, m, s || 0, 0);
-  const diffMs = target.getTime() - now.getTime();
-  const diffMin = Math.max(0, Math.round(diffMs / 60000));
-  if (diffMin <= 1) return 'A chegar';
-  return `${diffMin} min`;
+export function formatMetroWaitTime(wt: MetroWaitTime): string {
+  const minutes = wt.ut;
+  if (minutes == null || minutes <= 1) return 'A chegar';
+  return `${minutes} min`;
 }
