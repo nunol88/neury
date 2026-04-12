@@ -362,7 +362,7 @@ export default function Transportes() {
   const { data: nearbyCM, isLoading: cmLoading } = useNearbyCMStops(position);
   const { data: nearbyCarris, isLoading: carrisLoading } = useNearbyCarrisStops(position);
   const isOnline = useIsOnline();
-  const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
+  const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider; lat: number; lon: number }>>({});
   const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
   const [mapTarget, setMapTarget] = useState<{
     type: 'stop' | 'metro';
@@ -456,7 +456,10 @@ export default function Transportes() {
   }, [draggedSection]);
 
   const cacheStop = (stop: TransportStop) =>
-    setStopNameCache(prev => ({ ...prev, [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider } }));
+    setStopNameCache(prev => ({
+      ...prev,
+      [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider, lat: stop.lat, lon: stop.lon },
+    }));
 
   const openTimetable = (stop: TransportStop) => setTimetableStop({ id: stop.id, name: stop.name });
 
@@ -521,7 +524,13 @@ export default function Transportes() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {favorites.map(fav => {
                   const cached = stopNameCache[`${fav.provider}-${fav.id}`];
-                  const stop: TransportStop = { id: fav.id, name: cached?.name || fav.id, lat: 0, lon: 0, provider: fav.provider };
+                  const stop: TransportStop = {
+                    id: fav.id,
+                    name: cached?.name || fav.id,
+                    lat: cached?.lat || 0,
+                    lon: cached?.lon || 0,
+                    provider: fav.provider,
+                  };
                   return (
                     <StopCard
                       key={`fav-${fav.provider}-${fav.id}`}
