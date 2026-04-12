@@ -68,7 +68,7 @@ export interface Arrival {
 export interface CarrisDeparture {
   t: string;
   r: string;
-  s: string;
+  d: string;
 }
 
 export interface MetroLine {
