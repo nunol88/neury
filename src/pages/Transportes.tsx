@@ -1,14 +1,16 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Bus, Search, Star, StarOff, Clock, MapPin,
+  Bus, Search, Star, StarOff, Clock, MapPin, Map as MapIcon,
   RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff, CalendarDays, GripVertical
 } from 'lucide-react';
 import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
+import VehicleMapModal, { type MetroEstimatedPosition } from '@/components/transportes/VehicleMapModal';
+import { useVehiclePositions } from '@/hooks/useVehiclePositions';
 import {
   useSearchStops,
   useCMArrivals,
