@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -392,11 +392,15 @@ function CMStopMapWrapper({
   routeId,
   routeLabel,
   onClose,
+  userLat,
+  userLon,
 }: {
   stop: TransportStop;
   routeId: string;
   routeLabel?: string;
   onClose: () => void;
+  userLat?: number;
+  userLon?: number;
 }) {
   const { data: vehicles, isLoading } = useVehiclePositions(routeId);
 
@@ -410,6 +414,8 @@ function CMStopMapWrapper({
       stopName={stop.name}
       vehicles={vehicles || []}
       isLoading={isLoading}
+      userLat={userLat}
+      userLon={userLon}
     />
   );
 }
@@ -444,7 +450,17 @@ export default function Transportes() {
     mapTarget?.type === 'metro' ? (mapTarget.stationId || null) : null
   );
 
+  // Tick every 3s to animate metro position on map
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (mapTarget?.type !== 'metro') return;
+    const interval = setInterval(() => setTick(t => t + 1), 3000);
+    return () => clearInterval(interval);
+  }, [mapTarget?.type]);
+
   const metroMapPositions = useMemo<MetroEstimatedPosition[]>(() => {
+    // tick is used to force recalculation
+    void tick;
     if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations || !mapTarget.destinationId) return [];
 
     const stationLat = mapTarget.stationLat || 0;
@@ -469,7 +485,9 @@ export default function Transportes() {
     const timeLeft = selectedWait.arrivalTimes[0].timeLeft;
     const [m = 0, s = 0] = timeLeft.split(':').map(Number);
     const totalSec = (Number.isFinite(m) ? m : 0) * 60 + (Number.isFinite(s) ? s : 0);
-    const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
+    // Subtract elapsed time since data was fetched (tick * 3s)
+    const adjustedSec = Math.max(0, totalSec - (tick * 3 % totalSec));
+    const progress = Math.max(0, Math.min(1, 1 - adjustedSec / 180));
     const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * progress;
     const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * progress;
 
@@ -480,7 +498,7 @@ export default function Transportes() {
       timeLeft: formatMetroTimeLeft(timeLeft),
       live: selectedWait.live,
     }];
-  }, [mapTarget, metroWaitForMap, metroStations]);
+  }, [mapTarget, metroWaitForMap, metroStations, tick]);
 
   const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string) => {
     if (!routeId) return;
@@ -719,12 +737,14 @@ export default function Transportes() {
       {mapTarget && mapTarget.type === 'metro' && (
         <VehicleMapModal
           open
-          onClose={() => setMapTarget(null)}
+          onClose={() => { setMapTarget(null); setTick(0); }}
           title={`Metro — ${mapTarget.stationName}${mapTarget.destinationName ? ` → ${mapTarget.destinationName}` : ''}`}
           centerLat={mapTarget.stationLat || 38.7223}
           centerLon={mapTarget.stationLon || -9.1393}
           stopName={mapTarget.stationName}
           metroPositions={metroMapPositions}
+          userLat={position?.lat}
+          userLon={position?.lon}
         />
       )}
 
@@ -734,6 +754,8 @@ export default function Transportes() {
           routeId={mapTarget.routeId}
           routeLabel={mapTarget.routeLabel}
           onClose={() => setMapTarget(null)}
+          userLat={position?.lat}
+          userLon={position?.lon}
         />
       )}
     </div>

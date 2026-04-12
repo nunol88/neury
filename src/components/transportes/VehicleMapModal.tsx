@@ -43,6 +43,13 @@ const stopIcon = L.divIcon({
   iconAnchor: [16, 16],
 });
 
+const userIcon = L.divIcon({
+  className: 'transport-map-marker',
+  html: `<div style="background:#3b82f6;border-radius:9999px;width:18px;height:18px;border:3px solid white;box-shadow:0 0 0 2px #3b82f6, 0 4px 12px rgba(59,130,246,0.4);"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
 function syncMapContent({
   map,
   markersLayer,
@@ -52,6 +59,8 @@ function syncMapContent({
   vehicles,
   metroPositions,
   allPositions,
+  userLat,
+  userLon,
 }: {
   map: L.Map;
   markersLayer: L.LayerGroup;
@@ -61,6 +70,8 @@ function syncMapContent({
   vehicles: VehiclePosition[];
   metroPositions: MetroEstimatedPosition[];
   allPositions: [number, number][];
+  userLat?: number;
+  userLon?: number;
 }) {
   markersLayer.clearLayers();
 
@@ -96,6 +107,13 @@ function syncMapContent({
       .addTo(markersLayer);
   });
 
+  // User location marker
+  if (userLat != null && userLon != null && isValidLatLon(userLat, userLon)) {
+    L.marker([userLat, userLon], { icon: userIcon })
+      .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>A tua localização</strong></div>`)
+      .addTo(markersLayer);
+  }
+
   if (allPositions.length > 1) {
     map.fitBounds(L.latLngBounds(allPositions), {
       padding: [40, 40],
@@ -130,6 +148,8 @@ interface VehicleMapModalProps {
   vehicles?: VehiclePosition[];
   metroPositions?: MetroEstimatedPosition[];
   isLoading?: boolean;
+  userLat?: number;
+  userLon?: number;
 }
 
 export default function VehicleMapModal({
@@ -142,6 +162,8 @@ export default function VehicleMapModal({
   vehicles = [],
   metroPositions = [],
   isLoading,
+  userLat,
+  userLon,
 }: VehicleMapModalProps) {
   const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -153,6 +175,10 @@ export default function VehicleMapModal({
 
     if (isValidLatLon(centerLat, centerLon)) {
       points.push([centerLat, centerLon]);
+    }
+
+    if (userLat != null && userLon != null && isValidLatLon(userLat, userLon)) {
+      points.push([userLat, userLon]);
     }
 
     vehicles.forEach((vehicle) => {
@@ -168,7 +194,7 @@ export default function VehicleMapModal({
     });
 
     return points;
-  }, [centerLat, centerLon, vehicles, metroPositions]);
+  }, [centerLat, centerLon, vehicles, metroPositions, userLat, userLon]);
 
   useEffect(() => {
     if (!open || !mapContainerEl || mapRef.current) {
@@ -225,6 +251,8 @@ export default function VehicleMapModal({
         vehicles,
         metroPositions,
         allPositions,
+        userLat,
+        userLon,
       });
 
       invalidateMap(map);
@@ -276,6 +304,8 @@ export default function VehicleMapModal({
       vehicles,
       metroPositions,
       allPositions,
+      userLat,
+      userLon,
     });
 
     const timer = window.setTimeout(() => {
@@ -285,7 +315,7 @@ export default function VehicleMapModal({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [open, centerLat, centerLon, stopName, vehicles, metroPositions, allPositions]);
+  }, [open, centerLat, centerLon, stopName, vehicles, metroPositions, allPositions, userLat, userLon]);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
