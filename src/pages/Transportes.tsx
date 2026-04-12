@@ -329,6 +329,41 @@ export default function Transportes() {
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
   const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
 
+  // Section ordering (persisted in localStorage)
+  type SectionId = 'favorites' | 'metro' | 'nearby';
+  const defaultOrder: SectionId[] = ['favorites', 'metro', 'nearby'];
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(() => {
+    try {
+      const saved = localStorage.getItem('transport-section-order');
+      if (saved) {
+        const parsed = JSON.parse(saved) as SectionId[];
+        if (Array.isArray(parsed) && parsed.length === 3) return parsed;
+      }
+    } catch {}
+    return defaultOrder;
+  });
+  const [draggedSection, setDraggedSection] = useState<SectionId | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<SectionId | null>(null);
+
+  const handleDrop = useCallback((targetId: SectionId) => {
+    if (!draggedSection || draggedSection === targetId) {
+      setDraggedSection(null);
+      setDragOverSection(null);
+      return;
+    }
+    setSectionOrder(prev => {
+      const newOrder = [...prev];
+      const fromIdx = newOrder.indexOf(draggedSection);
+      const toIdx = newOrder.indexOf(targetId);
+      newOrder.splice(fromIdx, 1);
+      newOrder.splice(toIdx, 0, draggedSection);
+      localStorage.setItem('transport-section-order', JSON.stringify(newOrder));
+      return newOrder;
+    });
+    setDraggedSection(null);
+    setDragOverSection(null);
+  }, [draggedSection]);
+
   const cacheStop = (stop: TransportStop) =>
     setStopNameCache(prev => ({ ...prev, [`${stop.provider}-${stop.id}`]: { name: stop.name, provider: stop.provider } }));
 
