@@ -531,7 +531,7 @@ export default function Transportes() {
                 <Train className="h-4 w-4 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Metro</h2>
               </div>
-              <MetroStatusCard position={position} />
+              <MetroStatusCard position={position} onOpenMap={openMetroMap} />
               {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
             </div>
           );
@@ -557,6 +557,7 @@ export default function Transportes() {
                 removeFavorite={removeFavorite}
                 cacheStop={cacheStop}
                 onOpenTimetable={openTimetable}
+                onOpenMap={openStopMap}
               />
 
               <NearbySection
@@ -570,6 +571,7 @@ export default function Transportes() {
                 removeFavorite={removeFavorite}
                 cacheStop={cacheStop}
                 onOpenTimetable={openTimetable}
+                onOpenMap={openStopMap}
               />
               {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
             </div>
