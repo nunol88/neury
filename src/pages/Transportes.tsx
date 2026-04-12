@@ -14,6 +14,9 @@ import {
   useCMArrivals,
   useCarrisSchedule,
   useMetroStatus,
+  useNearestMetroStation,
+  useMetroWaitTimes,
+  formatMetroWaitTime,
   useFavoriteStops,
   useNearbyCMStops,
   useNearbyCarrisStops,
@@ -23,6 +26,7 @@ import {
   useIsOnline,
   type TransportStop,
   type TransportProvider,
+  type GeoPosition,
 } from '@/hooks/useTransportes';
 
 const metroColors: Record<string, string> = {
