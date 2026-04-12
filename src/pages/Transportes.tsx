@@ -604,27 +604,22 @@ export default function Transportes() {
         />
       )}
 
-      {mapTarget && (
+      {mapTarget && mapTarget.type === 'metro' && (
         <VehicleMapModal
-          open={!!mapTarget}
+          open
           onClose={() => setMapTarget(null)}
-          title={
-            mapTarget.type === 'metro'
-              ? `Metro — ${mapTarget.stationName}`
-              : `${mapTarget.stop?.name} (${mapTarget.stop?.provider === 'cm' ? 'CM' : 'Carris'})`
-          }
-          centerLat={
-            mapTarget.type === 'metro'
-              ? (mapTarget.stationLat || 38.7223)
-              : (mapTarget.stop?.lat || 38.7223)
-          }
-          centerLon={
-            mapTarget.type === 'metro'
-              ? (mapTarget.stationLon || -9.1393)
-              : (mapTarget.stop?.lon || -9.1393)
-          }
-          stopName={mapTarget.type === 'metro' ? mapTarget.stationName : mapTarget.stop?.name}
-          metroPositions={mapTarget.type === 'metro' ? metroMapPositions : []}
+          title={`Metro — ${mapTarget.stationName}`}
+          centerLat={mapTarget.stationLat || 38.7223}
+          centerLon={mapTarget.stationLon || -9.1393}
+          stopName={mapTarget.stationName}
+          metroPositions={metroMapPositions}
+        />
+      )}
+
+      {mapTarget && mapTarget.type === 'stop' && mapTarget.stop && (
+        <CMStopMapWrapper
+          stop={mapTarget.stop}
+          onClose={() => setMapTarget(null)}
         />
       )}
     </div>
