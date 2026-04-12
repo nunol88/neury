@@ -124,9 +124,9 @@ function EmptyState() {
 
 /* ── Stop card ── */
 
-function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
+function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void;
+  onOpenTimetable?: () => void; onOpenMap?: () => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -146,6 +146,11 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
+          {stop.provider === 'cm' && onOpenMap && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
+              <MapIcon className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {stop.provider === 'carris' && onOpenTimetable && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenTimetable} title="Ver horário completo">
               <CalendarDays className="h-3.5 w-3.5" />
