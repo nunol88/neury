@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -76,6 +77,7 @@ export default function VehicleMapModal({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const allPositions = useMemo<[number, number][]>(() => {
     const points: [number, number][] = [];
@@ -104,7 +106,8 @@ export default function VehicleMapModal({
       return;
     }
 
-    const map = L.map(mapContainerRef.current, {
+    const container = mapContainerRef.current;
+    const map = L.map(container, {
       zoomControl: true,
       attributionControl: true,
     });
@@ -117,12 +120,28 @@ export default function VehicleMapModal({
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    const timer = window.setTimeout(() => {
-      map.invalidateSize();
-    }, 180);
+    const invalidateMap = () => {
+      window.requestAnimationFrame(() => {
+        map.invalidateSize(true);
+      });
+    };
+
+    invalidateMap();
+    const timerA = window.setTimeout(invalidateMap, 120);
+    const timerB = window.setTimeout(invalidateMap, 320);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        invalidateMap();
+      });
+      resizeObserverRef.current.observe(container);
+    }
 
     return () => {
-      window.clearTimeout(timer);
+      window.clearTimeout(timerA);
+      window.clearTimeout(timerB);
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       markersLayerRef.current?.clearLayers();
       markersLayerRef.current = null;
       map.remove();
@@ -184,8 +203,8 @@ export default function VehicleMapModal({
     }
 
     const timer = window.setTimeout(() => {
-      map.invalidateSize();
-    }, 180);
+      map.invalidateSize(true);
+    }, 120);
 
     return () => {
       window.clearTimeout(timer);
@@ -210,6 +229,9 @@ export default function VehicleMapModal({
             )}
             {isLoading && <span className="text-xs text-muted-foreground animate-pulse">A atualizar...</span>}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Mapa com a localização da paragem ou estação e as posições disponíveis em tempo real.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="h-[60vh] w-full bg-muted/30">
