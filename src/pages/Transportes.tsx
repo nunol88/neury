@@ -32,6 +32,12 @@ import {
 const metroColors: Record<string, string> = {
   Azul: 'bg-blue-500', Amarela: 'bg-yellow-400', Verde: 'bg-green-500', Vermelha: 'bg-red-500',
 };
+const metroTextColors: Record<string, string> = {
+  Azul: 'text-blue-500', Amarela: 'text-yellow-500', Verde: 'text-green-500', Vermelha: 'text-red-500',
+};
+const metroBorderColors: Record<string, string> = {
+  Azul: 'border-blue-500', Amarela: 'border-yellow-400', Verde: 'border-green-500', Vermelha: 'border-red-500',
+};
 
 const providerBadgeClass: Record<TransportProvider, string> = {
   cm: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
