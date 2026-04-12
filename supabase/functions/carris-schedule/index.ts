@@ -44,11 +44,15 @@ Deno.serve(async (req) => {
     const currentTime = `${String(lisbon.getHours()).padStart(2, "0")}:${String(lisbon.getMinutes()).padStart(2, "0")}`;
 
     const departures = entries
-      .filter((e: string) => e.endsWith(`|${dayType}`) && e.substring(0, 5) >= currentTime)
+      .filter((e: string) => {
+        const parts = e.split("|");
+        const dayFlag = parts[2];
+        return dayFlag === dayType && parts[0] >= currentTime;
+      })
       .slice(0, 15)
       .map((e: string) => {
-        const [t, r, s] = e.split("|");
-        return { t, r, s };
+        const [t, r, , d] = e.split("|");
+        return { t, r, d: d || "" };
       });
 
     return new Response(JSON.stringify({ departures }), {
