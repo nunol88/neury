@@ -513,6 +513,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
+                      onOpenMap={() => openStopMap(stop)}
                     />
                   );
                 })}
