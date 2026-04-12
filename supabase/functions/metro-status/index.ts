@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: `{ station(id: "${stationId}") { id name waitTimes { destination { id name } time live ut } } }`,
+          query: `{ station(id: "${stationId}") { id name waitTimes { destination { id name } arrivalTimes { timeLeft } live } } }`,
         }),
       });
       const json = await res.json();

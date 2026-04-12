@@ -84,11 +84,14 @@ export interface MetroStation {
   lines: string[];
 }
 
+export interface MetroArrivalTime {
+  timeLeft: string;
+}
+
 export interface MetroWaitTime {
   destination: { id: string; name: string };
-  time: string;
+  arrivalTimes: MetroArrivalTime[];
   live: boolean;
-  ut: number;
 }
 
 export interface GeoPosition {
@@ -390,8 +393,9 @@ export function useMetroWaitTimes(stationId: string | null) {
   });
 }
 
-export function formatMetroWaitTime(wt: MetroWaitTime): string {
-  const minutes = wt.ut;
-  if (minutes == null || minutes <= 1) return 'A chegar';
-  return `${minutes} min`;
+export function formatMetroTimeLeft(timeLeft: string): string {
+  const [m, s] = timeLeft.split(':').map(Number);
+  const totalMin = m + (s > 30 ? 1 : 0);
+  if (totalMin <= 1) return 'A chegar';
+  return `${totalMin} min`;
 }
