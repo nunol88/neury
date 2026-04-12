@@ -450,7 +450,17 @@ export default function Transportes() {
     mapTarget?.type === 'metro' ? (mapTarget.stationId || null) : null
   );
 
+  // Tick every 3s to animate metro position on map
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (mapTarget?.type !== 'metro') return;
+    const interval = setInterval(() => setTick(t => t + 1), 3000);
+    return () => clearInterval(interval);
+  }, [mapTarget?.type]);
+
   const metroMapPositions = useMemo<MetroEstimatedPosition[]>(() => {
+    // tick is used to force recalculation
+    void tick;
     if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations || !mapTarget.destinationId) return [];
 
     const stationLat = mapTarget.stationLat || 0;
@@ -475,7 +485,9 @@ export default function Transportes() {
     const timeLeft = selectedWait.arrivalTimes[0].timeLeft;
     const [m = 0, s = 0] = timeLeft.split(':').map(Number);
     const totalSec = (Number.isFinite(m) ? m : 0) * 60 + (Number.isFinite(s) ? s : 0);
-    const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
+    // Subtract elapsed time since data was fetched (tick * 3s)
+    const adjustedSec = Math.max(0, totalSec - (tick * 3 % totalSec));
+    const progress = Math.max(0, Math.min(1, 1 - adjustedSec / 180));
     const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * progress;
     const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * progress;
 
@@ -486,7 +498,7 @@ export default function Transportes() {
       timeLeft: formatMetroTimeLeft(timeLeft),
       live: selectedWait.live,
     }];
-  }, [mapTarget, metroWaitForMap, metroStations]);
+  }, [mapTarget, metroWaitForMap, metroStations, tick]);
 
   const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string) => {
     if (!routeId) return;
