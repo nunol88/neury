@@ -737,12 +737,14 @@ export default function Transportes() {
       {mapTarget && mapTarget.type === 'metro' && (
         <VehicleMapModal
           open
-          onClose={() => setMapTarget(null)}
+          onClose={() => { setMapTarget(null); setTick(0); }}
           title={`Metro — ${mapTarget.stationName}${mapTarget.destinationName ? ` → ${mapTarget.destinationName}` : ''}`}
           centerLat={mapTarget.stationLat || 38.7223}
           centerLon={mapTarget.stationLon || -9.1393}
           stopName={mapTarget.stationName}
           metroPositions={metroMapPositions}
+          userLat={position?.lat}
+          userLon={position?.lon}
         />
       )}
 
@@ -752,6 +754,8 @@ export default function Transportes() {
           routeId={mapTarget.routeId}
           routeLabel={mapTarget.routeLabel}
           onClose={() => setMapTarget(null)}
+          userLat={position?.lat}
+          userLon={position?.lon}
         />
       )}
     </div>
