@@ -370,7 +370,7 @@ export default function Transportes() {
       </Card>
 
       {/* Metro */}
-      <MetroStatusCard />
+      <MetroStatusCard position={position} />
 
       {/* Nearby — separated by provider */}
       {position && (
