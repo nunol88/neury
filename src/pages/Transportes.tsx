@@ -1,14 +1,16 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Bus, Search, Star, StarOff, Clock, MapPin,
+  Bus, Search, Star, StarOff, Clock, MapPin, Map as MapIcon,
   RefreshCw, Train, Loader2, AlertCircle, Navigation, LocateFixed, WifiOff, CalendarDays, GripVertical
 } from 'lucide-react';
 import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
+import VehicleMapModal, { type MetroEstimatedPosition } from '@/components/transportes/VehicleMapModal';
+import { useVehiclePositions } from '@/hooks/useVehiclePositions';
 import {
   useSearchStops,
   useCMArrivals,
@@ -16,6 +18,7 @@ import {
   useMetroStatus,
   useNearestMetroStation,
   useMetroWaitTimes,
+  useMetroStations,
   formatMetroTimeLeft,
   useFavoriteStops,
   useNearbyCMStops,
@@ -122,9 +125,9 @@ function EmptyState() {
 
 /* ── Stop card ── */
 
-function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
+function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void;
+  onOpenTimetable?: () => void; onOpenMap?: () => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -144,6 +147,11 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
+          {stop.provider === 'cm' && onOpenMap && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
+              <MapIcon className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {stop.provider === 'carris' && onOpenTimetable && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenTimetable} title="Ver horário completo">
               <CalendarDays className="h-3.5 w-3.5" />
@@ -162,7 +170,7 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
 
 /* ── Metro ── */
 
-function MetroStatusCard({ position }: { position: GeoPosition | null }) {
+function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null; onOpenMap?: () => void }) {
   const { data: lines, isLoading: statusLoading } = useMetroStatus();
   const { data: nearestStation } = useNearestMetroStation(position);
   const { data: waitTimes, isLoading: waitLoading } = useMetroWaitTimes(nearestStation?.id || null);
@@ -178,10 +186,15 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Train className="h-4 w-4" /> Metro de Lisboa
         </CardTitle>
+        {nearestStation && onOpenMap && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
+            <MapIcon className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         {/* Nearest station - prominent display */}
@@ -278,7 +291,7 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
 
 /* ── Section for a provider's nearby stops ── */
 
-function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop, onOpenTimetable }: {
+function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop, onOpenTimetable, onOpenMap }: {
   title: string; badgeLabel: string; badgeClass: string;
   stops: TransportStop[] | undefined; isLoading: boolean;
   isFavorite: (id: string, p: TransportProvider) => boolean;
@@ -286,6 +299,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
+  onOpenMap: (stop: TransportStop) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -305,6 +319,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
+              onOpenMap={() => onOpenMap(stop)}
             />
           ))}
         </div>
@@ -318,6 +333,27 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
 
 /* ── Main page ── */
 
+/* ── CM Stop Map Wrapper (fetches arrivals + vehicle positions) ── */
+function CMStopMapWrapper({ stop, onClose }: { stop: TransportStop; onClose: () => void }) {
+  const { data: arrivals } = useCMArrivals(stop.provider === 'cm' ? stop.id : null);
+  // Get the first route_id from arrivals
+  const firstRouteId = arrivals?.[0]?.route_id || null;
+  const { data: vehicles, isLoading } = useVehiclePositions(firstRouteId);
+
+  return (
+    <VehicleMapModal
+      open
+      onClose={onClose}
+      title={`${stop.name} (${stop.provider === 'cm' ? 'Carris Metropolitana' : 'Carris'})`}
+      centerLat={stop.lat || 38.7223}
+      centerLon={stop.lon || -9.1393}
+      stopName={stop.name}
+      vehicles={vehicles || []}
+      isLoading={isLoading}
+    />
+  );
+}
+
 export default function Transportes() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: searchResults, isLoading: searching } = useSearchStops(searchQuery);
@@ -328,6 +364,61 @@ export default function Transportes() {
   const isOnline = useIsOnline();
   const [stopNameCache, setStopNameCache] = useState<Record<string, { name: string; provider: TransportProvider }>>({});
   const [timetableStop, setTimetableStop] = useState<{ id: string; name: string } | null>(null);
+  const [mapTarget, setMapTarget] = useState<{
+    type: 'stop' | 'metro';
+    stop?: TransportStop;
+    routeId?: string;
+    stationId?: string;
+    stationName?: string;
+    stationLat?: number;
+    stationLon?: number;
+  } | null>(null);
+
+  // Metro data for map
+  const { data: metroStations } = useMetroStations();
+  const { data: nearestStation } = useNearestMetroStation(position);
+  const { data: metroWaitForMap } = useMetroWaitTimes(
+    mapTarget?.type === 'metro' ? (mapTarget.stationId || null) : null
+  );
+
+  const metroMapPositions = useMemo<MetroEstimatedPosition[]>(() => {
+    if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations) return [];
+    const stationLat = mapTarget.stationLat || 0;
+    const stationLon = mapTarget.stationLon || 0;
+    return metroWaitForMap.flatMap(wt => {
+      const destStation = metroStations.find(s => s.name.toLowerCase() === wt.destination.name.toLowerCase());
+      if (!destStation || !wt.arrivalTimes?.[0]) return [];
+      const timeLeft = wt.arrivalTimes[0].timeLeft;
+      const [m, s] = timeLeft.split(':').map(Number);
+      const totalSec = m * 60 + (s || 0);
+      // Estimate 3 min between stations; interpolate position
+      const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
+      const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * (1 - progress);
+      const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * (1 - progress);
+      return [{
+        lat, lon,
+        destination: wt.destination.name,
+        timeLeft: formatMetroTimeLeft(timeLeft),
+        live: wt.live,
+      }];
+    });
+  }, [mapTarget, metroWaitForMap, metroStations]);
+
+  const openStopMap = (stop: TransportStop) => {
+    setMapTarget({ type: 'stop', stop });
+  };
+
+  const openMetroMap = () => {
+    if (nearestStation) {
+      setMapTarget({
+        type: 'metro',
+        stationId: nearestStation.id,
+        stationName: nearestStation.name,
+        stationLat: parseFloat(nearestStation.lat),
+        stationLon: parseFloat(nearestStation.lon),
+      });
+    }
+  };
 
   // Section ordering (persisted in localStorage)
   type SectionId = 'favorites' | 'metro' | 'nearby';
@@ -438,6 +529,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
+                      onOpenMap={() => openStopMap(stop)}
                     />
                   );
                 })}
@@ -455,7 +547,7 @@ export default function Transportes() {
                 <Train className="h-4 w-4 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Metro</h2>
               </div>
-              <MetroStatusCard position={position} />
+              <MetroStatusCard position={position} onOpenMap={openMetroMap} />
               {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
             </div>
           );
@@ -481,6 +573,7 @@ export default function Transportes() {
                 removeFavorite={removeFavorite}
                 cacheStop={cacheStop}
                 onOpenTimetable={openTimetable}
+                onOpenMap={openStopMap}
               />
 
               <NearbySection
@@ -494,6 +587,7 @@ export default function Transportes() {
                 removeFavorite={removeFavorite}
                 cacheStop={cacheStop}
                 onOpenTimetable={openTimetable}
+                onOpenMap={openStopMap}
               />
               {idx < sectionOrder.length - 1 && <Separator className="mt-6" />}
             </div>
@@ -523,6 +617,25 @@ export default function Transportes() {
           onClose={() => setTimetableStop(null)}
           stopId={timetableStop.id}
           stopName={timetableStop.name}
+        />
+      )}
+
+      {mapTarget && mapTarget.type === 'metro' && (
+        <VehicleMapModal
+          open
+          onClose={() => setMapTarget(null)}
+          title={`Metro — ${mapTarget.stationName}`}
+          centerLat={mapTarget.stationLat || 38.7223}
+          centerLon={mapTarget.stationLon || -9.1393}
+          stopName={mapTarget.stationName}
+          metroPositions={metroMapPositions}
+        />
+      )}
+
+      {mapTarget && mapTarget.type === 'stop' && mapTarget.stop && (
+        <CMStopMapWrapper
+          stop={mapTarget.stop}
+          onClose={() => setMapTarget(null)}
         />
       )}
     </div>
