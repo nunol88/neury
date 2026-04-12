@@ -169,7 +169,7 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: 
 
 /* ── Metro ── */
 
-function MetroStatusCard({ position }: { position: GeoPosition | null }) {
+function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null; onOpenMap?: () => void }) {
   const { data: lines, isLoading: statusLoading } = useMetroStatus();
   const { data: nearestStation } = useNearestMetroStation(position);
   const { data: waitTimes, isLoading: waitLoading } = useMetroWaitTimes(nearestStation?.id || null);
@@ -185,10 +185,15 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Train className="h-4 w-4" /> Metro de Lisboa
         </CardTitle>
+        {nearestStation && onOpenMap && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
+            <MapIcon className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         {/* Nearest station - prominent display */}
