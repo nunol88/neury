@@ -3,11 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import type { VehiclePosition } from '@/hooks/useVehiclePositions';
 
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const DEFAULT_CENTER: [number, number] = [38.7223, -9.1393];
 
 function escapeHtml(value: string) {
   return value
@@ -42,6 +42,75 @@ const stopIcon = L.divIcon({
   iconSize: [32, 32],
   iconAnchor: [16, 16],
 });
+
+function syncMapContent({
+  map,
+  markersLayer,
+  centerLat,
+  centerLon,
+  stopName,
+  vehicles,
+  metroPositions,
+  allPositions,
+}: {
+  map: L.Map;
+  markersLayer: L.LayerGroup;
+  centerLat: number;
+  centerLon: number;
+  stopName?: string;
+  vehicles: VehiclePosition[];
+  metroPositions: MetroEstimatedPosition[];
+  allPositions: [number, number][];
+}) {
+  markersLayer.clearLayers();
+
+  if (isValidLatLon(centerLat, centerLon)) {
+    L.marker([centerLat, centerLon], { icon: stopIcon })
+      .bindPopup(escapeHtml(stopName || 'Paragem'))
+      .addTo(markersLayer);
+  }
+
+  vehicles.forEach((vehicle) => {
+    if (!isValidLatLon(vehicle.lat, vehicle.lon)) {
+      return;
+    }
+
+    const routeLabel = escapeHtml((vehicle.route_id || '—').replace(/_\d+$/, ''));
+    const speedLabel = vehicle.speed > 0 ? `<br />Velocidade: ${Math.round(vehicle.speed)} km/h` : '';
+
+    L.marker([vehicle.lat, vehicle.lon], { icon: busIcon })
+      .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>Rota: ${routeLabel}</strong>${speedLabel}</div>`)
+      .addTo(markersLayer);
+  });
+
+  metroPositions.forEach((metro) => {
+    if (!isValidLatLon(metro.lat, metro.lon)) {
+      return;
+    }
+
+    const destination = escapeHtml(metro.destination);
+    const badge = metro.live ? '<br />Tempo real' : '';
+
+    L.marker([metro.lat, metro.lon], { icon: trainIcon })
+      .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>→ ${destination}</strong><br />${escapeHtml(metro.timeLeft)}${badge}</div>`)
+      .addTo(markersLayer);
+  });
+
+  if (allPositions.length > 1) {
+    map.fitBounds(L.latLngBounds(allPositions), {
+      padding: [40, 40],
+      maxZoom: 16,
+    });
+  } else if (allPositions.length === 1) {
+    map.setView(allPositions[0], 15);
+  } else {
+    map.setView(DEFAULT_CENTER, 12);
+  }
+
+  window.requestAnimationFrame(() => {
+    map.invalidateSize(true);
+  });
+}
 
 export interface MetroEstimatedPosition {
   lat: number;
@@ -128,7 +197,10 @@ export default function VehicleMapModal({
         return;
       }
 
+      const initialCenter = isValidLatLon(centerLat, centerLon) ? [centerLat, centerLon] as [number, number] : DEFAULT_CENTER;
       const map = L.map(container, {
+        center: initialCenter,
+        zoom: 15,
         zoomControl: true,
         attributionControl: true,
         fadeAnimation: false,
@@ -143,6 +215,17 @@ export default function VehicleMapModal({
 
       markersLayerRef.current = L.layerGroup().addTo(map);
       mapRef.current = map;
+
+      syncMapContent({
+        map,
+        markersLayer: markersLayerRef.current,
+        centerLat,
+        centerLon,
+        stopName,
+        vehicles,
+        metroPositions,
+        allPositions,
+      });
 
       invalidateMap(map);
       timerA = window.setTimeout(() => invalidateMap(map), 120);
@@ -180,50 +263,16 @@ export default function VehicleMapModal({
       return;
     }
 
-    markersLayer.clearLayers();
-
-    if (isValidLatLon(centerLat, centerLon)) {
-      L.marker([centerLat, centerLon], { icon: stopIcon })
-        .bindPopup(escapeHtml(stopName || 'Paragem'))
-        .addTo(markersLayer);
-    }
-
-    vehicles.forEach((vehicle) => {
-      if (!isValidLatLon(vehicle.lat, vehicle.lon)) {
-        return;
-      }
-
-      const routeLabel = escapeHtml((vehicle.route_id || '—').replace(/_\d+$/, ''));
-      const speedLabel = vehicle.speed > 0 ? `<br />Velocidade: ${Math.round(vehicle.speed)} km/h` : '';
-
-      L.marker([vehicle.lat, vehicle.lon], { icon: busIcon })
-        .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>Rota: ${routeLabel}</strong>${speedLabel}</div>`)
-        .addTo(markersLayer);
+    syncMapContent({
+      map,
+      markersLayer,
+      centerLat,
+      centerLon,
+      stopName,
+      vehicles,
+      metroPositions,
+      allPositions,
     });
-
-    metroPositions.forEach((metro) => {
-      if (!isValidLatLon(metro.lat, metro.lon)) {
-        return;
-      }
-
-      const destination = escapeHtml(metro.destination);
-      const badge = metro.live ? '<br />Tempo real' : '';
-
-      L.marker([metro.lat, metro.lon], { icon: trainIcon })
-        .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>→ ${destination}</strong><br />${escapeHtml(metro.timeLeft)}${badge}</div>`)
-        .addTo(markersLayer);
-    });
-
-    if (allPositions.length > 1) {
-      map.fitBounds(L.latLngBounds(allPositions), {
-        padding: [40, 40],
-        maxZoom: 16,
-      });
-    } else if (allPositions.length === 1) {
-      map.setView(allPositions[0], 15);
-    } else {
-      map.setView([38.7223, -9.1393], 12);
-    }
 
     const timer = window.setTimeout(() => {
       map.invalidateSize(true);
