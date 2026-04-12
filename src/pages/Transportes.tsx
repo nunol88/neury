@@ -213,7 +213,7 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
                       <span className="text-xs text-muted-foreground">→ {wt.destination.name}</span>
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-medium text-foreground">{formatMetroWaitTime(wt.time)}</span>
+                        <span className="font-medium text-foreground">{formatMetroWaitTime(wt)}</span>
                         {wt.live && <span className="text-[9px] text-green-500">●</span>}
                       </div>
                     </div>
