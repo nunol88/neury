@@ -49,7 +49,13 @@ const providerBadgeClass: Record<TransportProvider, string> = {
 
 /* ── Arrival sub-components ── */
 
-function CMStopArrivals({ stopId }: { stopId: string }) {
+function CMStopArrivals({
+  stopId,
+  onOpenMap,
+}: {
+  stopId: string;
+  onOpenMap?: (routeId: string, routeLabel: string) => void;
+}) {
   const { data: arrivals, isLoading, isError } = useCMArrivals(stopId);
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState />;
@@ -58,13 +64,27 @@ function CMStopArrivals({ stopId }: { stopId: string }) {
     <div className="space-y-1.5">
       {arrivals.map((a, i) => {
         const time = a.estimated_arrival_unix || a.scheduled_arrival_unix;
-        const route = a.route_id?.replace(/_\d+$/, '') || '—';
+        const routeId = a.route_id || '';
+        const route = routeId.replace(/_\d+$/, '') || '—';
+        const canOpenMap = !!onOpenMap && !!routeId;
+
         return (
-          <div key={`${a.pattern_id}-${i}`} className="flex items-center justify-between text-sm py-1">
+          <div key={`${a.pattern_id}-${i}`} className="flex items-center justify-between gap-2 py-1 text-sm">
             <Badge variant="secondary" className="text-xs font-mono px-1.5">{route}</Badge>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span className="font-medium text-foreground">{formatMinutesUntil(time)}</span>
+              {canOpenMap && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => onOpenMap(routeId, route)}
+                  title={`Ver autocarro ${route} no mapa`}
+                >
+                  <MapIcon className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         );
@@ -127,7 +147,7 @@ function EmptyState() {
 
 function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void; onOpenMap?: () => void;
+  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string) => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -147,11 +167,6 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: 
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          {stop.provider === 'cm' && onOpenMap && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
-              <MapIcon className="h-3.5 w-3.5" />
-            </Button>
-          )}
           {stop.provider === 'carris' && onOpenTimetable && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenTimetable} title="Ver horário completo">
               <CalendarDays className="h-3.5 w-3.5" />
@@ -162,7 +177,11 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: 
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {stop.provider === 'cm' ? <CMStopArrivals stopId={stop.id} /> : <CarrisStopSchedule stopId={stop.id} />}
+        {stop.provider === 'cm' ? (
+          <CMStopArrivals stopId={stop.id} onOpenMap={onOpenMap} />
+        ) : (
+          <CarrisStopSchedule stopId={stop.id} />
+        )}
       </CardContent>
     </Card>
   );
@@ -170,7 +189,22 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: 
 
 /* ── Metro ── */
 
-function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null; onOpenMap?: () => void }) {
+function MetroStatusCard({
+  position,
+  onOpenMap,
+}: {
+  position: GeoPosition | null;
+  onOpenMap?: (selection: {
+    stationId: string;
+    stationName: string;
+    stationLat: number;
+    stationLon: number;
+    destinationId: string;
+    destinationName: string;
+    timeLeft: string;
+    live: boolean;
+  }) => void;
+}) {
   const { data: lines, isLoading: statusLoading } = useMetroStatus();
   const { data: nearestStation } = useNearestMetroStation(position);
   const { data: waitTimes, isLoading: waitLoading } = useMetroWaitTimes(nearestStation?.id || null);
@@ -190,11 +224,6 @@ function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Train className="h-4 w-4" /> Metro de Lisboa
         </CardTitle>
-        {nearestStation && onOpenMap && (
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onOpenMap} title="Ver no mapa">
-            <MapIcon className="h-3.5 w-3.5" />
-          </Button>
-        )}
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         {/* Nearest station - prominent display */}
@@ -228,6 +257,8 @@ function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null
                 {waitTimes!.map((wt, i) => {
                   const nextTime = wt.arrivalTimes?.[0]?.timeLeft;
                   const nextMin = nextTime ? formatMetroTimeLeft(nextTime) : '—';
+                  const canOpenMap = !!onOpenMap && !!nearestStation && !!nextTime;
+
                   return (
                     <div key={`${wt.destination.id}-${i}`} className="bg-background/50 rounded-md p-2">
                       <div className="flex items-center justify-between">
@@ -243,7 +274,29 @@ function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null
                             </Badge>
                           )}
                         </div>
-                        <span className="text-lg font-bold text-primary">{nextMin}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-lg font-bold text-primary">{nextMin}</span>
+                          {canOpenMap && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => onOpenMap({
+                                stationId: nearestStation.id,
+                                stationName: nearestStation.name,
+                                stationLat: parseFloat(nearestStation.lat),
+                                stationLon: parseFloat(nearestStation.lon),
+                                destinationId: wt.destination.id,
+                                destinationName: wt.destination.name,
+                                timeLeft: nextTime,
+                                live: wt.live,
+                              })}
+                              title={`Ver comboio para ${wt.destination.name} no mapa`}
+                            >
+                              <MapIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       {expanded && wt.arrivalTimes?.slice(1).map((at, j) => (
                         <div key={j} className="flex justify-between text-xs text-muted-foreground mt-1 pl-5">
@@ -299,7 +352,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
-  onOpenMap: (stop: TransportStop) => void;
+  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -319,7 +372,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
-              onOpenMap={() => onOpenMap(stop)}
+              onOpenMap={(routeId, routeLabel) => onOpenMap(stop, routeId, routeLabel)}
             />
           ))}
         </div>
@@ -334,17 +387,24 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
 /* ── Main page ── */
 
 /* ── CM Stop Map Wrapper (fetches arrivals + vehicle positions) ── */
-function CMStopMapWrapper({ stop, onClose }: { stop: TransportStop; onClose: () => void }) {
-  const { data: arrivals } = useCMArrivals(stop.provider === 'cm' ? stop.id : null);
-  // Get the first route_id from arrivals
-  const firstRouteId = arrivals?.[0]?.route_id || null;
-  const { data: vehicles, isLoading } = useVehiclePositions(firstRouteId);
+function CMStopMapWrapper({
+  stop,
+  routeId,
+  routeLabel,
+  onClose,
+}: {
+  stop: TransportStop;
+  routeId: string;
+  routeLabel?: string;
+  onClose: () => void;
+}) {
+  const { data: vehicles, isLoading } = useVehiclePositions(routeId);
 
   return (
     <VehicleMapModal
       open
       onClose={onClose}
-      title={`${stop.name} (${stop.provider === 'cm' ? 'Carris Metropolitana' : 'Carris'})`}
+      title={`${stop.name} — Autocarro ${routeLabel || routeId.replace(/_\d+$/, '')}`}
       centerLat={stop.lat || 38.7223}
       centerLon={stop.lon || -9.1393}
       stopName={stop.name}
@@ -368,10 +428,13 @@ export default function Transportes() {
     type: 'stop' | 'metro';
     stop?: TransportStop;
     routeId?: string;
+    routeLabel?: string;
     stationId?: string;
     stationName?: string;
     stationLat?: number;
     stationLon?: number;
+    destinationId?: string;
+    destinationName?: string;
   } | null>(null);
 
   // Metro data for map
@@ -382,42 +445,66 @@ export default function Transportes() {
   );
 
   const metroMapPositions = useMemo<MetroEstimatedPosition[]>(() => {
-    if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations) return [];
+    if (mapTarget?.type !== 'metro' || !metroWaitForMap || !metroStations || !mapTarget.destinationId) return [];
+
     const stationLat = mapTarget.stationLat || 0;
     const stationLon = mapTarget.stationLon || 0;
-    return metroWaitForMap.flatMap(wt => {
-      const destStation = metroStations.find(s => s.name.toLowerCase() === wt.destination.name.toLowerCase());
-      if (!destStation || !wt.arrivalTimes?.[0]) return [];
-      const timeLeft = wt.arrivalTimes[0].timeLeft;
-      const [m, s] = timeLeft.split(':').map(Number);
-      const totalSec = m * 60 + (s || 0);
-      // Estimate 3 min between stations; interpolate position
-      const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
-      const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * (1 - progress);
-      const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * (1 - progress);
-      return [{
-        lat, lon,
-        destination: wt.destination.name,
-        timeLeft: formatMetroTimeLeft(timeLeft),
-        live: wt.live,
-      }];
-    });
+
+    const selectedWait = metroWaitForMap.find(
+      (wt) =>
+        wt.destination.id === mapTarget.destinationId ||
+        wt.destination.name.toLowerCase() === mapTarget.destinationName?.toLowerCase()
+    );
+
+    if (!selectedWait?.arrivalTimes?.[0]) return [];
+
+    const destStation = metroStations.find(
+      (station) =>
+        station.id === selectedWait.destination.id ||
+        station.name.toLowerCase() === selectedWait.destination.name.toLowerCase()
+    );
+
+    if (!destStation) return [];
+
+    const timeLeft = selectedWait.arrivalTimes[0].timeLeft;
+    const [m = 0, s = 0] = timeLeft.split(':').map(Number);
+    const totalSec = (Number.isFinite(m) ? m : 0) * 60 + (Number.isFinite(s) ? s : 0);
+    const progress = Math.max(0, Math.min(1, 1 - totalSec / 180));
+    const lat = stationLat + (parseFloat(destStation.lat) - stationLat) * progress;
+    const lon = stationLon + (parseFloat(destStation.lon) - stationLon) * progress;
+
+    return [{
+      lat,
+      lon,
+      destination: selectedWait.destination.name,
+      timeLeft: formatMetroTimeLeft(timeLeft),
+      live: selectedWait.live,
+    }];
   }, [mapTarget, metroWaitForMap, metroStations]);
 
-  const openStopMap = (stop: TransportStop) => {
-    setMapTarget({ type: 'stop', stop });
+  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string) => {
+    if (!routeId) return;
+
+    setMapTarget({ type: 'stop', stop, routeId, routeLabel });
   };
 
-  const openMetroMap = () => {
-    if (nearestStation) {
-      setMapTarget({
-        type: 'metro',
-        stationId: nearestStation.id,
-        stationName: nearestStation.name,
-        stationLat: parseFloat(nearestStation.lat),
-        stationLon: parseFloat(nearestStation.lon),
-      });
-    }
+  const openMetroMap = (selection: {
+    stationId: string;
+    stationName: string;
+    stationLat: number;
+    stationLon: number;
+    destinationId: string;
+    destinationName: string;
+  }) => {
+    setMapTarget({
+      type: 'metro',
+      stationId: selection.stationId,
+      stationName: selection.stationName,
+      stationLat: selection.stationLat,
+      stationLon: selection.stationLon,
+      destinationId: selection.destinationId,
+      destinationName: selection.destinationName,
+    });
   };
 
   // Section ordering (persisted in localStorage)
@@ -538,7 +625,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
-                      onOpenMap={() => openStopMap(stop)}
+                      onOpenMap={(routeId, routeLabel) => openStopMap(stop, routeId, routeLabel)}
                     />
                   );
                 })}
@@ -633,7 +720,7 @@ export default function Transportes() {
         <VehicleMapModal
           open
           onClose={() => setMapTarget(null)}
-          title={`Metro — ${mapTarget.stationName}`}
+          title={`Metro — ${mapTarget.stationName}${mapTarget.destinationName ? ` → ${mapTarget.destinationName}` : ''}`}
           centerLat={mapTarget.stationLat || 38.7223}
           centerLon={mapTarget.stationLon || -9.1393}
           stopName={mapTarget.stationName}
@@ -641,9 +728,11 @@ export default function Transportes() {
         />
       )}
 
-      {mapTarget && mapTarget.type === 'stop' && mapTarget.stop && (
+      {mapTarget && mapTarget.type === 'stop' && mapTarget.stop && mapTarget.routeId && (
         <CMStopMapWrapper
           stop={mapTarget.stop}
+          routeId={mapTarget.routeId}
+          routeLabel={mapTarget.routeLabel}
           onClose={() => setMapTarget(null)}
         />
       )}

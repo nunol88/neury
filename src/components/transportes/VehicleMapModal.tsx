@@ -19,7 +19,7 @@ function escapeHtml(value: string) {
 }
 
 function isValidLatLon(lat: number, lon: number) {
-  return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+  return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (Math.abs(lat) > 0.0001 || Math.abs(lon) > 0.0001);
 }
 
 const busIcon = L.divIcon({
@@ -107,44 +107,67 @@ export default function VehicleMapModal({
     }
 
     const container = mapContainerRef.current;
-    const map = L.map(container, {
-      zoomControl: true,
-      attributionControl: true,
-    });
+    let animationFrame = 0;
+    let timerA = 0;
+    let timerB = 0;
+    let cancelled = false;
 
-    L.tileLayer(TILE_URL, {
-      attribution: TILE_ATTRIBUTION,
-      maxZoom: 19,
-    }).addTo(map);
-
-    markersLayerRef.current = L.layerGroup().addTo(map);
-    mapRef.current = map;
-
-    const invalidateMap = () => {
+    const invalidateMap = (map: L.Map) => {
       window.requestAnimationFrame(() => {
         map.invalidateSize(true);
       });
     };
 
-    invalidateMap();
-    const timerA = window.setTimeout(invalidateMap, 120);
-    const timerB = window.setTimeout(invalidateMap, 320);
+    const initializeMap = () => {
+      if (cancelled || mapRef.current) {
+        return;
+      }
 
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserverRef.current = new ResizeObserver(() => {
-        invalidateMap();
+      if (container.clientWidth === 0 || container.clientHeight === 0) {
+        animationFrame = window.requestAnimationFrame(initializeMap);
+        return;
+      }
+
+      const map = L.map(container, {
+        zoomControl: true,
+        attributionControl: true,
+        fadeAnimation: false,
+        zoomAnimation: false,
+        markerZoomAnimation: false,
       });
-      resizeObserverRef.current.observe(container);
-    }
+
+      L.tileLayer(TILE_URL, {
+        attribution: TILE_ATTRIBUTION,
+        maxZoom: 19,
+      }).addTo(map);
+
+      markersLayerRef.current = L.layerGroup().addTo(map);
+      mapRef.current = map;
+
+      invalidateMap(map);
+      timerA = window.setTimeout(() => invalidateMap(map), 120);
+      timerB = window.setTimeout(() => invalidateMap(map), 320);
+
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserverRef.current = new ResizeObserver(() => {
+          invalidateMap(map);
+        });
+        resizeObserverRef.current.observe(container);
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(initializeMap);
 
     return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(timerA);
       window.clearTimeout(timerB);
       resizeObserverRef.current?.disconnect();
       resizeObserverRef.current = null;
       markersLayerRef.current?.clearLayers();
       markersLayerRef.current = null;
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
     };
   }, [open]);
