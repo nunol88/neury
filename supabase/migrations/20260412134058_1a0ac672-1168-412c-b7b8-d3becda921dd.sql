@@ -1,0 +1,2 @@
+CREATE POLICY "Service role can insert" ON public.carris_schedules FOR INSERT WITH CHECK (true);
+CREATE POLICY "Service role can update" ON public.carris_schedules FOR UPDATE USING (true) WITH CHECK (true);
