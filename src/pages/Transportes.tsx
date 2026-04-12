@@ -169,7 +169,7 @@ function MetroStatusCard() {
                   <div className={`w-3 h-3 rounded-full ${metroColors[line.nome] || 'bg-muted'}`} />
                   <span>{line.nome}</span>
                 </div>
-                <Badge variant={line.estado === 'Aberta' ? 'default' : 'destructive'} className="text-xs">{line.estado}</Badge>
+                <Badge variant={line.estado.toLowerCase().includes('ok') || line.estado === 'Aberta' ? 'default' : 'destructive'} className="text-xs">{line.estado}</Badge>
               </div>
             ))}
           </div>

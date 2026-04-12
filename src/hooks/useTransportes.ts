@@ -281,7 +281,15 @@ export function useMetroStatus() {
         if (!res.ok) throw new Error();
         const data = await res.json();
         const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        return Array.isArray(parsed?.resposta) ? parsed.resposta : [];
+        const resp = parsed?.resposta;
+        if (Array.isArray(resp)) return resp;
+        if (resp && typeof resp === 'object') {
+          const lineNames = ['amarela', 'azul', 'verde', 'vermelha'];
+          return lineNames
+            .filter(n => n in resp)
+            .map(n => ({ nome: n.charAt(0).toUpperCase() + n.slice(1), estado: (resp[n] || '').trim() || 'Desconhecido' }));
+        }
+        return [];
       } catch { return []; }
     },
     refetchInterval: 60_000,
