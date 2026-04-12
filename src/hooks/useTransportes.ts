@@ -76,6 +76,20 @@ export interface MetroLine {
   estado: string;
 }
 
+export interface MetroStation {
+  id: string;
+  name: string;
+  lat: string;
+  lon: string;
+  lines: string[];
+}
+
+export interface MetroWaitTime {
+  destination: { id: string; name: string };
+  time: string;
+  live: boolean;
+}
+
 export interface GeoPosition {
   lat: number;
   lon: number;
@@ -314,4 +328,70 @@ export function formatTimeUntil(timeStr: string): string {
   if (diff <= 1) return 'A chegar';
   if (diff > 60) return timeStr;
   return `${diff} min`;
+}
+
+// Metro stations (cached)
+let metroStationsCache: MetroStation[] | null = null;
+
+export function useMetroStations() {
+  return useQuery({
+    queryKey: ['metro-stations'],
+    queryFn: async (): Promise<MetroStation[]> => {
+      if (metroStationsCache) return metroStationsCache;
+      const res = await fetch(`${METRO_FN_URL}?action=stations`, {
+        headers: { 'Authorization': `Bearer ${ANON_KEY}` }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      metroStationsCache = data;
+      return data;
+    },
+    staleTime: Infinity,
+  });
+}
+
+// Find nearest metro station
+export function useNearestMetroStation(position: GeoPosition | null) {
+  const { data: stations } = useMetroStations();
+  return useQuery({
+    queryKey: ['metro-nearest', position?.lat, position?.lon],
+    queryFn: () => {
+      if (!position || !stations?.length) return null;
+      let nearest: MetroStation | null = null;
+      let minDist = Infinity;
+      for (const s of stations) {
+        const d = haversine(position.lat, position.lon, parseFloat(s.lat), parseFloat(s.lon));
+        if (d < minDist) { minDist = d; nearest = s; }
+      }
+      return nearest ? { ...nearest, distance: minDist } : null;
+    },
+    enabled: !!position && !!stations?.length,
+    staleTime: Infinity,
+  });
+}
+
+// Metro wait times for a station
+export function useMetroWaitTimes(stationId: string | null) {
+  return useQuery({
+    queryKey: ['metro-wait', stationId],
+    queryFn: async (): Promise<MetroWaitTime[]> => {
+      if (!stationId) return [];
+      const res = await fetch(`${METRO_FN_URL}?action=wait&station_id=${stationId}`, {
+        headers: { 'Authorization': `Bearer ${ANON_KEY}` }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      return data?.waitTimes || [];
+    },
+    enabled: !!stationId,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+}
+
+export function formatMetroWaitTime(timeStr: string): string {
+  const [h, m, s] = timeStr.split(':').map(Number);
+  const totalMinutes = h * 60 + m + (s > 30 ? 1 : 0);
+  if (totalMinutes <= 1) return 'A chegar';
+  return `${totalMinutes} min`;
 }

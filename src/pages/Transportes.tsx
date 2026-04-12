@@ -14,6 +14,9 @@ import {
   useCMArrivals,
   useCarrisSchedule,
   useMetroStatus,
+  useNearestMetroStation,
+  useMetroWaitTimes,
+  formatMetroWaitTime,
   useFavoriteStops,
   useNearbyCMStops,
   useNearbyCarrisStops,
@@ -23,6 +26,7 @@ import {
   useIsOnline,
   type TransportStop,
   type TransportProvider,
+  type GeoPosition,
 } from '@/hooks/useTransportes';
 
 const metroColors: Record<string, string> = {
@@ -152,17 +156,28 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable }: {
 
 /* ── Metro ── */
 
-function MetroStatusCard() {
-  const { data: lines, isLoading, isError } = useMetroStatus();
-  if (isError || (!isLoading && (!lines || lines.length === 0))) return null;
+function MetroStatusCard({ position }: { position: GeoPosition | null }) {
+  const { data: lines, isLoading: statusLoading } = useMetroStatus();
+  const { data: nearestStation } = useNearestMetroStation(position);
+  const { data: waitTimes, isLoading: waitLoading } = useMetroWaitTimes(nearestStation?.id || null);
+  const [expanded, setExpanded] = useState(false);
+
+  const hasStatus = lines && lines.length > 0;
+  const hasWait = waitTimes && waitTimes.length > 0;
+
+  if (!hasStatus && !hasWait && !statusLoading && !waitLoading) return null;
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2"><Train className="h-4 w-4" /> Metro de Lisboa</CardTitle>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Train className="h-4 w-4" /> Metro de Lisboa
+        </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        {isLoading ? <LoadingState /> : (
-          <div className="space-y-2">
+      <CardContent className="pt-0 space-y-3">
+        {/* Line status */}
+        {statusLoading ? <LoadingState /> : hasStatus && (
+          <div className="space-y-1.5">
             {lines?.map(line => (
               <div key={line.nome} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
@@ -173,6 +188,50 @@ function MetroStatusCard() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Nearest station wait times */}
+        {nearestStation && (
+          <>
+            <Separator />
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium">
+                  Estação mais próxima: <span className="text-foreground">{nearestStation.name}</span>
+                </span>
+                {(nearestStation as any).distance != null && (
+                  <span className="text-[10px] text-muted-foreground">
+                    ({((nearestStation as any).distance * 1000).toFixed(0)}m)
+                  </span>
+                )}
+              </div>
+              {waitLoading ? <LoadingState /> : hasWait ? (
+                <div className="space-y-1">
+                  {(expanded ? waitTimes : waitTimes!.slice(0, 3))?.map((wt, i) => (
+                    <div key={`${wt.destination.id}-${i}`} className="flex items-center justify-between text-sm py-0.5">
+                      <span className="text-xs text-muted-foreground">→ {wt.destination.name}</span>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-medium text-foreground">{formatMetroWaitTime(wt.time)}</span>
+                        {wt.live && <span className="text-[9px] text-green-500">●</span>}
+                      </div>
+                    </div>
+                  ))}
+                  {waitTimes!.length > 3 && (
+                    <button
+                      onClick={() => setExpanded(!expanded)}
+                      className="text-xs text-primary hover:underline w-full text-center py-1"
+                    >
+                      {expanded ? 'Mostrar menos ▲' : `Ver mais (${waitTimes!.length - 3}) ▼`}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Sem tempos de espera disponíveis</p>
+              )}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
@@ -311,7 +370,7 @@ export default function Transportes() {
       </Card>
 
       {/* Metro */}
-      <MetroStatusCard />
+      <MetroStatusCard position={position} />
 
       {/* Nearby — separated by provider */}
       {position && (
