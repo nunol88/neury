@@ -391,7 +391,11 @@ export function useMetroWaitTimes(stationId: string | null) {
 
 export function formatMetroWaitTime(timeStr: string): string {
   const [h, m, s] = timeStr.split(':').map(Number);
-  const totalMinutes = h * 60 + m + (s > 30 ? 1 : 0);
-  if (totalMinutes <= 1) return 'A chegar';
-  return `${totalMinutes} min`;
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(h, m, s || 0, 0);
+  const diffMs = target.getTime() - now.getTime();
+  const diffMin = Math.max(0, Math.round(diffMs / 60000));
+  if (diffMin <= 1) return 'A chegar';
+  return `${diffMin} min`;
 }
