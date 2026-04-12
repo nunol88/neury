@@ -392,11 +392,15 @@ function CMStopMapWrapper({
   routeId,
   routeLabel,
   onClose,
+  userLat,
+  userLon,
 }: {
   stop: TransportStop;
   routeId: string;
   routeLabel?: string;
   onClose: () => void;
+  userLat?: number;
+  userLon?: number;
 }) {
   const { data: vehicles, isLoading } = useVehiclePositions(routeId);
 
@@ -410,6 +414,8 @@ function CMStopMapWrapper({
       stopName={stop.name}
       vehicles={vehicles || []}
       isLoading={isLoading}
+      userLat={userLat}
+      userLon={userLon}
     />
   );
 }
