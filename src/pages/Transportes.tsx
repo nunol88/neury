@@ -290,7 +290,7 @@ function MetroStatusCard({ position, onOpenMap }: { position: GeoPosition | null
 
 /* ── Section for a provider's nearby stops ── */
 
-function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop, onOpenTimetable }: {
+function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavorite, addFavorite, removeFavorite, cacheStop, onOpenTimetable, onOpenMap }: {
   title: string; badgeLabel: string; badgeClass: string;
   stops: TransportStop[] | undefined; isLoading: boolean;
   isFavorite: (id: string, p: TransportProvider) => boolean;
@@ -298,6 +298,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
+  onOpenMap: (stop: TransportStop) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -317,6 +318,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
+              onOpenMap={() => onOpenMap(stop)}
             />
           ))}
         </div>
