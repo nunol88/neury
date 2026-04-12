@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -143,7 +143,7 @@ export default function VehicleMapModal({
   metroPositions = [],
   isLoading,
 }: VehicleMapModalProps) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -171,11 +171,11 @@ export default function VehicleMapModal({
   }, [centerLat, centerLon, vehicles, metroPositions]);
 
   useEffect(() => {
-    if (!open || !mapContainerRef.current || mapRef.current) {
+    if (!open || !mapContainerEl || mapRef.current) {
       return;
     }
 
-    const container = mapContainerRef.current;
+    const container = mapContainerEl;
     let animationFrame = 0;
     let timerA = 0;
     let timerB = 0;
@@ -252,8 +252,12 @@ export default function VehicleMapModal({
       markersLayerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
+
+      if ('_leaflet_id' in container) {
+        delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
+      }
     };
-  }, [open]);
+  }, [open, mapContainerEl]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -307,7 +311,7 @@ export default function VehicleMapModal({
         </DialogHeader>
 
         <div className="h-[60vh] w-full bg-muted/30">
-          <div ref={mapContainerRef} className="h-full w-full" />
+          <div ref={setMapContainerEl} className="h-full w-full" />
         </div>
 
         {!isLoading && vehicles.length === 0 && metroPositions.length === 0 && (
