@@ -148,6 +148,8 @@ interface VehicleMapModalProps {
   vehicles?: VehiclePosition[];
   metroPositions?: MetroEstimatedPosition[];
   isLoading?: boolean;
+  userLat?: number;
+  userLon?: number;
 }
 
 export default function VehicleMapModal({
@@ -160,6 +162,8 @@ export default function VehicleMapModal({
   vehicles = [],
   metroPositions = [],
   isLoading,
+  userLat,
+  userLon,
 }: VehicleMapModalProps) {
   const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
