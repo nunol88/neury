@@ -315,7 +315,7 @@ export default function VehicleMapModal({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [open, centerLat, centerLon, stopName, vehicles, metroPositions, allPositions]);
+  }, [open, centerLat, centerLon, stopName, vehicles, metroPositions, allPositions, userLat, userLon]);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
