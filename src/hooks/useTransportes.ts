@@ -76,6 +76,20 @@ export interface MetroLine {
   estado: string;
 }
 
+export interface MetroStation {
+  id: string;
+  name: string;
+  lat: string;
+  lon: string;
+  lines: string[];
+}
+
+export interface MetroWaitTime {
+  destination: { id: string; name: string };
+  time: string;
+  live: boolean;
+}
+
 export interface GeoPosition {
   lat: number;
   lon: number;
