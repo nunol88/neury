@@ -251,6 +251,8 @@ export default function VehicleMapModal({
         vehicles,
         metroPositions,
         allPositions,
+        userLat,
+        userLon,
       });
 
       invalidateMap(map);
@@ -302,6 +304,8 @@ export default function VehicleMapModal({
       vehicles,
       metroPositions,
       allPositions,
+      userLat,
+      userLon,
     });
 
     const timer = window.setTimeout(() => {
