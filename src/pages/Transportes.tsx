@@ -374,11 +374,6 @@ export default function Transportes() {
     stationLon?: number;
   } | null>(null);
 
-  // Vehicle positions for map (only fetch when map is open and for CM stops)
-  const activeRouteId = mapTarget?.type === 'stop' && mapTarget.stop?.provider === 'cm'
-    ? null // We'll get route from arrivals — for now fetch all nearby
-    : null;
-
   // Metro data for map
   const { data: metroStations } = useMetroStations();
   const { data: nearestStation } = useNearestMetroStation(position);
