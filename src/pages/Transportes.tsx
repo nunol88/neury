@@ -16,7 +16,7 @@ import {
   useMetroStatus,
   useNearestMetroStation,
   useMetroWaitTimes,
-  formatMetroWaitTime,
+  formatMetroTimeLeft,
   useFavoriteStops,
   useNearbyCMStops,
   useNearbyCarrisStops,
@@ -207,23 +207,32 @@ function MetroStatusCard({ position }: { position: GeoPosition | null }) {
                 )}
               </div>
               {waitLoading ? <LoadingState /> : hasWait ? (
-                <div className="space-y-1">
-                  {(expanded ? waitTimes : waitTimes!.slice(0, 3))?.map((wt, i) => (
-                    <div key={`${wt.destination.id}-${i}`} className="flex items-center justify-between text-sm py-0.5">
-                      <span className="text-xs text-muted-foreground">→ {wt.destination.name}</span>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-medium text-foreground">{formatMetroWaitTime(wt)}</span>
-                        {wt.live && <span className="text-[9px] text-green-500">●</span>}
+                <div className="space-y-2">
+                  {waitTimes!.map((wt, i) => (
+                    <div key={`${wt.destination.id}-${i}`}>
+                      <div className="flex items-center justify-between text-sm py-0.5">
+                        <span className="text-xs text-muted-foreground">→ {wt.destination.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium text-foreground">
+                            {wt.arrivalTimes?.[0] ? formatMetroTimeLeft(wt.arrivalTimes[0].timeLeft) : '—'}
+                          </span>
+                          {wt.live && <span className="text-[9px] text-green-500">●</span>}
+                        </div>
                       </div>
+                      {expanded && wt.arrivalTimes?.slice(1).map((at, j) => (
+                        <div key={j} className="flex justify-end text-xs text-muted-foreground py-0.5">
+                          {formatMetroTimeLeft(at.timeLeft)}
+                        </div>
+                      ))}
                     </div>
                   ))}
-                  {waitTimes!.length > 3 && (
+                  {waitTimes!.some(wt => wt.arrivalTimes?.length > 1) && (
                     <button
                       onClick={() => setExpanded(!expanded)}
                       className="text-xs text-primary hover:underline w-full text-center py-1"
                     >
-                      {expanded ? 'Mostrar menos ▲' : `Ver mais (${waitTimes!.length - 3}) ▼`}
+                      {expanded ? 'Mostrar menos ▲' : 'Ver mais horários ▼'}
                     </button>
                   )}
                 </div>
