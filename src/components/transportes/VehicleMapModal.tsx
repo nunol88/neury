@@ -177,6 +177,10 @@ export default function VehicleMapModal({
       points.push([centerLat, centerLon]);
     }
 
+    if (userLat != null && userLon != null && isValidLatLon(userLat, userLon)) {
+      points.push([userLat, userLon]);
+    }
+
     vehicles.forEach((vehicle) => {
       if (isValidLatLon(vehicle.lat, vehicle.lon)) {
         points.push([vehicle.lat, vehicle.lon]);
@@ -190,7 +194,7 @@ export default function VehicleMapModal({
     });
 
     return points;
-  }, [centerLat, centerLon, vehicles, metroPositions]);
+  }, [centerLat, centerLon, vehicles, metroPositions, userLat, userLon]);
 
   useEffect(() => {
     if (!open || !mapContainerEl || mapRef.current) {
