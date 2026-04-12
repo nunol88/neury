@@ -303,8 +303,7 @@ export function formatTimeUntil(timeStr: string): string {
   const target = new Date(now);
   target.setHours(h, m, 0, 0);
   const diff = Math.max(0, Math.round((target.getTime() - now.getTime()) / 60000));
-  if (diff === 0) return 'A chegar';
-  if (diff === 1) return '1 min';
+  if (diff <= 1) return 'A chegar';
   if (diff > 60) return timeStr;
   return `${diff} min`;
 }

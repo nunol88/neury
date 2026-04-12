@@ -36,10 +36,12 @@ Deno.serve(async (req) => {
 
     const entries: string[] = data?.entries || [];
 
+    // Use Lisbon timezone (GTFS times are local)
     const now = new Date();
-    const day = now.getDay();
+    const lisbon = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Lisbon" }));
+    const day = lisbon.getDay();
     const dayType = day === 0 ? "u" : day === 6 ? "s" : "w";
-    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const currentTime = `${String(lisbon.getHours()).padStart(2, "0")}:${String(lisbon.getMinutes()).padStart(2, "0")}`;
 
     const departures = entries
       .filter((e: string) => e.endsWith(`|${dayType}`) && e.substring(0, 5) >= currentTime)
