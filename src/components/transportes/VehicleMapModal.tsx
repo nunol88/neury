@@ -107,6 +107,13 @@ function syncMapContent({
       .addTo(markersLayer);
   });
 
+  // User location marker
+  if (userLat != null && userLon != null && isValidLatLon(userLat, userLon)) {
+    L.marker([userLat, userLon], { icon: userIcon })
+      .bindPopup(`<div style="font-size:12px;line-height:1.4;color:hsl(var(--foreground));"><strong>A tua localização</strong></div>`)
+      .addTo(markersLayer);
+  }
+
   if (allPositions.length > 1) {
     map.fitBounds(L.latLngBounds(allPositions), {
       padding: [40, 40],
