@@ -706,7 +706,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
-                      onOpenMap={(routeId, routeLabel) => openStopMap(stop, routeId, routeLabel)}
+                      onOpenMap={(routeId, routeLabel, departureTime) => openStopMap(stop, routeId, routeLabel, departureTime)}
                     />
                   );
                 })}
