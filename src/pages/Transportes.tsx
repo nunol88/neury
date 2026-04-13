@@ -503,7 +503,21 @@ function CMStopMapWrapper({
     }];
   }, [vehicles, departureTime, busDestination, stop, routeId]);
 
-  const allVehicles = (vehicles && vehicles.length > 0) ? vehicles : estimatedVehicles;
+  // For CM (real-time), show only the closest vehicle to the stop
+  const closestVehicle = useMemo<VehiclePosition[]>(() => {
+    if (!vehicles || vehicles.length === 0) return estimatedVehicles;
+    if (vehicles.length === 1) return vehicles;
+    const stopLat = stop.lat || 0;
+    const stopLon = stop.lon || 0;
+    let best = vehicles[0];
+    let bestDist = (best.lat - stopLat) ** 2 + (best.lon - stopLon) ** 2;
+    for (let i = 1; i < vehicles.length; i++) {
+      const d = (vehicles[i].lat - stopLat) ** 2 + (vehicles[i].lon - stopLon) ** 2;
+      if (d < bestDist) { best = vehicles[i]; bestDist = d; }
+    }
+    return [best];
+  }, [vehicles, estimatedVehicles, stop.lat, stop.lon]);
+
   const isEstimated = estimatedVehicles.length > 0 && (!vehicles || vehicles.length === 0);
 
   return (
@@ -514,7 +528,7 @@ function CMStopMapWrapper({
       centerLat={stop.lat || 38.7223}
       centerLon={stop.lon || -9.1393}
       stopName={stop.name}
-      vehicles={allVehicles}
+      vehicles={closestVehicle}
       isLoading={isLoading}
       userLat={userLat}
       userLon={userLon}
