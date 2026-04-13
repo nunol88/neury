@@ -93,7 +93,7 @@ function CMStopArrivals({
   );
 }
 
-function CarrisStopSchedule({ stopId }: { stopId: string }) {
+function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string) => void }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
   const [expanded, setExpanded] = useState(false);
   const COLLAPSED_COUNT = 3;
@@ -117,6 +117,17 @@ function CarrisStopSchedule({ stopId }: { stopId: string }) {
             <Clock className="h-3 w-3" />
             <span className="font-medium text-foreground">{formatTimeUntil(dep.t)}</span>
             <span className="text-xs">({dep.t})</span>
+            {onOpenMap && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0"
+                onClick={() => onOpenMap(dep.r, dep.r)}
+                title={`Ver carreira ${dep.r} no mapa`}
+              >
+                <MapIcon className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
       ))}
