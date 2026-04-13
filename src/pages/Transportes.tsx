@@ -498,6 +498,7 @@ export default function Transportes() {
     routeId?: string;
     routeLabel?: string;
     departureTime?: string;
+    busDestination?: string;
     stationId?: string;
     stationName?: string;
     stationLat?: number;
@@ -563,10 +564,10 @@ export default function Transportes() {
     }];
   }, [mapTarget, metroWaitForMap, metroStations, tick]);
 
-  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => {
+  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => {
     if (!routeId) return;
 
-    setMapTarget({ type: 'stop', stop, routeId, routeLabel, departureTime });
+    setMapTarget({ type: 'stop', stop, routeId, routeLabel, departureTime, busDestination: destination });
   };
 
   const openMetroMap = (selection: {
