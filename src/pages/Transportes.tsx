@@ -818,6 +818,7 @@ export default function Transportes() {
           stop={mapTarget.stop}
           routeId={mapTarget.routeId}
           routeLabel={mapTarget.routeLabel}
+          departureTime={mapTarget.departureTime}
           onClose={() => setMapTarget(null)}
           userLat={position?.lat}
           userLon={position?.lon}
