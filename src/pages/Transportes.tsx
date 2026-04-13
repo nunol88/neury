@@ -191,7 +191,7 @@ function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: 
         {stop.provider === 'cm' ? (
           <CMStopArrivals stopId={stop.id} onOpenMap={onOpenMap} />
         ) : (
-          <CarrisStopSchedule stopId={stop.id} />
+          <CarrisStopSchedule stopId={stop.id} onOpenMap={onOpenMap} />
         )}
       </CardContent>
     </Card>
