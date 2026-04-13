@@ -11,6 +11,7 @@ import {
 import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
 import VehicleMapModal, { type MetroEstimatedPosition } from '@/components/transportes/VehicleMapModal';
 import { useVehiclePositions, type VehiclePosition } from '@/hooks/useVehiclePositions';
+import carrisStopsRaw from '@/data/carrisStops.json';
 import {
   useSearchStops,
   useCMArrivals,
