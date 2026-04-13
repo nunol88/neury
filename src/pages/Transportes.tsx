@@ -122,7 +122,7 @@ function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?:
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={() => onOpenMap(dep.r, dep.r)}
+                onClick={() => onOpenMap(dep.r, dep.r, dep.t)}
                 title={`Ver carreira ${dep.r} no mapa`}
               >
                 <MapIcon className="h-3 w-3" />
