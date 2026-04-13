@@ -528,7 +528,7 @@ function CMStopMapWrapper({
       centerLat={stop.lat || 38.7223}
       centerLon={stop.lon || -9.1393}
       stopName={stop.name}
-      vehicles={allVehicles}
+      vehicles={closestVehicle}
       isLoading={isLoading}
       userLat={userLat}
       userLon={userLon}
