@@ -11,6 +11,7 @@ import {
 import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
 import VehicleMapModal, { type MetroEstimatedPosition } from '@/components/transportes/VehicleMapModal';
 import { useVehiclePositions, type VehiclePosition } from '@/hooks/useVehiclePositions';
+import carrisStopsRaw from '@/data/carrisStops.json';
 import {
   useSearchStops,
   useCMArrivals,
@@ -93,7 +94,7 @@ function CMStopArrivals({
   );
 }
 
-function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void }) {
+function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
   const [expanded, setExpanded] = useState(false);
   const COLLAPSED_COUNT = 3;
@@ -122,7 +123,7 @@ function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?:
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={() => onOpenMap(dep.r, dep.r, dep.t)}
+                onClick={() => onOpenMap(dep.r, dep.r, dep.t, dep.d)}
                 title={`Ver carreira ${dep.r} no mapa`}
               >
                 <MapIcon className="h-3 w-3" />
@@ -158,7 +159,7 @@ function EmptyState() {
 
 function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void;
+  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -363,7 +364,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
-  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => void;
+  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -383,7 +384,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
-              onOpenMap={(routeId, routeLabel, departureTime) => onOpenMap(stop, routeId, routeLabel, departureTime)}
+              onOpenMap={(routeId, routeLabel, departureTime, destination) => onOpenMap(stop, routeId, routeLabel, departureTime, destination)}
             />
           ))}
         </div>
@@ -398,11 +399,30 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
 /* ── Main page ── */
 
 /* ── CM Stop Map Wrapper (fetches arrivals + vehicle positions) ── */
+
+// Lookup a Carris stop by name (fuzzy match)
+function findCarrisStopByName(name: string): TransportStop | undefined {
+  if (!name) return undefined;
+  const lower = name.toLowerCase().trim();
+  const carrisStopsAll = (carrisStopsRaw as any[]).map(
+    (s: [string, string, number, number]) => ({
+      id: s[0], name: s[1], lat: s[2], lon: s[3], provider: 'carris' as TransportProvider
+    })
+  );
+  // Exact match first
+  let match = carrisStopsAll.find(s => s.name.toLowerCase() === lower);
+  if (match) return match;
+  // Partial match
+  match = carrisStopsAll.find(s => s.name.toLowerCase().includes(lower) || lower.includes(s.name.toLowerCase()));
+  return match;
+}
+
 function CMStopMapWrapper({
   stop,
   routeId,
   routeLabel,
   departureTime,
+  busDestination,
   onClose,
   userLat,
   userLon,
@@ -411,6 +431,7 @@ function CMStopMapWrapper({
   routeId: string;
   routeLabel?: string;
   departureTime?: string;
+  busDestination?: string;
   onClose: () => void;
   userLat?: number;
   userLon?: number;
@@ -419,7 +440,6 @@ function CMStopMapWrapper({
 
   // Estimate bus position for Carris (urban) when no real-time GPS
   const estimatedVehicles = useMemo<VehiclePosition[]>(() => {
-    // If we already have real vehicles, no need to estimate
     if (vehicles && vehicles.length > 0) return [];
     if (!departureTime || !stop.lat || !stop.lon) return [];
 
@@ -431,37 +451,57 @@ function CMStopMapWrapper({
     target.setHours(h, m, 0, 0);
     const diffMin = Math.max(0, (target.getTime() - now.getTime()) / 60000);
 
-    if (diffMin > 90) return []; // too far away
+    if (diffMin > 90 || diffMin < 0.5) return [];
 
-    // Estimate position: assume ~20km/h avg, place bus proportionally away
-    // Max distance ~5km away for a 15min wait, scaled linearly
-    const maxDistKm = 5;
-    const distKm = Math.min(maxDistKm, (diffMin / 15) * maxDistKm);
+    // Find the destination stop to determine the direction the bus is coming FROM
+    // The bus is heading TO the destination, so it's coming from the opposite direction
+    const destStop = busDestination ? findCarrisStopByName(busDestination) : undefined;
 
-    // Pick a bearing based on user location or default (north-ish)
-    let bearing = 0; // radians, north
-    if (userLat != null && userLon != null) {
-      // Place bus roughly on the opposite side of the stop from the user
-      const dLat = stop.lat - userLat;
-      const dLon = stop.lon - userLon;
-      bearing = Math.atan2(dLon, dLat) + Math.PI; // opposite direction
+    let busLat: number;
+    let busLon: number;
+
+    if (destStop && destStop.lat && destStop.lon) {
+      // Bus is coming from somewhere and heading toward the destination via this stop
+      // The bus is currently between its origin (opposite of destination) and this stop
+      // So we interpolate: bus is somewhere along the line AWAY from the destination
+      
+      // Direction from destination to this stop (the bus travel direction)
+      const dirLat = stop.lat - destStop.lat;
+      const dirLon = stop.lon - destStop.lon;
+      const dirLen = Math.sqrt(dirLat * dirLat + dirLon * dirLon);
+      
+      if (dirLen > 0.0001) {
+        // Normalize and extend beyond the stop (bus is coming from that direction)
+        const normLat = dirLat / dirLen;
+        const normLon = dirLon / dirLen;
+        
+        // Scale by time: more time = further away, max ~0.05 degrees (~5km)
+        const scale = Math.min(0.05, (diffMin / 20) * 0.04);
+        
+        busLat = stop.lat + normLat * scale;
+        busLon = stop.lon + normLon * scale;
+      } else {
+        busLat = stop.lat + 0.01;
+        busLon = stop.lon;
+      }
+    } else {
+      // No destination info — place along a generic offset
+      const scale = Math.min(0.04, (diffMin / 20) * 0.03);
+      busLat = stop.lat + scale;
+      busLon = stop.lon;
     }
-
-    // Convert distance to lat/lon offset (~111km per degree lat)
-    const latOffset = (distKm / 111) * Math.cos(bearing);
-    const lonOffset = (distKm / (111 * Math.cos(stop.lat * Math.PI / 180))) * Math.sin(bearing);
 
     return [{
       vehicle_id: `est-${routeId}`,
-      lat: stop.lat + latOffset,
-      lon: stop.lon + lonOffset,
+      lat: busLat,
+      lon: busLon,
       bearing: 0,
       speed: diffMin <= 1 ? 0 : 20,
       route_id: routeId,
       trip_id: '',
       timestamp: 0,
     }];
-  }, [vehicles, departureTime, stop, routeId, userLat, userLon]);
+  }, [vehicles, departureTime, busDestination, stop, routeId]);
 
   const allVehicles = (vehicles && vehicles.length > 0) ? vehicles : estimatedVehicles;
   const isEstimated = estimatedVehicles.length > 0 && (!vehicles || vehicles.length === 0);
@@ -498,6 +538,7 @@ export default function Transportes() {
     routeId?: string;
     routeLabel?: string;
     departureTime?: string;
+    busDestination?: string;
     stationId?: string;
     stationName?: string;
     stationLat?: number;
@@ -563,10 +604,10 @@ export default function Transportes() {
     }];
   }, [mapTarget, metroWaitForMap, metroStations, tick]);
 
-  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => {
+  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => {
     if (!routeId) return;
 
-    setMapTarget({ type: 'stop', stop, routeId, routeLabel, departureTime });
+    setMapTarget({ type: 'stop', stop, routeId, routeLabel, departureTime, busDestination: destination });
   };
 
   const openMetroMap = (selection: {
@@ -706,7 +747,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
-                      onOpenMap={(routeId, routeLabel, departureTime) => openStopMap(stop, routeId, routeLabel, departureTime)}
+                      onOpenMap={(routeId, routeLabel, departureTime, destination) => openStopMap(stop, routeId, routeLabel, departureTime, destination)}
                     />
                   );
                 })}
@@ -819,6 +860,7 @@ export default function Transportes() {
           routeId={mapTarget.routeId}
           routeLabel={mapTarget.routeLabel}
           departureTime={mapTarget.departureTime}
+          busDestination={mapTarget.busDestination}
           onClose={() => setMapTarget(null)}
           userLat={position?.lat}
           userLon={position?.lon}
