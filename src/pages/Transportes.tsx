@@ -93,7 +93,7 @@ function CMStopArrivals({
   );
 }
 
-function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void }) {
+function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
   const [expanded, setExpanded] = useState(false);
   const COLLAPSED_COUNT = 3;
@@ -122,7 +122,7 @@ function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?:
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={() => onOpenMap(dep.r, dep.r, dep.t)}
+                onClick={() => onOpenMap(dep.r, dep.r, dep.t, dep.d)}
                 title={`Ver carreira ${dep.r} no mapa`}
               >
                 <MapIcon className="h-3 w-3" />
@@ -158,7 +158,7 @@ function EmptyState() {
 
 function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void;
+  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -363,7 +363,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
-  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => void;
+  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string, destination?: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -383,7 +383,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
-              onOpenMap={(routeId, routeLabel, departureTime) => onOpenMap(stop, routeId, routeLabel, departureTime)}
+              onOpenMap={(routeId, routeLabel, departureTime, destination) => onOpenMap(stop, routeId, routeLabel, departureTime, destination)}
             />
           ))}
         </div>
@@ -706,7 +706,7 @@ export default function Transportes() {
                       isFav
                       onRemove={() => removeFavorite(fav.id, fav.provider)}
                       onOpenTimetable={() => openTimetable(stop)}
-                      onOpenMap={(routeId, routeLabel, departureTime) => openStopMap(stop, routeId, routeLabel, departureTime)}
+                      onOpenMap={(routeId, routeLabel, departureTime, destination) => openStopMap(stop, routeId, routeLabel, departureTime, destination)}
                     />
                   );
                 })}
