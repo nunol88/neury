@@ -93,7 +93,7 @@ function CMStopArrivals({
   );
 }
 
-function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string) => void }) {
+function CarrisStopSchedule({ stopId, onOpenMap }: { stopId: string; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void }) {
   const { data, isLoading, isError } = useCarrisSchedule(stopId);
   const [expanded, setExpanded] = useState(false);
   const COLLAPSED_COUNT = 3;
@@ -158,7 +158,7 @@ function EmptyState() {
 
 function StopCard({ stop, onAdd, onRemove, isFav, onOpenTimetable, onOpenMap }: {
   stop: TransportStop; onAdd?: () => void; onRemove?: () => void; isFav?: boolean;
-  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string) => void;
+  onOpenTimetable?: () => void; onOpenMap?: (routeId?: string, routeLabel?: string, departureTime?: string) => void;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -402,6 +402,7 @@ function CMStopMapWrapper({
   stop,
   routeId,
   routeLabel,
+  departureTime,
   onClose,
   userLat,
   userLon,
@@ -409,21 +410,71 @@ function CMStopMapWrapper({
   stop: TransportStop;
   routeId: string;
   routeLabel?: string;
+  departureTime?: string;
   onClose: () => void;
   userLat?: number;
   userLon?: number;
 }) {
   const { data: vehicles, isLoading } = useVehiclePositions(routeId);
 
+  // Estimate bus position for Carris (urban) when no real-time GPS
+  const estimatedVehicles = useMemo<VehiclePosition[]>(() => {
+    // If we already have real vehicles, no need to estimate
+    if (vehicles && vehicles.length > 0) return [];
+    if (!departureTime || !stop.lat || !stop.lon) return [];
+
+    const [h, m] = departureTime.split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return [];
+
+    const now = new Date();
+    const target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    const diffMin = Math.max(0, (target.getTime() - now.getTime()) / 60000);
+
+    if (diffMin > 90) return []; // too far away
+
+    // Estimate position: assume ~20km/h avg, place bus proportionally away
+    // Max distance ~5km away for a 15min wait, scaled linearly
+    const maxDistKm = 5;
+    const distKm = Math.min(maxDistKm, (diffMin / 15) * maxDistKm);
+
+    // Pick a bearing based on user location or default (north-ish)
+    let bearing = 0; // radians, north
+    if (userLat != null && userLon != null) {
+      // Place bus roughly on the opposite side of the stop from the user
+      const dLat = stop.lat - userLat;
+      const dLon = stop.lon - userLon;
+      bearing = Math.atan2(dLon, dLat) + Math.PI; // opposite direction
+    }
+
+    // Convert distance to lat/lon offset (~111km per degree lat)
+    const latOffset = (distKm / 111) * Math.cos(bearing);
+    const lonOffset = (distKm / (111 * Math.cos(stop.lat * Math.PI / 180))) * Math.sin(bearing);
+
+    return [{
+      vehicle_id: `est-${routeId}`,
+      lat: stop.lat + latOffset,
+      lon: stop.lon + lonOffset,
+      bearing: 0,
+      speed: diffMin <= 1 ? 0 : 20,
+      route_id: routeId,
+      trip_id: '',
+      timestamp: 0,
+    }];
+  }, [vehicles, departureTime, stop, routeId, userLat, userLon]);
+
+  const allVehicles = (vehicles && vehicles.length > 0) ? vehicles : estimatedVehicles;
+  const isEstimated = estimatedVehicles.length > 0 && (!vehicles || vehicles.length === 0);
+
   return (
     <VehicleMapModal
       open
       onClose={onClose}
-      title={`${stop.name} — Autocarro ${routeLabel || routeId.replace(/_\d+$/, '')}`}
+      title={`${stop.name} — ${stop.provider === 'carris' ? 'Carris' : 'Autocarro'} ${routeLabel || routeId.replace(/_\d+$/, '')}${isEstimated ? ' (estimativa)' : ''}`}
       centerLat={stop.lat || 38.7223}
       centerLon={stop.lon || -9.1393}
       stopName={stop.name}
-      vehicles={vehicles || []}
+      vehicles={allVehicles}
       isLoading={isLoading}
       userLat={userLat}
       userLon={userLon}
@@ -446,6 +497,7 @@ export default function Transportes() {
     stop?: TransportStop;
     routeId?: string;
     routeLabel?: string;
+    departureTime?: string;
     stationId?: string;
     stationName?: string;
     stationLat?: number;
@@ -511,10 +563,10 @@ export default function Transportes() {
     }];
   }, [mapTarget, metroWaitForMap, metroStations, tick]);
 
-  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string) => {
+  const openStopMap = (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => {
     if (!routeId) return;
 
-    setMapTarget({ type: 'stop', stop, routeId, routeLabel });
+    setMapTarget({ type: 'stop', stop, routeId, routeLabel, departureTime });
   };
 
   const openMetroMap = (selection: {
