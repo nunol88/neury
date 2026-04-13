@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import CarrisTimetableModal from '@/components/schedule/CarrisTimetableModal';
 import VehicleMapModal, { type MetroEstimatedPosition } from '@/components/transportes/VehicleMapModal';
-import { useVehiclePositions } from '@/hooks/useVehiclePositions';
+import { useVehiclePositions, type VehiclePosition } from '@/hooks/useVehiclePositions';
 import {
   useSearchStops,
   useCMArrivals,
