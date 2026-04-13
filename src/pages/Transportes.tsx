@@ -363,7 +363,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
   removeFavorite: (id: string, p: TransportProvider) => void;
   cacheStop: (s: TransportStop) => void;
   onOpenTimetable: (stop: TransportStop) => void;
-  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string) => void;
+  onOpenMap: (stop: TransportStop, routeId?: string, routeLabel?: string, departureTime?: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -383,7 +383,7 @@ function NearbySection({ title, badgeLabel, badgeClass, stops, isLoading, isFavo
               onAdd={() => { addFavorite(stop.id, stop.provider); cacheStop(stop); }}
               onRemove={() => removeFavorite(stop.id, stop.provider)}
               onOpenTimetable={() => onOpenTimetable(stop)}
-              onOpenMap={(routeId, routeLabel) => onOpenMap(stop, routeId, routeLabel)}
+              onOpenMap={(routeId, routeLabel, departureTime) => onOpenMap(stop, routeId, routeLabel, departureTime)}
             />
           ))}
         </div>
