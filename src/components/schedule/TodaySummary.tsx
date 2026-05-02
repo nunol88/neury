@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles } from 'lucide-react';
+import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle } from 'lucide-react';
+import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
 
 interface TodaySummaryProps {
   tasks: Task[];
