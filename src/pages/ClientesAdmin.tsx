@@ -11,7 +11,7 @@ import {
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search, CalendarDays, Sparkles, FileText
+  Navigation, Search, CalendarDays, Sparkles, FileText, Star
 } from 'lucide-react';
 import { generateClientReportPdf } from '@/utils/clientReportPdf';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const ClientesAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { clients, loading, addClient, clientExists, refetch } = useClients();
+  const { clients, loading, addClient, clientExists, toggleFavorite, refetch } = useClients();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   
   // Generate months config
@@ -159,7 +159,7 @@ const ClientesAdmin = () => {
         if (error) throw error;
         toast({ title: 'Cliente atualizado' });
       } else {
-        await addClient({ ...formData, recibo_verde: false });
+        await addClient({ ...formData, recibo_verde: false, favorito: false });
       }
       await refetch();
       resetForm();
@@ -723,10 +723,29 @@ const ClientesAdmin = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <ClientAvatar name={client.nome} size="lg" />
-                          <div>
-                            <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
+                              <button
+                                onClick={() => toggleFavorite(client.id)}
+                                className={`p-1 rounded-full transition-all ${
+                                  client.favorito
+                                    ? 'text-amber-400 hover:text-amber-500'
+                                    : 'text-muted-foreground/30 hover:text-amber-400'
+                                }`}
+                                title={client.favorito ? 'Remover dos favoritos' : 'Marcar como favorito'}
+                                aria-label={client.favorito ? 'Remover dos favoritos' : 'Marcar como favorito'}
+                              >
+                                <Star size={18} className={client.favorito ? 'fill-current' : ''} />
+                              </button>
+                              {client.favorito && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-500">
+                                  Fixo
+                                </span>
+                              )}
+                            </div>
                             {stats && stats.totalAgendamentos > 0 && (
-                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full inline-block mt-1">
                                 {stats.totalAgendamentos} agendamento{stats.totalAgendamentos !== 1 ? 's' : ''}
                                 {selectedMonth !== 'all' && monthlyStats && (
                                   <span className="ml-1 opacity-70">em {monthlyStats.monthLabel.split(' ')[0]}</span>
