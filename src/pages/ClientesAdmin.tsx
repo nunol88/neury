@@ -538,8 +538,8 @@ const ClientesAdmin = () => {
         {showForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={resetForm} />
-            <div className="bg-card rounded-xl shadow-xl w-full max-w-md relative z-10">
-              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center">
+            <div className="bg-card rounded-xl shadow-xl w-full max-w-md relative z-10 max-h-[90vh] flex flex-col overflow-hidden">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-4 rounded-t-xl flex justify-between items-center shrink-0">
                 <h2 className="text-lg font-bold">
                   {editingClient ? 'Editar Cliente' : 'Novo Cliente'}
                 </h2>
@@ -547,7 +547,7 @@ const ClientesAdmin = () => {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-sm font-medium text-card-foreground mb-1">
                     Nome <span className="text-destructive">*</span>
