@@ -915,6 +915,28 @@ const ClientesAdmin = () => {
                           <div className="text-success font-medium">
                             €{client.preco_hora}/hora
                           </div>
+                          {(client.dias_preferidos?.length > 0 || client.periodo_preferido) && (
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                              {client.dias_preferidos?.length > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                  <CalendarDays size={11} />
+                                  {client.dias_preferidos
+                                    .slice()
+                                    .sort((a, b) => a - b)
+                                    .map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d])
+                                    .join(', ')}
+                                  {client.frequencia_preferida === 'quinzenal' && ' · 2/2 sem'}
+                                </span>
+                              )}
+                              {client.periodo_preferido && (
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-600 dark:text-amber-400">
+                                  <Clock size={11} />
+                                  {{ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' }[client.periodo_preferido]}
+                                  {' · '}{client.duracao_preferida_horas}h
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {client.notas && (
                           <p className="mt-2 text-xs text-muted-foreground italic">{client.notas}</p>
