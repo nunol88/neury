@@ -699,17 +699,71 @@ const ClientesAdmin = () => {
 
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      Duração típica (horas)
+                      Duração típica
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={12}
-                      step={0.5}
-                      value={formData.duracao_preferida_horas}
-                      onChange={(e) => setFormData({ ...formData, duracao_preferida_horas: Number(e.target.value) || 3 })}
-                      className="w-full p-2 border border-border rounded-lg bg-card text-foreground text-sm"
-                    />
+                    {(() => {
+                      const total = formData.duracao_preferida_horas || 0;
+                      const horas = Math.floor(total);
+                      const minutos = Math.round((total - horas) * 60);
+                      const setDuration = (h: number, m: number) =>
+                        setFormData({ ...formData, duracao_preferida_horas: h + m / 60 });
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">
+                                Horas
+                              </label>
+                              <select
+                                value={horas}
+                                onChange={(e) => setDuration(Number(e.target.value), minutos)}
+                                className="w-full p-2 border border-border rounded-lg bg-card text-foreground text-sm"
+                              >
+                                {Array.from({ length: 13 }, (_, i) => i).map(h => (
+                                  <option key={h} value={h}>{h}h</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">
+                                Minutos
+                              </label>
+                              <select
+                                value={minutos}
+                                onChange={(e) => setDuration(horas, Number(e.target.value))}
+                                className="w-full p-2 border border-border rounded-lg bg-card text-foreground text-sm"
+                              >
+                                {[0, 15, 30, 45].map(m => (
+                                  <option key={m} value={m}>{m} min</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {[
+                              { label: '2h', v: 2 },
+                              { label: '2h30', v: 2.5 },
+                              { label: '3h', v: 3 },
+                              { label: '3h30', v: 3.5 },
+                              { label: '4h', v: 4 },
+                            ].map(p => (
+                              <button
+                                type="button"
+                                key={p.label}
+                                onClick={() => setFormData({ ...formData, duracao_preferida_horas: p.v })}
+                                className={`px-2 py-0.5 text-[11px] rounded-md border transition ${
+                                  total === p.v
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                                }`}
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -932,7 +986,12 @@ const ClientesAdmin = () => {
                                 <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-600 dark:text-amber-400">
                                   <Clock size={11} />
                                   {{ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' }[client.periodo_preferido]}
-                                  {' · '}{client.duracao_preferida_horas}h
+                                  {' · '}{(() => {
+                                    const t = client.duracao_preferida_horas || 0;
+                                    const h = Math.floor(t);
+                                    const m = Math.round((t - h) * 60);
+                                    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
+                                  })()}
                                 </span>
                               )}
                             </div>
