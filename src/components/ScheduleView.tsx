@@ -139,6 +139,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   // State for copy day modal
   const [showCopyDayModal, setShowCopyDayModal] = useState(false);
   const [copyDayTarget, setCopyDayTarget] = useState<{ date: string; label: string }>({ date: '', label: '' });
+  const [showFavoritesPrompt, setShowFavoritesPrompt] = useState(false);
+  const [missingFavorites, setMissingFavorites] = useState<Client[]>([]);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
