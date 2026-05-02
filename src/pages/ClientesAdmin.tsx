@@ -547,7 +547,7 @@ const ClientesAdmin = () => {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-sm font-medium text-card-foreground mb-1">
                     Nome <span className="text-destructive">*</span>
