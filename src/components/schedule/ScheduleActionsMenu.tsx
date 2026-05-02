@@ -15,7 +15,9 @@ interface ScheduleActionsMenuProps {
   previousMonthLabel: string | null;
   currentMonthLabel: string;
   hasTasksInMonth: boolean;
+  hasFavorites?: boolean;
   onCopyFromPrevious: () => void;
+  onCopyFavorites?: () => void;
   onDeleteMonth: () => void;
   onExportCalendar?: () => void;
 }
