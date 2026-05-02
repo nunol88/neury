@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle } from 'lucide-react';
+import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText } from 'lucide-react';
 import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
+import { generateDailyRoutePdf } from '@/utils/dailyRoutePdf';
 
 interface TodaySummaryProps {
   tasks: Task[];
