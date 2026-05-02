@@ -79,9 +79,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-muted">
               <Clock size={18} className="text-muted-foreground" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-foreground">{totalHours.toFixed(0)}h</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Horas</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-foreground leading-tight">{totalHours.toFixed(0)}h</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Horas</p>
             </div>
           </div>
 
