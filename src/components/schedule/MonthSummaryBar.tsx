@@ -100,14 +100,14 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   return (
     <div className="glass-card rounded-2xl border border-border/50 p-3 shadow-lg animate-slide-up sm:p-4">
       <div className="grid gap-3 xl:grid-cols-[1fr_360px] xl:items-stretch">
-        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
           <SummaryMetric icon={<Calendar size={17} />} value={totalTasks} label="Agendamentos" tone="primary" />
           <SummaryMetric icon={<CheckCircle2 size={17} />} value={completedTasks} label="Concluídos" tone="success" />
           <SummaryMetric icon={<Clock size={17} />} value={`${totalHours.toFixed(0)}h`} label="Horas" tone="muted" />
           <SummaryMetric icon={<Target size={17} />} value={pendingTasks} label="Pendentes" tone="warning" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(190px,0.9fr)] xl:grid-cols-1">
+        <div className="grid gap-3 xl:grid-cols-1">
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/50 bg-secondary/45 p-3">
             <div className="min-w-0">
               <div className="mb-2 flex items-center justify-between gap-2">
