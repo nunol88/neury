@@ -107,6 +107,7 @@ export type Database = {
       clients: {
         Row: {
           created_at: string
+          favorito: boolean
           id: string
           morada: string | null
           nome: string
@@ -118,6 +119,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          favorito?: boolean
           id?: string
           morada?: string | null
           nome: string
@@ -129,6 +131,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          favorito?: boolean
           id?: string
           morada?: string | null
           nome?: string
