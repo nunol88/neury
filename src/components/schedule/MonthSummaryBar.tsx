@@ -90,9 +90,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-amber-500/20">
               <Target size={18} className="text-amber-500" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-amber-500">{pendingTasks}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Pendentes</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-amber-500 leading-tight">{pendingTasks}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Pendentes</p>
             </div>
           </div>
         </div>
