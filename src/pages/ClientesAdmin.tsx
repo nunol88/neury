@@ -712,6 +712,11 @@ const ClientesAdmin = () => {
                     />
                   </div>
                 </div>
+
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full bg-gradient-to-r from-primary to-primary/80"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
                   {editingClient ? 'Guardar Alterações' : 'Criar Cliente'}
