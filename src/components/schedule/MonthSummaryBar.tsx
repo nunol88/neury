@@ -100,15 +100,15 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   return (
     <div className="glass-card rounded-2xl border border-border/50 p-3 shadow-lg animate-slide-up sm:p-4">
       <div className="grid gap-3 xl:grid-cols-[1fr_360px] xl:items-stretch">
-        <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
           <SummaryMetric icon={<Calendar size={17} />} value={totalTasks} label="Agendamentos" tone="primary" />
           <SummaryMetric icon={<CheckCircle2 size={17} />} value={completedTasks} label="Concluídos" tone="success" />
           <SummaryMetric icon={<Clock size={17} />} value={`${totalHours.toFixed(0)}h`} label="Horas" tone="muted" />
           <SummaryMetric icon={<Target size={17} />} value={pendingTasks} label="Pendentes" tone="warning" />
         </div>
 
-        <div className="grid gap-3 xl:grid-cols-1">
-          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/50 bg-secondary/45 p-3">
+        <div className="grid gap-2 sm:gap-3 xl:grid-cols-1">
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/50 bg-secondary/45 p-3 sm:grid-cols-2">
             <div className="min-w-0">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="truncate text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Feito</span>
@@ -145,7 +145,7 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
               <Euro size={18} className="shrink-0 text-success" />
               <span className="truncate text-2xl font-bold leading-tight text-success">{totalValue.toFixed(2)}</span>
             </div>
-            <div className="mt-1 grid grid-cols-1 gap-0.5 text-[10px] leading-tight text-muted-foreground sm:grid-cols-2 xl:grid-cols-1">
+            <div className="mt-1 grid grid-cols-1 gap-0.5 text-[10px] leading-tight text-muted-foreground md:grid-cols-2 xl:grid-cols-1">
               <span className="truncate text-success">€{completedValue.toFixed(2)} faturado</span>
               <span className="truncate text-warning">€{(totalValue - completedValue).toFixed(2)} pendente</span>
             </div>
