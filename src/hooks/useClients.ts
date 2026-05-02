@@ -10,6 +10,7 @@ export interface Client {
   preco_hora: string;
   notas: string;
   recibo_verde: boolean;
+  favorito: boolean;
 }
 
 export const useClients = () => {
