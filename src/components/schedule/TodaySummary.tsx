@@ -159,6 +159,19 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
                 Ir para hoje
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                generateDailyRoutePdf(todayStr, todayTasks);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-secondary/60 hover:bg-secondary text-card-foreground transition-colors"
+              title="Gerar PDF da folha do dia"
+            >
+              <FileText size={14} />
+              PDF
+            </button>
           </div>
 
           {/* Expanded service list */}
