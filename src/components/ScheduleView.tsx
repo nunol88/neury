@@ -1603,7 +1603,25 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                   previousMonthLabel={previousMonthLabel}
                   currentMonthLabel={activeConfig?.label || ''}
                   hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
+                  hasFavorites={clients.some(c => c.favorito)}
                   onCopyFromPrevious={handleCopyFromPreviousMonth}
+                  onCopyFavorites={() => {
+                    const favoriteClients = clients.filter(c => c.favorito);
+                    const currentTasks = allTasks[activeMonth as keyof AllTasks] || [];
+                    const namesWithTasks = new Set(currentTasks.map(t => t.client.toLowerCase()));
+                    const missing = favoriteClients.filter(
+                      c => !namesWithTasks.has(c.nome.toLowerCase())
+                    );
+                    if (missing.length === 0) {
+                      toast({
+                        title: 'Tudo em dia',
+                        description: 'Todos os clientes fixos já estão neste mês.',
+                      });
+                      return;
+                    }
+                    setMissingFavorites(missing);
+                    setShowFavoritesPrompt(true);
+                  }}
                   onDeleteMonth={handleDeleteMonth}
                   onExportCalendar={() => {
                     const tasks = allTasks[activeMonth as keyof AllTasks] || [];
