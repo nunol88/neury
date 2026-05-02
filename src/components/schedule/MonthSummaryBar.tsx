@@ -51,15 +51,15 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
     <div className="glass-card p-4 rounded-2xl shadow-lg border border-border/50 animate-slide-up">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Left side: Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-w-0">
           {/* Total appointments */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
             <div className="p-2 rounded-lg bg-primary/20">
               <Calendar size={18} className="text-primary" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-primary">{totalTasks}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Agendamentos</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-primary leading-tight">{totalTasks}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Agendamentos</p>
             </div>
           </div>
 
@@ -68,9 +68,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-success/20">
               <CheckCircle2 size={18} className="text-success" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-success">{completedTasks}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Concluídos</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-success leading-tight">{completedTasks}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Concluídos</p>
             </div>
           </div>
 
@@ -79,9 +79,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-muted">
               <Clock size={18} className="text-muted-foreground" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-foreground">{totalHours.toFixed(0)}h</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Horas</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-foreground leading-tight">{totalHours.toFixed(0)}h</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Horas</p>
             </div>
           </div>
 
@@ -90,9 +90,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-amber-500/20">
               <Target size={18} className="text-amber-500" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-amber-500">{pendingTasks}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Pendentes</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-amber-500 leading-tight">{pendingTasks}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Pendentes</p>
             </div>
           </div>
         </div>
