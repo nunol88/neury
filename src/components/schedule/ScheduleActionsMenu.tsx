@@ -63,6 +63,14 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
           </DropdownMenuItem>
         )}
 
+        {/* Copy favorite (fixed) clients */}
+        {hasFavorites && onCopyFavorites && (
+          <DropdownMenuItem onClick={onCopyFavorites} className="gap-2">
+            <Star size={16} className="text-amber-500 fill-current" />
+            <span>Copiar clientes fixos</span>
+          </DropdownMenuItem>
+        )}
+
         {/* Export to calendar */}
         {hasTasksInMonth && onExportCalendar && (
           <>
