@@ -986,7 +986,12 @@ const ClientesAdmin = () => {
                                 <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-600 dark:text-amber-400">
                                   <Clock size={11} />
                                   {{ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' }[client.periodo_preferido]}
-                                  {' · '}{client.duracao_preferida_horas}h
+                                  {' · '}{(() => {
+                                    const t = client.duracao_preferida_horas || 0;
+                                    const h = Math.floor(t);
+                                    const m = Math.round((t - h) * 60);
+                                    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
+                                  })()}
                                 </span>
                               )}
                             </div>
