@@ -31,6 +31,70 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.10.0',
+    date: '2026-05-02',
+    title: '📱 Tablet Otimizado + Produtividade Admin',
+    summary: 'Pacote grande de melhorias para o dia-a-dia da Mayara. A app ficou muito melhor em tablets (especialmente iPad em horizontal): o resumo mensal e a grelha de dias deixaram de ficar apertados ou cortados. Foram adicionadas ferramentas práticas: lembretes de cobrança por WhatsApp com mensagem pronta, um cartão "Hoje" no topo da agenda com a rota do dia e link para Google Maps, badge vermelho na sidebar a contar pagamentos em atraso (>7 dias), e exportação da rota diária em PDF para enviar à funcionária de manhã.',
+    changes: [
+      { text: 'Botão "Lembrete WhatsApp" para cada cliente com pagamentos pendentes', type: 'new' },
+      { text: 'Cartão "Hoje" no topo da Agenda com serviços do dia, total e link Google Maps', type: 'new' },
+      { text: 'Badge vermelho na sidebar com nº de pagamentos vencidos há mais de 7 dias', type: 'new' },
+      { text: 'Exportar rota diária em PDF (cliente, hora, morada, telefone)', type: 'new' },
+      { text: 'Resumo mensal recalibrado para tablets (2 colunas até XL, sem texto cortado)', type: 'fix' },
+      { text: 'Grelha de dias com 2 colunas em tablet horizontal (deixa de ficar ilegível)', type: 'fix' },
+    ],
+  },
+  {
+    version: '2.9.0',
+    date: '2026-04-20',
+    title: '🚌 Transportes de Lisboa em Tempo Real',
+    summary: 'Foi adicionada uma nova secção "Transportes" com posições em direto dos autocarros da Carris e estado das linhas do Metro de Lisboa. Inclui mapa interativo (Leaflet), horários por paragem e funciona em modo offline com dados em cache. Disponível para a Mayara e para a funcionária — útil para planear deslocações entre serviços.',
+    changes: [
+      { text: 'Nova página "Transportes" com Carris e Metro de Lisboa', type: 'new' },
+      { text: 'Mapa interativo com posições dos autocarros em tempo real', type: 'new' },
+      { text: 'Horários por paragem da Carris', type: 'new' },
+      { text: 'Estado das linhas do Metro (atrasos, fechos)', type: 'new' },
+      { text: 'Funciona offline com cache local', type: 'new' },
+      { text: 'Disponível para admin e funcionário/a', type: 'improvement' },
+    ],
+  },
+  {
+    version: '2.8.0',
+    date: '2026-04-05',
+    title: '🧾 Atualização Fiscal 2026',
+    summary: 'A Gestão Fiscal foi atualizada para a nova taxa da Segurança Social em vigor em 2026: 21,4% sobre 70% da receita bruta (anteriormente 24,5%). Os relatórios PDF e os cálculos automáticos refletem a nova realidade. Nada na contabilidade do passado foi alterado — só os meses de 2026 em diante.',
+    changes: [
+      { text: 'Taxa Segurança Social 2026 atualizada para 21,4%', type: 'improvement' },
+      { text: 'Relatórios PDF refletem a nova taxa', type: 'improvement' },
+      { text: 'Cálculo automático em todos os widgets fiscais', type: 'fix' },
+    ],
+  },
+  {
+    version: '2.7.0',
+    date: '2026-04-01',
+    title: '📊 Dashboard com Histórico Comparativo',
+    summary: 'O Dashboard ganhou um widget novo de comparação histórica que mostra a evolução por mês ou por ano com gráficos lado a lado. Foi também adicionada exportação completa em XML para a contabilidade e melhorias gerais nas estatísticas dos clientes (mostra automaticamente o total faturado por mês/ano).',
+    changes: [
+      { text: 'Widget de comparação histórica (mês vs mês, ano vs ano)', type: 'new' },
+      { text: 'Exportação XML completa para contabilidade', type: 'new' },
+      { text: 'Estatísticas mensais e anuais por cliente', type: 'new' },
+      { text: 'Auto-preenchimento de morada e contacto ao agendar', type: 'improvement' },
+    ],
+  },
+  {
+    version: '2.6.0',
+    date: '2026-03-31',
+    title: '🎨 Login Liquid Glass + Polimentos',
+    summary: 'O ecrã de login foi redesenhado com efeito "liquid glass" (vidro líquido) mais elegante. As contas de email da Mayara são automaticamente promovidas a admin. Foi reorganizada a navegação e melhorados vários detalhes visuais.',
+    changes: [
+      { text: 'Login com novo visual liquid glass mais polido', type: 'improvement' },
+      { text: 'Promoção automática a admin para emails autorizados', type: 'new' },
+      { text: 'Toggle "Novos registos" para controlar entrada de utilizadores', type: 'new' },
+      { text: 'Tabs dos meses ficam fixas no topo ao fazer scroll', type: 'improvement' },
+      { text: 'Scroll-to-top automático ao mudar de mês', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.5.1',
     date: '2026-03-30',
     title: '📋 Log de Atividade Melhorado',
