@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreVertical, Copy, Trash2, Loader2, Smartphone } from 'lucide-react';
+import { MoreVertical, Copy, Trash2, Loader2, Smartphone, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
