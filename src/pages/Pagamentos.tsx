@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePayments } from '@/hooks/usePayments';
+import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,8 +24,16 @@ import {
   Clock, 
   Search,
   User,
-  Calendar
+  Calendar,
+  MessageCircle,
+  Copy
 } from 'lucide-react';
+import {
+  buildPaymentReminderMessage,
+  openWhatsApp,
+  copyToClipboard,
+  normalizePhoneForWhatsApp,
+} from '@/utils/whatsappMessages';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -34,6 +44,8 @@ const Pagamentos: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
+  const { toast } = useToast();
+  const { clients } = useClients();
   
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
@@ -49,6 +61,15 @@ const Pagamentos: React.FC = () => {
     markAsUnpaid, 
     markMultipleAsPaid 
   } = usePayments(selectedMonth, selectedYear);
+
+  // Quick lookup of phone by client name (case-insensitive)
+  const phoneByName = useMemo(() => {
+    const map = new Map<string, string>();
+    clients.forEach(c => {
+      if (c.telefone) map.set(c.nome.toLowerCase(), c.telefone);
+    });
+    return map;
+  }, [clients]);
 
   const filteredClients = clientSummaries.filter(client => {
     const matchesSearch = client.clientName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -78,6 +99,34 @@ const Pagamentos: React.FC = () => {
     if (unpaidIds.length > 0) {
       await markMultipleAsPaid(unpaidIds);
     }
+  };
+
+  const handleSendWhatsApp = (clientName: string) => {
+    const client = clientSummaries.find(c => c.clientName === clientName);
+    if (!client) return;
+    const pendingServices = client.services.filter(s => !s.pago);
+    const phone = phoneByName.get(clientName.toLowerCase()) || null;
+    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
+    const hasPhone = openWhatsApp(phone, message);
+    if (!hasPhone) {
+      toast({
+        title: 'Sem telefone do cliente',
+        description: 'Abriu o WhatsApp Web — escolhe o contacto manualmente.',
+      });
+    }
+  };
+
+  const handleCopySummary = async (clientName: string) => {
+    const client = clientSummaries.find(c => c.clientName === clientName);
+    if (!client) return;
+    const pendingServices = client.services.filter(s => !s.pago);
+    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
+    const ok = await copyToClipboard(message);
+    toast({
+      title: ok ? 'Mensagem copiada' : 'Não foi possível copiar',
+      description: ok ? 'Cola onde quiseres (SMS, email, etc.).' : undefined,
+      variant: ok ? 'default' : 'destructive',
+    });
   };
 
   const formatDate = (dateStr: string) => {
@@ -283,15 +332,39 @@ const Pagamentos: React.FC = () => {
                   </div>
                   
                   {client.totalPending > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 w-full bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:hover:bg-green-950/50 dark:text-green-400 dark:border-green-800"
-                      onClick={() => handleMarkAllPaid(client.clientName)}
-                    >
-                      <CheckCircle2 size={16} className="mr-2" />
-                      Marcar todos como pago ({formatCurrency(client.totalPending)})
-                    </Button>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:hover:bg-green-950/50 dark:text-green-400 dark:border-green-800"
+                        onClick={() => handleMarkAllPaid(client.clientName)}
+                      >
+                        <CheckCircle2 size={16} className="mr-2" />
+                        Marcar pago ({formatCurrency(client.totalPending)})
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800"
+                        onClick={() => handleSendWhatsApp(client.clientName)}
+                        title={
+                          normalizePhoneForWhatsApp(phoneByName.get(client.clientName.toLowerCase()))
+                            ? 'Abrir WhatsApp com lembrete'
+                            : 'Sem telefone — abre WhatsApp Web'
+                        }
+                      >
+                        <MessageCircle size={16} className="mr-2" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopySummary(client.clientName)}
+                      >
+                        <Copy size={16} className="mr-2" />
+                        Copiar resumo
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>

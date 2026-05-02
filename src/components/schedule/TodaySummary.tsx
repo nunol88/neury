@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles } from 'lucide-react';
+import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText } from 'lucide-react';
+import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
+import { generateDailyRoutePdf } from '@/utils/dailyRoutePdf';
 
 interface TodaySummaryProps {
   tasks: Task[];
@@ -19,6 +21,7 @@ const getTaskPrice = (t: Task, isAdmin: boolean): number => {
 };
 
 const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isAdmin = true }) => {
+  const [expanded, setExpanded] = useState(false);
   const todayTasks = tasks;
   const completedTasks = todayTasks.filter(t => t.completed);
   const pendingTasks = todayTasks.filter(t => !t.completed);
@@ -37,9 +40,8 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
   const isAllDone = todayTasks.length > 0 && completedTasks.length === todayTasks.length;
 
   return (
-    <div 
-      onClick={onScrollToToday}
-      className={`glass-card rounded-2xl p-4 mb-6 cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-xl animate-fade-in ${
+    <div
+      className={`glass-card rounded-2xl p-4 mb-6 transition-all duration-300 hover:shadow-xl animate-fade-in ${
         isAllDone ? 'ring-2 ring-success shadow-glow-success' : ''
       }`}
     >
@@ -135,6 +137,127 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
           </div>
         </div>
       </div>
+
+      {/* Quick actions row */}
+      {todayTasks.length > 0 && (
+        <>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setExpanded(v => !v)}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-secondary/60 hover:bg-secondary text-card-foreground transition-colors"
+            >
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expanded ? 'Esconder lista' : `Ver ${todayTasks.length} serviço${todayTasks.length > 1 ? 's' : ''}`}
+            </button>
+            {onScrollToToday && (
+              <button
+                type="button"
+                onClick={onScrollToToday}
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-primary/15 hover:bg-primary/25 text-primary transition-colors"
+              >
+                Ir para hoje
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                generateDailyRoutePdf(todayStr, todayTasks);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-secondary/60 hover:bg-secondary text-card-foreground transition-colors"
+              title="Gerar PDF da folha do dia"
+            >
+              <FileText size={14} />
+              PDF
+            </button>
+          </div>
+
+          {/* Expanded service list */}
+          {expanded && (
+            <ul className="mt-3 space-y-2 animate-fade-in">
+              {todayTasks
+                .slice()
+                .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                .map(task => {
+                  const mapsHref = task.address
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.address)}`
+                    : null;
+                  return (
+                    <li
+                      key={task.id}
+                      className={`flex items-center gap-2 p-2.5 rounded-lg border ${
+                        task.completed
+                          ? 'bg-success/5 border-success/30 opacity-70'
+                          : 'bg-secondary/40 border-border'
+                      }`}
+                    >
+                      <div className="text-xs font-bold text-primary w-12 shrink-0 tabular-nums">
+                        {task.startTime}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-card-foreground truncate">
+                          {task.client}
+                        </p>
+                        {task.address && (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {task.address}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {task.phone && (
+                          <a
+                            href={`tel:${task.phone}`}
+                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary"
+                            aria-label="Ligar"
+                            title="Ligar"
+                          >
+                            <Phone size={14} />
+                          </a>
+                        )}
+                        {task.phone && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openWhatsApp(
+                                task.phone,
+                                buildServiceConfirmationMessage(
+                                  task.client,
+                                  task.date,
+                                  task.startTime,
+                                  task.endTime
+                                )
+                              )
+                            }
+                            className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            aria-label="Confirmar por WhatsApp"
+                            title="Confirmar por WhatsApp"
+                          >
+                            <MessageCircle size={14} />
+                          </button>
+                        )}
+                        {mapsHref && (
+                          <a
+                            href={mapsHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-md hover:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            aria-label="Abrir no Maps"
+                            title="Abrir no Maps"
+                          >
+                            <Navigation size={14} />
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   );
 };

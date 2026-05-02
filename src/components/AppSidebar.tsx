@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { useOverduePayments } from '@/hooks/useOverduePayments';
 import { NavLink } from '@/components/NavLink';
 import { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
 import {
@@ -62,6 +63,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const isAdmin = role === 'admin';
   const items = isAdmin ? navItems : neurySidebarItems;
+  const { count: overdueCount } = useOverduePayments(7);
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = isAdmin ? 'Administrador' : 'Funcionário/a';
   const [emailLoginEnabled, setEmailLoginEnabled] = useState(
@@ -120,13 +122,19 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => {
                 const isActive = location.pathname === item.url;
+                const showOverdueBadge =
+                  isAdmin && overdueCount > 0 && item.url === '/admin/pagamentos';
                 
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
                       asChild 
                       isActive={isActive}
-                      tooltip={item.title}
+                      tooltip={
+                        showOverdueBadge
+                          ? `${item.title} — ${overdueCount} em atraso`
+                          : item.title
+                      }
                     >
                       <NavLink 
                         to={item.url} 
@@ -134,7 +142,15 @@ export function AppSidebar() {
                         className="flex items-center gap-3"
                       >
                         <item.icon className="h-4 w-4 flex-shrink-0" />
-                        <span>{item.title}</span>
+                        <span className="flex-1">{item.title}</span>
+                        {showOverdueBadge && (
+                          <span
+                            className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none"
+                            aria-label={`${overdueCount} pagamentos em atraso`}
+                          >
+                            {overdueCount > 99 ? '99+' : overdueCount}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
