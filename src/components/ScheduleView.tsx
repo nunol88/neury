@@ -38,6 +38,7 @@ import {
 import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
 import ExtraValueModal from '@/components/schedule/ExtraValueModal';
+import FavoritesPromptDialog from '@/components/schedule/FavoritesPromptDialog';
 
 import {
   generateMonthsConfig,
