@@ -20,6 +20,56 @@ const getTaskPrice = (t: Task, isAdmin: boolean): number => {
   return hours * EMPLOYEE_RATE;
 };
 
+interface SummaryMetricProps {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+  tone: 'primary' | 'success' | 'warning' | 'muted';
+}
+
+const toneClasses: Record<SummaryMetricProps['tone'], { tile: string; icon: string; value: string }> = {
+  primary: {
+    tile: 'from-primary/10 to-primary/5 border-primary/20',
+    icon: 'bg-primary/15 text-primary',
+    value: 'text-primary',
+  },
+  success: {
+    tile: 'from-success/10 to-success/5 border-success/20',
+    icon: 'bg-success/15 text-success',
+    value: 'text-success',
+  },
+  warning: {
+    tile: 'from-warning/10 to-warning/5 border-warning/20',
+    icon: 'bg-warning/15 text-warning',
+    value: 'text-warning',
+  },
+  muted: {
+    tile: 'from-secondary to-secondary/50 border-border/50',
+    icon: 'bg-muted text-muted-foreground',
+    value: 'text-foreground',
+  },
+};
+
+const SummaryMetric: React.FC<SummaryMetricProps> = ({ icon, value, label, tone }) => {
+  const classes = toneClasses[tone];
+
+  return (
+    <div className={`min-h-[86px] rounded-xl border bg-gradient-to-br p-3 ${classes.tile}`}>
+      <div className="flex h-full min-w-0 flex-col justify-between gap-2">
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${classes.icon}`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className={`text-2xl font-bold leading-none ${classes.value}`}>{value}</p>
+          <p className="mt-1 truncate text-[10px] font-semibold uppercase leading-tight tracking-normal text-muted-foreground">
+            {label}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   tasks,
   monthLabel,
@@ -48,136 +98,56 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
   const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
-    <div className="glass-card p-4 rounded-2xl shadow-lg border border-border/50 animate-slide-up">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        {/* Left side: Stats grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-w-0">
-          {/* Total appointments */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-            <div className="p-2 rounded-lg bg-primary/20">
-              <Calendar size={18} className="text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-primary leading-tight">{totalTasks}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Agendamentos</p>
-            </div>
-          </div>
-
-          {/* Completed */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
-            <div className="p-2 rounded-lg bg-success/20">
-              <CheckCircle2 size={18} className="text-success" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-success leading-tight">{completedTasks}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Concluídos</p>
-            </div>
-          </div>
-
-          {/* Hours */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-secondary to-secondary/50 border border-border/50">
-            <div className="p-2 rounded-lg bg-muted">
-              <Clock size={18} className="text-muted-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-foreground leading-tight">{totalHours.toFixed(0)}h</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Horas</p>
-            </div>
-          </div>
-
-          {/* Pending */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20">
-            <div className="p-2 rounded-lg bg-amber-500/20">
-              <Target size={18} className="text-amber-500" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-amber-500 leading-tight">{pendingTasks}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Pendentes</p>
-            </div>
-          </div>
+    <div className="glass-card rounded-2xl border border-border/50 p-3 shadow-lg animate-slide-up sm:p-4">
+      <div className="grid gap-3 xl:grid-cols-[1fr_360px] xl:items-stretch">
+        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+          <SummaryMetric icon={<Calendar size={17} />} value={totalTasks} label="Agendamentos" tone="primary" />
+          <SummaryMetric icon={<CheckCircle2 size={17} />} value={completedTasks} label="Concluídos" tone="success" />
+          <SummaryMetric icon={<Clock size={17} />} value={`${totalHours.toFixed(0)}h`} label="Horas" tone="muted" />
+          <SummaryMetric icon={<Target size={17} />} value={pendingTasks} label="Pendentes" tone="warning" />
         </div>
 
-        {/* Right side: Value + Progress */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 lg:gap-6">
-          {/* Progress circles */}
-          <div className="flex items-center gap-4">
-            {/* Completion progress */}
-            <div className="relative">
-              <svg className="w-14 h-14 transform -rotate-90">
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  fill="none"
-                  className="text-muted/30"
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(190px,0.9fr)] xl:grid-cols-1">
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/50 bg-secondary/45 p-3">
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="truncate text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Feito</span>
+                <span className="shrink-0 text-sm font-bold text-success">{completionRate.toFixed(0)}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-success transition-all duration-1000 ease-out"
+                  style={{ width: `${completionRate}%` }}
                 />
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 24}`}
-                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - completionRate / 100)}`}
-                  className="text-success transition-all duration-1000 ease-out"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xs font-bold text-success">{completionRate.toFixed(0)}%</span>
-                <span className="text-[8px] text-muted-foreground">Feito</span>
               </div>
             </div>
 
-            {/* Occupancy progress */}
-            <div className="relative">
-              <svg className="w-14 h-14 transform -rotate-90">
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  fill="none"
-                  className="text-muted/30"
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="truncate text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Ocupação</span>
+                <span className="shrink-0 text-sm font-bold text-primary">{occupancyRate.toFixed(0)}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
+                  style={{ width: `${occupancyRate}%` }}
                 />
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 24}`}
-                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - occupancyRate / 100)}`}
-                  className="text-primary transition-all duration-1000 ease-out"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xs font-bold text-primary">{occupancyRate.toFixed(0)}%</span>
-                <span className="text-[8px] text-muted-foreground">Ocupação</span>
               </div>
             </div>
           </div>
 
-          {/* Total value */}
-          <div className="flex flex-col items-center sm:items-end p-4 rounded-xl bg-gradient-to-br from-success/10 via-success/5 to-transparent border border-success/20">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-              <TrendingUp size={12} />
-              <span>Total {monthLabel}</span>
+          <div className="min-w-0 rounded-xl border border-success/20 bg-gradient-to-br from-success/10 via-success/5 to-card/30 p-3 sm:p-4">
+            <div className="mb-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+              <TrendingUp size={12} className="shrink-0" />
+              <span className="truncate">Total {monthLabel}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Euro size={18} className="text-success" />
-              <span className="text-2xl font-bold text-success">{totalValue.toFixed(2)}</span>
+            <div className="flex min-w-0 items-center gap-1">
+              <Euro size={18} className="shrink-0 text-success" />
+              <span className="truncate text-2xl font-bold leading-tight text-success">{totalValue.toFixed(2)}</span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
-              <span className="text-success">€{completedValue.toFixed(2)} faturado</span>
-              <span>•</span>
-              <span className="text-amber-500">€{(totalValue - completedValue).toFixed(2)} pendente</span>
+            <div className="mt-1 grid grid-cols-1 gap-0.5 text-[10px] leading-tight text-muted-foreground sm:grid-cols-2 xl:grid-cols-1">
+              <span className="truncate text-success">€{completedValue.toFixed(2)} faturado</span>
+              <span className="truncate text-warning">€{(totalValue - completedValue).toFixed(2)} pendente</span>
             </div>
           </div>
         </div>
