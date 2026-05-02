@@ -164,8 +164,12 @@ const ClientesAdmin = () => {
             telefone: formData.telefone || null,
             morada: formData.morada || null,
             preco_hora: formData.preco_hora,
-            notas: formData.notas || null
-          })
+            notas: formData.notas || null,
+            dias_preferidos: formData.dias_preferidos,
+            frequencia_preferida: formData.frequencia_preferida,
+            periodo_preferido: formData.periodo_preferido,
+            duracao_preferida_horas: formData.duracao_preferida_horas,
+          } as any)
           .eq('id', editingClient.id);
 
         if (error) throw error;
