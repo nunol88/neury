@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type FrequenciaPreferida = 'semanal' | 'quinzenal';
+export type PeriodoPreferido = 'manha' | 'tarde' | 'noite' | null;
+
 export interface Client {
   id: string;
   nome: string;
@@ -11,6 +14,12 @@ export interface Client {
   notas: string;
   recibo_verde: boolean;
   favorito: boolean;
+  // Preferências de agendamento (usadas para auto-agendar fixos)
+  dias_preferidos: number[]; // 0=Dom, 1=Seg, ..., 6=Sáb
+  frequencia_preferida: FrequenciaPreferida;
+  periodo_preferido: PeriodoPreferido;
+  hora_preferida: string | null; // ex: "09:00"
+  duracao_preferida_horas: number; // ex: 3
 }
 
 export const useClients = () => {
