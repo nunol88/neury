@@ -23,6 +23,7 @@ export const useClients = () => {
       const { data, error } = await supabase
         .from('clients')
         .select('*')
+        .order('favorito', { ascending: false })
         .order('nome', { ascending: true });
 
       if (error) throw error;
@@ -34,7 +35,8 @@ export const useClients = () => {
         morada: row.morada || '',
         preco_hora: row.preco_hora || '7',
         notas: row.notas || '',
-        recibo_verde: row.recibo_verde || false
+        recibo_verde: row.recibo_verde || false,
+        favorito: (row as any).favorito || false
       })));
     } catch (error: any) {
       console.error('Error fetching clients:', error);
@@ -53,6 +55,12 @@ export const useClients = () => {
       client.nome.toLowerCase() === normalizedName && client.id !== excludeId
     );
   }, [clients]);
+
+  const sortClients = (list: Client[]) =>
+    [...list].sort((a, b) => {
+      if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+      return a.nome.localeCompare(b.nome);
+    });
 
   const addClient = async (clientData: Omit<Client, 'id'>): Promise<Client | null> => {
     // Check for duplicate name
@@ -73,8 +81,9 @@ export const useClients = () => {
           telefone: clientData.telefone || null,
           morada: clientData.morada || null,
           preco_hora: clientData.preco_hora || '7',
-          notas: clientData.notas || null
-        })
+          notas: clientData.notas || null,
+          favorito: clientData.favorito || false
+        } as any)
         .select()
         .single();
 
@@ -87,10 +96,11 @@ export const useClients = () => {
         morada: data.morada || '',
         preco_hora: data.preco_hora || '7',
         notas: data.notas || '',
-        recibo_verde: data.recibo_verde || false
+        recibo_verde: data.recibo_verde || false,
+        favorito: (data as any).favorito || false
       };
 
-      setClients(prev => [...prev, newClient].sort((a, b) => a.nome.localeCompare(b.nome)));
+      setClients(prev => sortClients([...prev, newClient]));
       toast({ title: 'Cliente guardado' });
       return newClient;
     } catch (error: any) {
@@ -104,11 +114,38 @@ export const useClients = () => {
     }
   };
 
+  const toggleFavorite = async (clientId: string): Promise<void> => {
+    const current = clients.find(c => c.id === clientId);
+    if (!current) return;
+    const newValue = !current.favorito;
+
+    // Optimistic update
+    setClients(prev => sortClients(prev.map(c => c.id === clientId ? { ...c, favorito: newValue } : c)));
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ favorito: newValue } as any)
+        .eq('id', clientId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      // Revert
+      setClients(prev => sortClients(prev.map(c => c.id === clientId ? { ...c, favorito: !newValue } : c)));
+      toast({
+        title: 'Erro ao atualizar favorito',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   return {
     clients,
     loading,
     addClient,
     clientExists,
+    toggleFavorite,
     refetch: fetchClients
   };
 };
