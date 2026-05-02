@@ -63,6 +63,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const isAdmin = role === 'admin';
   const items = isAdmin ? navItems : neurySidebarItems;
+  const { count: overdueCount } = useOverduePayments(7);
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = isAdmin ? 'Administrador' : 'Funcionário/a';
   const [emailLoginEnabled, setEmailLoginEnabled] = useState(
