@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreVertical, Copy, Trash2, Loader2, Smartphone } from 'lucide-react';
+import { MoreVertical, Copy, Trash2, Loader2, Smartphone, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,7 +15,9 @@ interface ScheduleActionsMenuProps {
   previousMonthLabel: string | null;
   currentMonthLabel: string;
   hasTasksInMonth: boolean;
+  hasFavorites?: boolean;
   onCopyFromPrevious: () => void;
+  onCopyFavorites?: () => void;
   onDeleteMonth: () => void;
   onExportCalendar?: () => void;
 }
@@ -26,7 +28,9 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
   previousMonthLabel,
   currentMonthLabel,
   hasTasksInMonth,
+  hasFavorites,
   onCopyFromPrevious,
+  onCopyFavorites,
   onDeleteMonth,
   onExportCalendar,
 }) => {
@@ -56,6 +60,14 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
             <span>
               {copyingFromPrevious ? 'A copiar...' : `Copiar de ${prevMonthName}`}
             </span>
+          </DropdownMenuItem>
+        )}
+
+        {/* Copy favorite (fixed) clients */}
+        {hasFavorites && onCopyFavorites && (
+          <DropdownMenuItem onClick={onCopyFavorites} className="gap-2">
+            <Star size={16} className="text-amber-500 fill-current" />
+            <span>Copiar clientes fixos</span>
           </DropdownMenuItem>
         )}
 
