@@ -1682,7 +1682,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       )}
 
       {/* Days Grid */}
-      <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
+      <main className="max-w-7xl mx-auto p-4 mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 print:block print:w-full relative z-0">
         {currentMonthDays.map((dayObj) => {
           const dayTasks = getTasksForMonth(activeMonth)
             .filter(t => t.date === dayObj.dateString)
