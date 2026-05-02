@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePayments } from '@/hooks/usePayments';
+import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,8 +24,16 @@ import {
   Clock, 
   Search,
   User,
-  Calendar
+  Calendar,
+  MessageCircle,
+  Copy
 } from 'lucide-react';
+import {
+  buildPaymentReminderMessage,
+  openWhatsApp,
+  copyToClipboard,
+  normalizePhoneForWhatsApp,
+} from '@/utils/whatsappMessages';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
