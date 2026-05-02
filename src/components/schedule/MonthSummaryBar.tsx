@@ -51,7 +51,7 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
     <div className="glass-card p-4 rounded-2xl shadow-lg border border-border/50 animate-slide-up">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Left side: Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-w-0">
           {/* Total appointments */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
             <div className="p-2 rounded-lg bg-primary/20">
