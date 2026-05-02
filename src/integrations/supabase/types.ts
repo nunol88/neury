@@ -107,11 +107,16 @@ export type Database = {
       clients: {
         Row: {
           created_at: string
+          dias_preferidos: number[]
+          duracao_preferida_horas: number
           favorito: boolean
+          frequencia_preferida: string
+          hora_preferida: string | null
           id: string
           morada: string | null
           nome: string
           notas: string | null
+          periodo_preferido: string | null
           preco_hora: string | null
           recibo_verde: boolean
           telefone: string | null
@@ -119,11 +124,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dias_preferidos?: number[]
+          duracao_preferida_horas?: number
           favorito?: boolean
+          frequencia_preferida?: string
+          hora_preferida?: string | null
           id?: string
           morada?: string | null
           nome: string
           notas?: string | null
+          periodo_preferido?: string | null
           preco_hora?: string | null
           recibo_verde?: boolean
           telefone?: string | null
@@ -131,11 +141,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dias_preferidos?: number[]
+          duracao_preferida_horas?: number
           favorito?: boolean
+          frequencia_preferida?: string
+          hora_preferida?: string | null
           id?: string
           morada?: string | null
           nome?: string
           notas?: string | null
+          periodo_preferido?: string | null
           preco_hora?: string | null
           recibo_verde?: boolean
           telefone?: string | null

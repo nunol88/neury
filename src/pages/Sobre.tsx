@@ -31,6 +31,18 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.11.0',
+    date: '2026-05-02',
+    title: '⭐ Preferências de Clientes Fixos',
+    summary: 'Cada cliente pode agora ter dias da semana preferidos, frequência (semanal ou quinzenal), período do dia (manhã/tarde/noite) e duração típica do serviço. Quando se copia o mês ou se usa "Copiar clientes fixos", os agendamentos dos favoritos são criados automaticamente nos dias e horários certos — basta confirmar.',
+    changes: [
+      { text: 'Novos campos de preferências no formulário de cliente (dias, frequência, período, duração)', type: 'new' },
+      { text: 'Auto-agendamento respeita as preferências dos clientes favoritos', type: 'new' },
+      { text: 'Quinzenal cria 1 ocorrência sim, outra não, por cada dia da semana escolhido', type: 'new' },
+      { text: 'Indicadores visuais (chips) no cartão de cliente com dias e período preferidos', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.10.0',
     date: '2026-05-02',
     title: '📱 Tablet Otimizado + Produtividade Admin',

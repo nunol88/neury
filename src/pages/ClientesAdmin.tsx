@@ -70,7 +70,11 @@ const ClientesAdmin = () => {
     telefone: '',
     morada: '',
     preco_hora: '7',
-    notas: ''
+    notas: '',
+    dias_preferidos: [] as number[],
+    frequencia_preferida: 'semanal' as 'semanal' | 'quinzenal',
+    periodo_preferido: null as 'manha' | 'tarde' | 'noite' | null,
+    duracao_preferida_horas: 3,
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -110,7 +114,11 @@ const ClientesAdmin = () => {
   }, [monthsConfig]);
 
   const resetForm = () => {
-    setFormData({ nome: '', telefone: '', morada: '', preco_hora: '7', notas: '' });
+    setFormData({
+      nome: '', telefone: '', morada: '', preco_hora: '7', notas: '',
+      dias_preferidos: [], frequencia_preferida: 'semanal', periodo_preferido: null,
+      duracao_preferida_horas: 3,
+    });
     setEditingClient(null);
     setShowForm(false);
   };
@@ -122,7 +130,11 @@ const ClientesAdmin = () => {
       telefone: client.telefone,
       morada: client.morada,
       preco_hora: client.preco_hora,
-      notas: client.notas
+      notas: client.notas,
+      dias_preferidos: client.dias_preferidos || [],
+      frequencia_preferida: client.frequencia_preferida || 'semanal',
+      periodo_preferido: client.periodo_preferido,
+      duracao_preferida_horas: client.duracao_preferida_horas || 3,
     });
     setShowForm(true);
   };
@@ -152,14 +164,27 @@ const ClientesAdmin = () => {
             telefone: formData.telefone || null,
             morada: formData.morada || null,
             preco_hora: formData.preco_hora,
-            notas: formData.notas || null
-          })
+            notas: formData.notas || null,
+            dias_preferidos: formData.dias_preferidos,
+            frequencia_preferida: formData.frequencia_preferida,
+            periodo_preferido: formData.periodo_preferido,
+            duracao_preferida_horas: formData.duracao_preferida_horas,
+          } as any)
           .eq('id', editingClient.id);
 
         if (error) throw error;
         toast({ title: 'Cliente atualizado' });
       } else {
-        await addClient({ ...formData, recibo_verde: false, favorito: false });
+        await addClient({
+          ...formData,
+          recibo_verde: false,
+          favorito: false,
+          dias_preferidos: formData.dias_preferidos,
+          frequencia_preferida: formData.frequencia_preferida,
+          periodo_preferido: formData.periodo_preferido,
+          hora_preferida: null,
+          duracao_preferida_horas: formData.duracao_preferida_horas,
+        });
       }
       await refetch();
       resetForm();
@@ -575,8 +600,121 @@ const ClientesAdmin = () => {
                     placeholder="Observações..."
                   />
                 </div>
-                <Button 
-                  type="submit" 
+
+                {/* === Preferências de agendamento === */}
+                <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Star size={14} className="text-amber-500" />
+                    <h3 className="text-sm font-semibold text-card-foreground">
+                      Preferências de agendamento
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Usadas para auto-agendar clientes fixos/favoritos primeiro.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Dias da semana preferidos
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label, idx) => {
+                        const active = formData.dias_preferidos.includes(idx);
+                        return (
+                          <button
+                            type="button"
+                            key={idx}
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                dias_preferidos: active
+                                  ? prev.dias_preferidos.filter(d => d !== idx)
+                                  : [...prev.dias_preferidos, idx],
+                              }));
+                            }}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Frequência
+                    </label>
+                    <div className="flex gap-1.5">
+                      {[
+                        { v: 'semanal' as const, label: 'Todas as semanas' },
+                        { v: 'quinzenal' as const, label: 'De 2 em 2 semanas' },
+                      ].map(opt => (
+                        <button
+                          type="button"
+                          key={opt.v}
+                          onClick={() => setFormData(prev => ({ ...prev, frequencia_preferida: opt.v }))}
+                          className={`flex-1 px-2.5 py-1.5 text-xs font-medium rounded-md border transition ${
+                            formData.frequencia_preferida === opt.v
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Período preferido
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { v: null as null, label: 'Sem pref.' },
+                        { v: 'manha' as const, label: 'Manhã' },
+                        { v: 'tarde' as const, label: 'Tarde' },
+                        { v: 'noite' as const, label: 'Noite' },
+                      ].map(opt => (
+                        <button
+                          type="button"
+                          key={String(opt.v)}
+                          onClick={() => setFormData(prev => ({ ...prev, periodo_preferido: opt.v }))}
+                          className={`px-2 py-1.5 text-xs font-medium rounded-md border transition ${
+                            formData.periodo_preferido === opt.v
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Duração típica (horas)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      step={0.5}
+                      value={formData.duracao_preferida_horas}
+                      onChange={(e) => setFormData({ ...formData, duracao_preferida_horas: Number(e.target.value) || 3 })}
+                      className="w-full p-2 border border-border rounded-lg bg-card text-foreground text-sm"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
                   disabled={saving}
                   className="w-full bg-gradient-to-r from-primary to-primary/80"
                 >
@@ -777,6 +915,28 @@ const ClientesAdmin = () => {
                           <div className="text-success font-medium">
                             €{client.preco_hora}/hora
                           </div>
+                          {(client.dias_preferidos?.length > 0 || client.periodo_preferido) && (
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                              {client.dias_preferidos?.length > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                  <CalendarDays size={11} />
+                                  {client.dias_preferidos
+                                    .slice()
+                                    .sort((a, b) => a - b)
+                                    .map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d])
+                                    .join(', ')}
+                                  {client.frequencia_preferida === 'quinzenal' && ' · 2/2 sem'}
+                                </span>
+                              )}
+                              {client.periodo_preferido && (
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-600 dark:text-amber-400">
+                                  <Clock size={11} />
+                                  {{ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' }[client.periodo_preferido]}
+                                  {' · '}{client.duracao_preferida_horas}h
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {client.notas && (
                           <p className="mt-2 text-xs text-muted-foreground italic">{client.notas}</p>
