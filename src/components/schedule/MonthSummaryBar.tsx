@@ -68,9 +68,9 @@ const MonthSummaryBar: React.FC<MonthSummaryBarProps> = ({
             <div className="p-2 rounded-lg bg-success/20">
               <CheckCircle2 size={18} className="text-success" />
             </div>
-            <div>
-              <p className="text-xl font-bold text-success">{completedTasks}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Concluídos</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold text-success leading-tight">{completedTasks}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider truncate">Concluídos</p>
             </div>
           </div>
 
