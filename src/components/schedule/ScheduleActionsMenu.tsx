@@ -28,7 +28,9 @@ const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
   previousMonthLabel,
   currentMonthLabel,
   hasTasksInMonth,
+  hasFavorites,
   onCopyFromPrevious,
+  onCopyFavorites,
   onDeleteMonth,
   onExportCalendar,
 }) => {
