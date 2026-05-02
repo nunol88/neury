@@ -44,6 +44,8 @@ const Pagamentos: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
+  const { toast } = useToast();
+  const { clients } = useClients();
   
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
@@ -59,6 +61,15 @@ const Pagamentos: React.FC = () => {
     markAsUnpaid, 
     markMultipleAsPaid 
   } = usePayments(selectedMonth, selectedYear);
+
+  // Quick lookup of phone by client name (case-insensitive)
+  const phoneByName = useMemo(() => {
+    const map = new Map<string, string>();
+    clients.forEach(c => {
+      if (c.telefone) map.set(c.nome.toLowerCase(), c.telefone);
+    });
+    return map;
+  }, [clients]);
 
   const filteredClients = clientSummaries.filter(client => {
     const matchesSearch = client.clientName.toLowerCase().includes(searchTerm.toLowerCase());
