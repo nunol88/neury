@@ -2265,6 +2265,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         themeGradient={themeGradient}
       />
 
+      {/* Favorites prompt after copying month */}
+      <FavoritesPromptDialog
+        open={showFavoritesPrompt}
+        onClose={() => setShowFavoritesPrompt(false)}
+        missingFavorites={missingFavorites}
+        monthLabel={monthsConfig[activeMonth]?.label || activeMonth}
+        onConfirm={handleAddMissingFavorites}
+      />
+
       {/* Copy Day Modal */}
       <CopyDayModal
         open={showCopyDayModal}
