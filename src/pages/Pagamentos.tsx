@@ -101,6 +101,34 @@ const Pagamentos: React.FC = () => {
     }
   };
 
+  const handleSendWhatsApp = (clientName: string) => {
+    const client = clientSummaries.find(c => c.clientName === clientName);
+    if (!client) return;
+    const pendingServices = client.services.filter(s => !s.pago);
+    const phone = phoneByName.get(clientName.toLowerCase()) || null;
+    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
+    const hasPhone = openWhatsApp(phone, message);
+    if (!hasPhone) {
+      toast({
+        title: 'Sem telefone do cliente',
+        description: 'Abriu o WhatsApp Web — escolhe o contacto manualmente.',
+      });
+    }
+  };
+
+  const handleCopySummary = async (clientName: string) => {
+    const client = clientSummaries.find(c => c.clientName === clientName);
+    if (!client) return;
+    const pendingServices = client.services.filter(s => !s.pago);
+    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
+    const ok = await copyToClipboard(message);
+    toast({
+      title: ok ? 'Mensagem copiada' : 'Não foi possível copiar',
+      description: ok ? 'Cola onde quiseres (SMS, email, etc.).' : undefined,
+      variant: ok ? 'default' : 'destructive',
+    });
+  };
+
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-');
     return `${day}/${month}`;
