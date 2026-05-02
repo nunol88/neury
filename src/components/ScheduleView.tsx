@@ -663,7 +663,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           preco_hora: newTask.pricePerHour,
           notas: '',
           recibo_verde: false,
-          favorito: false
+          favorito: false,
+          dias_preferidos: [],
+          frequencia_preferida: 'semanal',
+          periodo_preferido: null,
+          hora_preferida: null,
+          duracao_preferida_horas: 3,
         });
       }
 

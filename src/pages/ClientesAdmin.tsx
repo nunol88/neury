@@ -159,7 +159,16 @@ const ClientesAdmin = () => {
         if (error) throw error;
         toast({ title: 'Cliente atualizado' });
       } else {
-        await addClient({ ...formData, recibo_verde: false, favorito: false });
+        await addClient({
+          ...formData,
+          recibo_verde: false,
+          favorito: false,
+          dias_preferidos: formData.dias_preferidos,
+          frequencia_preferida: formData.frequencia_preferida,
+          periodo_preferido: formData.periodo_preferido,
+          hora_preferida: null,
+          duracao_preferida_horas: formData.duracao_preferida_horas,
+        });
       }
       await refetch();
       resetForm();
