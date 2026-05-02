@@ -20,6 +20,7 @@ const getTaskPrice = (t: Task, isAdmin: boolean): number => {
 };
 
 const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isAdmin = true }) => {
+  const [expanded, setExpanded] = useState(false);
   const todayTasks = tasks;
   const completedTasks = todayTasks.filter(t => t.completed);
   const pendingTasks = todayTasks.filter(t => !t.completed);
