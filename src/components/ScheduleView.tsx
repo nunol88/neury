@@ -1332,39 +1332,94 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     const selected = missingFavorites.filter(c => selectedClientIds.includes(c.id));
     if (selected.length === 0 || currentMonthDays.length === 0) return;
 
-    // Use first weekday of the month as default placement
+    // Default fallback: first weekday of the month
     const firstWeekday = currentMonthDays.find(d => {
       const dow = d.dateObject.getDay();
       return dow !== 0 && dow !== 6;
     }) || currentMonthDays[0];
 
+    // Period -> default start hour
+    const periodHour: Record<string, string> = { manha: '09:00', tarde: '14:00', noite: '18:00' };
+    const addHours = (time: string, hours: number) => {
+      const [h, m] = time.split(':').map(Number);
+      const total = h * 60 + m + Math.round(hours * 60);
+      const eh = Math.min(23, Math.floor(total / 60));
+      const em = total % 60;
+      return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+    };
+
     const newIds: string[] = [];
+    let totalSlots = 0;
+    let clientsWithPrefs = 0;
+
     for (const client of selected) {
-      const result = await addTask({
-        date: firstWeekday.dateString,
-        client: client.nome,
-        phone: client.telefone || '',
-        startTime: '09:00',
-        endTime: '12:00',
-        address: client.morada || '',
-        pricePerHour: client.preco_hora || '7',
-        price: ((parseFloat(client.preco_hora) || 7) * 3).toString(),
-        notes: '',
-        completed: false,
-        pago: false
-      });
-      if (result) newIds.push(result.id);
+      const dur = client.duracao_preferida_horas || 3;
+      const startTime = client.hora_preferida && /^\d{2}:\d{2}$/.test(client.hora_preferida)
+        ? client.hora_preferida
+        : (client.periodo_preferido ? periodHour[client.periodo_preferido] : '09:00');
+      const endTime = addHours(startTime, dur);
+      const pricePerHour = client.preco_hora || '7';
+      const price = ((parseFloat(pricePerHour) || 7) * dur).toString();
+
+      // Compute preferred slots based on dias_preferidos + frequencia
+      let slots: string[] = [];
+      if (client.dias_preferidos && client.dias_preferidos.length > 0) {
+        clientsWithPrefs++;
+        const matching = currentMonthDays.filter(d => client.dias_preferidos.includes(d.dateObject.getDay()));
+        if (client.frequencia_preferida === 'quinzenal') {
+          // Keep every other occurrence per weekday
+          const byDow = new Map<number, typeof matching>();
+          matching.forEach(d => {
+            const dow = d.dateObject.getDay();
+            if (!byDow.has(dow)) byDow.set(dow, []);
+            byDow.get(dow)!.push(d);
+          });
+          const filtered: typeof matching = [];
+          byDow.forEach(list => list.forEach((d, i) => { if (i % 2 === 0) filtered.push(d); }));
+          slots = filtered
+            .sort((a, b) => a.dateString.localeCompare(b.dateString))
+            .map(d => d.dateString);
+        } else {
+          slots = matching.map(d => d.dateString);
+        }
+      }
+
+      // No preferences -> single placement on first weekday (legacy behavior)
+      if (slots.length === 0) {
+        slots = [firstWeekday.dateString];
+      }
+
+      totalSlots += slots.length;
+
+      for (const date of slots) {
+        const result = await addTask({
+          date,
+          client: client.nome,
+          phone: client.telefone || '',
+          startTime,
+          endTime,
+          address: client.morada || '',
+          pricePerHour,
+          price,
+          notes: '',
+          completed: false,
+          pago: false
+        });
+        if (result) newIds.push(result.id);
+      }
     }
 
     if (newIds.length > 0) {
       addAction({
         type: 'bulk_create',
-        description: `${newIds.length} favorito${newIds.length !== 1 ? 's' : ''} adicionado${newIds.length !== 1 ? 's' : ''}`,
+        description: `${newIds.length} agendamento${newIds.length !== 1 ? 's' : ''} de fixos criado${newIds.length !== 1 ? 's' : ''}`,
         undoData: { taskIds: newIds }
       });
       toast({
-        title: `${newIds.length} favorito${newIds.length !== 1 ? 's' : ''} adicionado${newIds.length !== 1 ? 's' : ''}`,
-        description: 'Ajusta horários e dias arrastando os cards.',
+        title: `${newIds.length} agendamento${newIds.length !== 1 ? 's' : ''} criado${newIds.length !== 1 ? 's' : ''}`,
+        description: clientsWithPrefs > 0
+          ? `${clientsWithPrefs} cliente${clientsWithPrefs !== 1 ? 's' : ''} com preferências respeitadas. Ajusta arrastando se necessário.`
+          : 'Define dias e horário preferidos no cliente para auto-agendar com precisão.',
       });
     }
   };
