@@ -37,16 +37,24 @@ export const useClients = () => {
 
       if (error) throw error;
 
-      setClients((data || []).map(row => ({
-        id: row.id,
-        nome: row.nome,
-        telefone: row.telefone || '',
-        morada: row.morada || '',
-        preco_hora: row.preco_hora || '7',
-        notas: row.notas || '',
-        recibo_verde: row.recibo_verde || false,
-        favorito: (row as any).favorito || false
-      })));
+      setClients((data || []).map(row => {
+        const r = row as any;
+        return {
+          id: row.id,
+          nome: row.nome,
+          telefone: row.telefone || '',
+          morada: row.morada || '',
+          preco_hora: row.preco_hora || '7',
+          notas: row.notas || '',
+          recibo_verde: row.recibo_verde || false,
+          favorito: r.favorito || false,
+          dias_preferidos: Array.isArray(r.dias_preferidos) ? r.dias_preferidos : [],
+          frequencia_preferida: (r.frequencia_preferida === 'quinzenal' ? 'quinzenal' : 'semanal') as FrequenciaPreferida,
+          periodo_preferido: (['manha', 'tarde', 'noite'].includes(r.periodo_preferido) ? r.periodo_preferido : null) as PeriodoPreferido,
+          hora_preferida: r.hora_preferida || null,
+          duracao_preferida_horas: typeof r.duracao_preferida_horas === 'number' ? r.duracao_preferida_horas : Number(r.duracao_preferida_horas) || 3,
+        };
+      }));
     } catch (error: any) {
       console.error('Error fetching clients:', error);
     } finally {
@@ -91,13 +99,19 @@ export const useClients = () => {
           morada: clientData.morada || null,
           preco_hora: clientData.preco_hora || '7',
           notas: clientData.notas || null,
-          favorito: clientData.favorito || false
+          favorito: clientData.favorito || false,
+          dias_preferidos: clientData.dias_preferidos || [],
+          frequencia_preferida: clientData.frequencia_preferida || 'semanal',
+          periodo_preferido: clientData.periodo_preferido,
+          hora_preferida: clientData.hora_preferida,
+          duracao_preferida_horas: clientData.duracao_preferida_horas ?? 3,
         } as any)
         .select()
         .single();
 
       if (error) throw error;
 
+      const d = data as any;
       const newClient: Client = {
         id: data.id,
         nome: data.nome,
@@ -106,7 +120,12 @@ export const useClients = () => {
         preco_hora: data.preco_hora || '7',
         notas: data.notas || '',
         recibo_verde: data.recibo_verde || false,
-        favorito: (data as any).favorito || false
+        favorito: d.favorito || false,
+        dias_preferidos: Array.isArray(d.dias_preferidos) ? d.dias_preferidos : [],
+        frequencia_preferida: (d.frequencia_preferida === 'quinzenal' ? 'quinzenal' : 'semanal') as FrequenciaPreferida,
+        periodo_preferido: (['manha', 'tarde', 'noite'].includes(d.periodo_preferido) ? d.periodo_preferido : null) as PeriodoPreferido,
+        hora_preferida: d.hora_preferida || null,
+        duracao_preferida_horas: typeof d.duracao_preferida_horas === 'number' ? d.duracao_preferida_horas : Number(d.duracao_preferida_horas) || 3,
       };
 
       setClients(prev => sortClients([...prev, newClient]));
