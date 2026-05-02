@@ -1303,6 +1303,64 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     } finally {
       setCopyingFromPrevious(false);
     }
+
+    // After copying, check which favorite clients have NO tasks in target month
+    // and prompt the admin to add them
+    const favoriteClients = clients.filter(c => c.favorito);
+    if (favoriteClients.length > 0) {
+      // Re-read current month's tasks (including just-added ones) by name
+      const currentTasks = allTasks[activeMonth as keyof AllTasks] || [];
+      const namesWithTasks = new Set(currentTasks.map(t => t.client.toLowerCase()));
+      const missing = favoriteClients.filter(
+        c => !namesWithTasks.has(c.nome.toLowerCase())
+      );
+      if (missing.length > 0) {
+        setMissingFavorites(missing);
+        setShowFavoritesPrompt(true);
+      }
+    }
+  };
+
+  const handleAddMissingFavorites = async (selectedClientIds: string[]) => {
+    if (selectedClientIds.length === 0) return;
+    const selected = missingFavorites.filter(c => selectedClientIds.includes(c.id));
+    if (selected.length === 0 || currentMonthDays.length === 0) return;
+
+    // Use first weekday of the month as default placement
+    const firstWeekday = currentMonthDays.find(d => {
+      const dow = d.dateObject.getDay();
+      return dow !== 0 && dow !== 6;
+    }) || currentMonthDays[0];
+
+    const newIds: string[] = [];
+    for (const client of selected) {
+      const result = await addTask({
+        date: firstWeekday.dateString,
+        client: client.nome,
+        phone: client.telefone || '',
+        startTime: '09:00',
+        endTime: '12:00',
+        address: client.morada || '',
+        pricePerHour: client.preco_hora || '7',
+        price: ((parseFloat(client.preco_hora) || 7) * 3).toString(),
+        notes: '',
+        completed: false,
+        pago: false
+      });
+      if (result) newIds.push(result.id);
+    }
+
+    if (newIds.length > 0) {
+      addAction({
+        type: 'bulk_create',
+        description: `${newIds.length} favorito${newIds.length !== 1 ? 's' : ''} adicionado${newIds.length !== 1 ? 's' : ''}`,
+        undoData: { taskIds: newIds }
+      });
+      toast({
+        title: `${newIds.length} favorito${newIds.length !== 1 ? 's' : ''} adicionado${newIds.length !== 1 ? 's' : ''}`,
+        description: 'Ajusta horários e dias arrastando os cards.',
+      });
+    }
   };
 
   // Helper function to detect recurrence pattern from a client's tasks
