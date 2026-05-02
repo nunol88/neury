@@ -600,10 +600,118 @@ const ClientesAdmin = () => {
                     placeholder="Observações..."
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={saving}
-                  className="w-full bg-gradient-to-r from-primary to-primary/80"
+
+                {/* === Preferências de agendamento === */}
+                <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Star size={14} className="text-amber-500" />
+                    <h3 className="text-sm font-semibold text-card-foreground">
+                      Preferências de agendamento
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Usadas para auto-agendar clientes fixos/favoritos primeiro.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Dias da semana preferidos
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label, idx) => {
+                        const active = formData.dias_preferidos.includes(idx);
+                        return (
+                          <button
+                            type="button"
+                            key={idx}
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                dias_preferidos: active
+                                  ? prev.dias_preferidos.filter(d => d !== idx)
+                                  : [...prev.dias_preferidos, idx],
+                              }));
+                            }}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Frequência
+                    </label>
+                    <div className="flex gap-1.5">
+                      {[
+                        { v: 'semanal' as const, label: 'Todas as semanas' },
+                        { v: 'quinzenal' as const, label: 'De 2 em 2 semanas' },
+                      ].map(opt => (
+                        <button
+                          type="button"
+                          key={opt.v}
+                          onClick={() => setFormData(prev => ({ ...prev, frequencia_preferida: opt.v }))}
+                          className={`flex-1 px-2.5 py-1.5 text-xs font-medium rounded-md border transition ${
+                            formData.frequencia_preferida === opt.v
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Período preferido
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { v: null as null, label: 'Sem pref.' },
+                        { v: 'manha' as const, label: 'Manhã' },
+                        { v: 'tarde' as const, label: 'Tarde' },
+                        { v: 'noite' as const, label: 'Noite' },
+                      ].map(opt => (
+                        <button
+                          type="button"
+                          key={String(opt.v)}
+                          onClick={() => setFormData(prev => ({ ...prev, periodo_preferido: opt.v }))}
+                          className={`px-2 py-1.5 text-xs font-medium rounded-md border transition ${
+                            formData.periodo_preferido === opt.v
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Duração típica (horas)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      step={0.5}
+                      value={formData.duracao_preferida_horas}
+                      onChange={(e) => setFormData({ ...formData, duracao_preferida_horas: Number(e.target.value) || 3 })}
+                      className="w-full p-2 border border-border rounded-lg bg-card text-foreground text-sm"
+                    />
+                  </div>
+                </div>
                 >
                   {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
                   {editingClient ? 'Guardar Alterações' : 'Criar Cliente'}
