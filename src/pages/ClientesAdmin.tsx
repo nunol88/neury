@@ -11,7 +11,7 @@ import {
   Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search, CalendarDays, Sparkles, FileText
+  Navigation, Search, CalendarDays, Sparkles, FileText, Star
 } from 'lucide-react';
 import { generateClientReportPdf } from '@/utils/clientReportPdf';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const ClientesAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { clients, loading, addClient, clientExists, refetch } = useClients();
+  const { clients, loading, addClient, clientExists, toggleFavorite, refetch } = useClients();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   
   // Generate months config
