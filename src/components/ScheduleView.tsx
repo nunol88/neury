@@ -1329,7 +1329,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const handleAddMissingFavorites = async (selectedClientIds: string[]) => {
     if (selectedClientIds.length === 0) return;
-    const selected = missingFavorites.filter(c => selectedClientIds.includes(c.id));
+    let selected = missingFavorites.filter(c => selectedClientIds.includes(c.id));
     if (selected.length === 0 || currentMonthDays.length === 0) return;
 
     // Default fallback: first weekday of the month
@@ -1348,16 +1348,50 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
     };
 
+    // Look up the previous month's tasks to mirror order/start times of fixed clients
+    const previousMonth = getPreviousMonth();
+    const previousTasks = previousMonth ? (allTasks[previousMonth as keyof AllTasks] || []) : [];
+    const prevByClient = new Map<string, Task[]>();
+    previousTasks.forEach(t => {
+      const key = t.client.toLowerCase();
+      if (!prevByClient.has(key)) prevByClient.set(key, []);
+      prevByClient.get(key)!.push(t);
+    });
+    // Earliest startTime per client in previous month (for sort)
+    const earliestStart = (name: string): string => {
+      const list = prevByClient.get(name.toLowerCase());
+      if (!list || list.length === 0) return '99:99';
+      return list.map(t => t.startTime).sort()[0];
+    };
+    // Sort selected to follow previous month order: clients present last month first,
+    // ordered by their earliest startTime in that month
+    selected = [...selected].sort((a, b) => {
+      const ha = prevByClient.has(a.nome.toLowerCase());
+      const hb = prevByClient.has(b.nome.toLowerCase());
+      if (ha !== hb) return ha ? -1 : 1;
+      return earliestStart(a.nome).localeCompare(earliestStart(b.nome));
+    });
+
     const newIds: string[] = [];
     let totalSlots = 0;
     let clientsWithPrefs = 0;
+    let clientsFromPrev = 0;
 
     for (const client of selected) {
+      const prevList = prevByClient.get(client.nome.toLowerCase());
+      const prevFirst = prevList && prevList.length > 0
+        ? [...prevList].sort((a, b) => a.startTime.localeCompare(b.startTime))[0]
+        : null;
+      if (prevFirst) clientsFromPrev++;
+
       const dur = client.duracao_preferida_horas || 3;
-      const startTime = client.hora_preferida && /^\d{2}:\d{2}$/.test(client.hora_preferida)
-        ? client.hora_preferida
-        : (client.periodo_preferido ? periodHour[client.periodo_preferido] : '09:00');
-      const endTime = addHours(startTime, dur);
+      // Prefer previous month start time so daily order matches
+      const startTime = prevFirst
+        ? prevFirst.startTime
+        : (client.hora_preferida && /^\d{2}:\d{2}$/.test(client.hora_preferida)
+          ? client.hora_preferida
+          : (client.periodo_preferido ? periodHour[client.periodo_preferido] : '09:00'));
+      const endTime = prevFirst ? prevFirst.endTime : addHours(startTime, dur);
       const pricePerHour = client.preco_hora || '7';
       const price = ((parseFloat(pricePerHour) || 7) * dur).toString();
 
