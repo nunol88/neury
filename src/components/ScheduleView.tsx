@@ -1397,7 +1397,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       // Compute preferred slots based on dias_preferidos + frequencia
       let slots: string[] = [];
-      if (client.dias_preferidos && client.dias_preferidos.length > 0) {
+
+      // 1) If client had tasks in previous month, mirror that weekday pattern
+      if (prevList && prevList.length > 0) {
+        const prevDows = new Set<number>();
+        prevList.forEach(t => {
+          // Parse YYYY-MM-DD as local date to avoid TZ off-by-one
+          const [y, mo, d] = t.date.split('-').map(Number);
+          prevDows.add(new Date(y, (mo || 1) - 1, d || 1).getDay());
+        });
+        slots = currentMonthDays
+          .filter(d => prevDows.has(d.dateObject.getDay()))
+          .map(d => d.dateString);
+      } else if (client.dias_preferidos && client.dias_preferidos.length > 0) {
         clientsWithPrefs++;
         const matching = currentMonthDays.filter(d => client.dias_preferidos.includes(d.dateObject.getDay()));
         if (client.frequencia_preferida === 'quinzenal') {
