@@ -1451,9 +1451,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       });
       toast({
         title: `${newIds.length} agendamento${newIds.length !== 1 ? 's' : ''} criado${newIds.length !== 1 ? 's' : ''}`,
-        description: clientsWithPrefs > 0
-          ? `${clientsWithPrefs} cliente${clientsWithPrefs !== 1 ? 's' : ''} com preferências respeitadas. Ajusta arrastando se necessário.`
-          : 'Define dias e horário preferidos no cliente para auto-agendar com precisão.',
+        description: clientsFromPrev > 0
+          ? `Ordem e horários espelhados do mês anterior (${clientsFromPrev} cliente${clientsFromPrev !== 1 ? 's' : ''}).`
+          : (clientsWithPrefs > 0
+            ? `${clientsWithPrefs} cliente${clientsWithPrefs !== 1 ? 's' : ''} com preferências respeitadas. Ajusta arrastando se necessário.`
+            : 'Define dias e horário preferidos no cliente para auto-agendar com precisão.'),
       });
     }
   };
