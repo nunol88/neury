@@ -1395,65 +1395,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       const pricePerHour = client.preco_hora || '7';
       const price = ((parseFloat(pricePerHour) || 7) * dur).toString();
 
-      // Compute preferred slots from full annual history (weekly vs quinzenal per weekday)
+      // Compute preferred slots based on dias_preferidos + frequencia
       let slots: string[] = [];
-      const isQuinzenal = client.frequencia_preferida === 'quinzenal';
-
-      // Build complete history for this client across ALL months
-      const history: { date: Date; ds: string }[] = [];
-      Object.values(allTasks).forEach(monthArr => {
-        (monthArr || []).forEach(t => {
-          if (t.client.toLowerCase() !== client.nome.toLowerCase()) return;
-          const [y, mo, d] = t.date.split('-').map(Number);
-          history.push({ date: new Date(y, (mo || 1) - 1, d || 1), ds: t.date });
-        });
-      });
-
-      if (history.length > 0) {
-        // Group history by day-of-week
-        const byDow = new Map<number, { date: Date }[]>();
-        history.forEach(h => {
-          const dow = h.date.getDay();
-          if (!byDow.has(dow)) byDow.set(dow, []);
-          byDow.get(dow)!.push({ date: h.date });
-        });
-
-        const out: string[] = [];
-        currentMonthDays.forEach(md => {
-          const dow = md.dateObject.getDay();
-          const occ = byDow.get(dow);
-          if (!occ || occ.length === 0) return;
-
-          const sorted = [...occ].sort((a, b) => a.date.getTime() - b.date.getTime());
-          // Detect cadence for this weekday
-          let cadence: 'weekly' | 'biweekly' = 'weekly';
-          if (sorted.length >= 2) {
-            const gaps: number[] = [];
-            for (let i = 1; i < sorted.length; i++) {
-              gaps.push(Math.round((sorted[i].date.getTime() - sorted[i - 1].date.getTime()) / 86400000));
-            }
-            const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-            if (avgGap >= 12) cadence = 'biweekly';
-          } else if (isQuinzenal) {
-            cadence = 'biweekly';
-          }
-
-          if (cadence === 'weekly') {
-            out.push(md.dateString);
-          } else {
-            // Biweekly: keep parity with the most recent historical occurrence
-            const last = sorted[sorted.length - 1];
-            const weeksDiff = Math.round(
-              (md.dateObject.getTime() - last.date.getTime()) / (7 * 86400000)
-            );
-            if (Math.abs(weeksDiff) % 2 === 0) out.push(md.dateString);
-          }
-        });
-        slots = out;
-      } else if (client.dias_preferidos && client.dias_preferidos.length > 0) {
+      if (client.dias_preferidos && client.dias_preferidos.length > 0) {
         clientsWithPrefs++;
         const matching = currentMonthDays.filter(d => client.dias_preferidos.includes(d.dateObject.getDay()));
-        if (isQuinzenal) {
+        if (client.frequencia_preferida === 'quinzenal') {
+          // Keep every other occurrence per weekday
           const byDow = new Map<number, typeof matching>();
           matching.forEach(d => {
             const dow = d.dateObject.getDay();
