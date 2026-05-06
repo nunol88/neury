@@ -1170,7 +1170,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         return preferred;
       };
 
-      for (const clientKey in tasksByClient) {
+      // Process weekly clients first so biweekly ones can avoid their days
+      const orderedKeys = Object.keys(tasksByClient).sort((a, b) => {
+        const pa = detectRecurrencePattern(tasksByClient[a], prevMonthDays);
+        const pb = detectRecurrencePattern(tasksByClient[b], prevMonthDays);
+        const rank = (t: string) => t === 'weekly' ? 0 : t === 'monthly' ? 1 : t === 'biweekly' ? 2 : 3;
+        return rank(pa.type) - rank(pb.type);
+      });
+
+      for (const clientKey of orderedKeys) {
         const clientTasks = tasksByClient[clientKey].sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
