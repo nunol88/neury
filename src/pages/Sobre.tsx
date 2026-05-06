@@ -31,6 +31,16 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.11.4',
+    date: '2026-05-06',
+    title: '⚠️ Aviso de Conflitos Antes de Copiar',
+    summary: 'Antes de executar "Copiar mês anterior", a app simula a operação e, se detectar dias com 3+ fixos, mostra um diálogo de aviso com a lista. Podes cancelar e ajustar, ou avançar.',
+    changes: [
+      { text: 'Novo diálogo "Conflitos detetados" com lista de dias problemáticos antes da cópia', type: 'new' },
+      { text: 'Botão "Copiar mesmo assim" para forçar quando aceitas os conflitos', type: 'new' },
+    ],
+  },
+  {
     version: '2.11.3',
     date: '2026-05-06',
     title: '📋 Relatório da Cópia de Mês',
