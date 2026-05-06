@@ -2656,6 +2656,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         totalCopied={copyReportData.total}
       />
 
+      <CopyConflictDialog
+        isOpen={showConflictDialog}
+        onClose={() => setShowConflictDialog(false)}
+        onConfirm={() => {
+          setShowConflictDialog(false);
+          executeCopyFromPreviousMonth();
+        }}
+        overloadedDays={conflictPreviewDays}
+        monthLabel={monthsConfig[activeMonth]?.label || activeMonth}
+      />
+
       {/* Copy Day Modal */}
       <CopyDayModal
         open={showCopyDayModal}
