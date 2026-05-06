@@ -1138,6 +1138,38 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       const prevMonthConfig = monthsConfig[previousMonth];
       const prevMonthDays = prevMonthConfig ? generateDaysForMonth(prevMonthConfig) : [];
 
+      // Track how many fixed tasks each day already holds, to redistribute conflicts
+      const dayLoad = new Map<string, number>();
+      const incLoad = (d: string) => dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+      // Seed with already-existing tasks in the target month
+      (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => incLoad(t.date));
+      const MAX_PER_DAY = 2; // try to keep at most 2 fixed services per day
+
+      // Helper: pick best alternative date for a biweekly task to avoid overcrowded days.
+      // Allowed shifts must keep the 14-day cycle intact (±14 days inside this month).
+      const pickBetterDate = (preferred: string, dayOfWeek: number): string => {
+        const candidates = currentMonthDays
+          .filter(d => d.dateObject.getDay() === dayOfWeek)
+          .map(d => d.dateString);
+        if (candidates.length === 0) return preferred;
+        // Sort by current load, then by closeness to preferred date
+        const preferredIdx = candidates.indexOf(preferred);
+        const sorted = [...candidates].sort((a, b) => {
+          const la = dayLoad.get(a) || 0;
+          const lb = dayLoad.get(b) || 0;
+          if (la !== lb) return la - lb;
+          const ai = candidates.indexOf(a);
+          const bi = candidates.indexOf(b);
+          return Math.abs(ai - preferredIdx) - Math.abs(bi - preferredIdx);
+        });
+        const best = sorted[0];
+        // Only switch if it actually reduces load below threshold
+        if ((dayLoad.get(preferred) || 0) >= MAX_PER_DAY && (dayLoad.get(best) || 0) < (dayLoad.get(preferred) || 0)) {
+          return best;
+        }
+        return preferred;
+      };
+
       for (const clientKey in tasksByClient) {
         const clientTasks = tasksByClient[clientKey].sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -1166,7 +1198,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               completed: false,
               pago: false
             });
-            if (result) newTaskIds.push(result.id);
+            if (result) {
+              newTaskIds.push(result.id);
+              incLoad(targetDay.dateString);
+            }
           }
         } else if (pattern.type === 'biweekly') {
           // Bi-weekly: copy to alternating weeks (1st, 3rd OR 2nd, 4th)
@@ -1175,8 +1210,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           
           // Determine which weeks (odd: 1,3 or even: 2,4)
           const startWeek = pattern.startWeekParity || 'odd';
-          const targetWeekIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
-          
+          let targetWeekIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
+
+          // Conflict avoidance: if the chosen parity is overcrowded but the
+          // alternate parity is free, swap the whole chain so quinzenais
+          // partilhem dias alternados em vez de empilharem no mesmo dia.
+          const altIndices = startWeek === 'odd' ? [1, 3] : [0, 2, 4];
+          const loadOf = (idxs: number[]) => idxs.reduce((sum, i) => sum + (matchingDays[i] ? (dayLoad.get(matchingDays[i].dateString) || 0) : 0), 0);
+          if (loadOf(targetWeekIndices) > loadOf(altIndices) + 1) {
+            targetWeekIndices = altIndices;
+          }
+
           for (let i = 0; i < matchingDays.length; i++) {
             if (targetWeekIndices.includes(i)) {
               const targetDay = matchingDays[i];
@@ -1194,7 +1238,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                 completed: false,
                 pago: false
               });
-              if (result) newTaskIds.push(result.id);
+              if (result) {
+                newTaskIds.push(result.id);
+                incLoad(targetDay.dateString);
+              }
             }
           }
         } else if (pattern.type === 'monthly') {
@@ -1228,7 +1275,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               completed: false,
               pago: false
             });
-            if (result) newTaskIds.push(result.id);
+            if (result) {
+              newTaskIds.push(result.id);
+              incLoad(targetDay.dateString);
+            }
           }
         } else {
           // Single/unique tasks - copy maintaining relative week position
@@ -1268,6 +1318,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
             if (result) {
               newTaskIds.push(result.id);
+              incLoad(newDateStr);
             }
           }
         }
