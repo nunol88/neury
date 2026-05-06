@@ -2535,6 +2535,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         onConfirm={handleAddMissingFavorites}
       />
 
+      {/* Copy report modal */}
+      <CopyReportModal
+        isOpen={showCopyReport}
+        onClose={() => setShowCopyReport(false)}
+        overloadedDays={copyReportData.overloaded}
+        relocations={copyReportData.relocations}
+        totalCopied={copyReportData.total}
+      />
+
       {/* Copy Day Modal */}
       <CopyDayModal
         open={showCopyDayModal}
