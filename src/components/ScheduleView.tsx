@@ -1357,6 +1357,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       if (!prevByClient.has(key)) prevByClient.set(key, []);
       prevByClient.get(key)!.push(t);
     });
+
+    // Track occupied dates in the current month to avoid same-day conflicts between fixed clients.
+    // Seed with existing tasks already in the month (e.g. from the copy step).
+    const currentTasks = allTasks[activeMonth as keyof AllTasks] || [];
+    const occupiedDates = new Set<string>(currentTasks.map(t => t.date));
+
+    // Helper: integer days between two YYYY-MM-DD dates
+    const daysBetween = (a: string, b: string): number => {
+      const da = new Date(a + 'T00:00:00');
+      const db = new Date(b + 'T00:00:00');
+      return Math.round((db.getTime() - da.getTime()) / 86400000);
+    };
     // Earliest startTime per client in previous month (for sort)
     const earliestStart = (name: string): string => {
       const list = prevByClient.get(name.toLowerCase());
