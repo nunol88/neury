@@ -1357,6 +1357,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       if (!prevByClient.has(key)) prevByClient.set(key, []);
       prevByClient.get(key)!.push(t);
     });
+
+    // Track occupied dates in the current month to avoid same-day conflicts between fixed clients.
+    // Seed with existing tasks already in the month (e.g. from the copy step).
+    const currentTasks = allTasks[activeMonth as keyof AllTasks] || [];
+    const occupiedDates = new Set<string>(currentTasks.map(t => t.date));
+
+    // Helper: integer days between two YYYY-MM-DD dates
+    const daysBetween = (a: string, b: string): number => {
+      const da = new Date(a + 'T00:00:00');
+      const db = new Date(b + 'T00:00:00');
+      return Math.round((db.getTime() - da.getTime()) / 86400000);
+    };
     // Earliest startTime per client in previous month (for sort)
     const earliestStart = (name: string): string => {
       const list = prevByClient.get(name.toLowerCase());
@@ -1401,7 +1413,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         clientsWithPrefs++;
         const matching = currentMonthDays.filter(d => client.dias_preferidos.includes(d.dateObject.getDay()));
         if (client.frequencia_preferida === 'quinzenal') {
-          // Keep every other occurrence per weekday
+          // Use previous month's last occurrence per weekday to keep parity (avoid colliding 14-day cycle).
+          const prevByDow = new Map<number, string>(); // dow -> last date in prev month
+          (prevList || []).forEach(t => {
+            const dt = new Date(t.date + 'T00:00:00');
+            const dow = dt.getDay();
+            const cur = prevByDow.get(dow);
+            if (!cur || t.date > cur) prevByDow.set(dow, t.date);
+          });
           const byDow = new Map<number, typeof matching>();
           matching.forEach(d => {
             const dow = d.dateObject.getDay();
@@ -1409,7 +1428,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             byDow.get(dow)!.push(d);
           });
           const filtered: typeof matching = [];
-          byDow.forEach(list => list.forEach((d, i) => { if (i % 2 === 0) filtered.push(d); }));
+          byDow.forEach((list, dow) => {
+            const lastPrev = prevByDow.get(dow);
+            list.forEach(d => {
+              if (lastPrev) {
+                // Keep only days where gap from last prev occurrence is a multiple of 14
+                if (daysBetween(lastPrev, d.dateString) % 14 === 0) filtered.push(d);
+              } else {
+                // No previous reference: keep every other (1st, 3rd, ...)
+                const idx = list.indexOf(d);
+                if (idx % 2 === 0) filtered.push(d);
+              }
+            });
+          });
           slots = filtered
             .sort((a, b) => a.dateString.localeCompare(b.dateString))
             .map(d => d.dateString);
@@ -1422,6 +1453,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       if (slots.length === 0) {
         slots = [firstWeekday.dateString];
       }
+
+      // Filter out dates that already have a fixed client scheduled (no same-day conflicts).
+      slots = slots.filter(d => !occupiedDates.has(d));
 
       totalSlots += slots.length;
 
@@ -1439,7 +1473,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           completed: false,
           pago: false
         });
-        if (result) newIds.push(result.id);
+        if (result) {
+          newIds.push(result.id);
+          occupiedDates.add(date);
+        }
       }
     }
 

@@ -31,6 +31,16 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.11.1',
+    date: '2026-05-06',
+    title: '🛡️ Sem Conflitos entre Fixos',
+    summary: 'O auto-agendamento dos clientes fixos passa a evitar marcar dois fixos no mesmo dia. Para os quinzenais, a app olha para o mês anterior e mantém a quinzena correta (ciclo de 14 dias), evitando colisões neste mês e nos seguintes.',
+    changes: [
+      { text: 'Fixos nunca são agendados no mesmo dia que outro fixo já marcado', type: 'fix' },
+      { text: 'Quinzenais respeitam a paridade do mês anterior (cadeia 14-em-14 dias)', type: 'fix' },
+    ],
+  },
+  {
     version: '2.11.0',
     date: '2026-05-02',
     title: '⭐ Preferências de Clientes Fixos',
