@@ -31,6 +31,16 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.11.2',
+    date: '2026-05-06',
+    title: '🔀 Quinzenais Sem Coincidências com Semanais',
+    summary: 'Quando se copia o mês anterior, os clientes quinzenais que partilham o dia da semana com semanais (ou com outros quinzenais) passam a ser distribuídos automaticamente pela quinzena alternada, evitando dias com 3 ou 4 fixos empilhados.',
+    changes: [
+      { text: 'Cópia processa primeiro semanais, depois quinzenais — para os quinzenais "verem" os dias já ocupados', type: 'fix' },
+      { text: 'Quinzenais trocam a paridade (1ª/3ª ↔ 2ª/4ª semana) se a escolha original cria sobrelotação', type: 'fix' },
+    ],
+  },
+  {
     version: '2.11.1',
     date: '2026-05-06',
     title: '🛡️ Sem Conflitos entre Fixos',
