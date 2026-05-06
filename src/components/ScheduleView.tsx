@@ -1220,7 +1220,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             });
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(targetDay.dateString);
+              incLoad(targetDay.dateString, templateTask.client);
             }
           }
         } else if (pattern.type === 'biweekly') {
@@ -1276,7 +1276,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               });
               if (result) {
                 newTaskIds.push(result.id);
-                incLoad(targetDay.dateString);
+                incLoad(targetDay.dateString, templateTask.client);
               }
             }
           }
@@ -1313,7 +1313,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             });
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(targetDay.dateString);
+              incLoad(targetDay.dateString, templateTask.client);
             }
           }
         } else {
@@ -1354,7 +1354,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(newDateStr);
+              incLoad(newDateStr, task.client);
             }
           }
         }
