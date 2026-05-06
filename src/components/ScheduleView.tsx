@@ -1126,6 +1126,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     
     try {
       const newTaskIds: string[] = [];
+      const relocations: Relocation[] = [];
 
       // Group tasks by client to detect recurrence patterns
       const tasksByClient: { [client: string]: Task[] } = {};
