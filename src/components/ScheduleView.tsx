@@ -40,6 +40,7 @@ import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
 import ExtraValueModal from '@/components/schedule/ExtraValueModal';
 import FavoritesPromptDialog from '@/components/schedule/FavoritesPromptDialog';
 import CopyReportModal, { type Relocation, type OverloadedDay } from '@/components/schedule/CopyReportModal';
+import CopyConflictDialog from '@/components/schedule/CopyConflictDialog';
 
 import {
   generateMonthsConfig,
@@ -145,6 +146,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [missingFavorites, setMissingFavorites] = useState<Client[]>([]);
   const [showCopyReport, setShowCopyReport] = useState(false);
   const [copyReportData, setCopyReportData] = useState<{ overloaded: OverloadedDay[]; relocations: Relocation[]; total: number }>({ overloaded: [], relocations: [], total: 0 });
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [conflictPreviewDays, setConflictPreviewDays] = useState<OverloadedDay[]>([]);
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -1086,6 +1089,96 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     }
   };
 
+  // Simulate the copy to detect overloaded days BEFORE actually inserting.
+  // Mirrors the placement logic of executeCopyFromPreviousMonth (weekly + biweekly + monthly + single).
+  const simulateCopyFromPreviousMonth = (): { overloaded: OverloadedDay[]; previousMonth: string | null } => {
+    const previousMonth = getPreviousMonth();
+    if (!previousMonth) return { overloaded: [], previousMonth: null };
+    const previousTasks = allTasks[previousMonth as keyof AllTasks] || [];
+    const clientNames = clients.map(c => c.nome.toLowerCase());
+    const tasksToClone = previousTasks.filter(t => clientNames.includes(t.client.toLowerCase()));
+    if (tasksToClone.length === 0) return { overloaded: [], previousMonth };
+
+    const tasksByClient: { [k: string]: Task[] } = {};
+    tasksToClone.forEach(t => {
+      const k = t.client.toLowerCase();
+      (tasksByClient[k] = tasksByClient[k] || []).push(t);
+    });
+    const prevMonthConfig = monthsConfig[previousMonth];
+    const prevMonthDays = prevMonthConfig ? generateDaysForMonth(prevMonthConfig) : [];
+
+    const dayLoad = new Map<string, number>();
+    const dayClients = new Map<string, string[]>();
+    const inc = (d: string, c: string) => {
+      dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+      const list = dayClients.get(d) || [];
+      if (!list.includes(c)) list.push(c);
+      dayClients.set(d, list);
+    };
+    (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => inc(t.date, t.client));
+
+    const orderedKeys = Object.keys(tasksByClient).sort((a, b) => {
+      const pa = detectRecurrencePattern(tasksByClient[a], prevMonthDays);
+      const pb = detectRecurrencePattern(tasksByClient[b], prevMonthDays);
+      const rank = (t: string) => t === 'weekly' ? 0 : t === 'monthly' ? 1 : t === 'biweekly' ? 2 : 3;
+      return rank(pa.type) - rank(pb.type);
+    });
+
+    for (const k of orderedKeys) {
+      const list = [...tasksByClient[k]].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const pattern = detectRecurrencePattern(list, prevMonthDays);
+      const clientName = list[0].client;
+
+      if (pattern.type === 'weekly') {
+        const dow = pattern.dayOfWeek!;
+        currentMonthDays.filter(d => d.dateObject.getDay() === dow).forEach(d => inc(d.dateString, clientName));
+      } else if (pattern.type === 'biweekly') {
+        const dow = pattern.dayOfWeek!;
+        const matching = currentMonthDays.filter(d => d.dateObject.getDay() === dow);
+        const startWeek = pattern.startWeekParity || 'odd';
+        const original = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
+        const alt = startWeek === 'odd' ? [1, 3] : [0, 2, 4];
+        const loadOf = (idxs: number[]) => idxs.reduce((s, i) => s + (matching[i] ? (dayLoad.get(matching[i].dateString) || 0) : 0), 0);
+        const target = loadOf(original) > loadOf(alt) + 1 ? alt : original;
+        target.forEach(i => { if (matching[i]) inc(matching[i].dateString, clientName); });
+      } else if (pattern.type === 'monthly') {
+        const tpl = list[0];
+        const oldDate = new Date(tpl.date);
+        const dom = oldDate.getUTCDate();
+        const dow = oldDate.getUTCDay();
+        let target = currentMonthDays.find(d => d.dateObject.getDate() === dom);
+        if (!target) {
+          const wom = Math.ceil(dom / 7);
+          const m = currentMonthDays.filter(d => d.dateObject.getDay() === dow);
+          target = m[Math.min(wom - 1, m.length - 1)];
+        }
+        if (target) inc(target.dateString, clientName);
+      } else {
+        list.forEach(t => {
+          const od = new Date(t.date);
+          const dom = od.getUTCDate();
+          const dow = od.getUTCDay();
+          const m = currentMonthDays.filter(d => d.dateObject.getDay() === dow);
+          let dateStr = '';
+          if (m.length > 0) {
+            const wom = Math.ceil(dom / 7);
+            dateStr = m[Math.min(wom - 1, m.length - 1)].dateString;
+          } else {
+            dateStr = currentMonthDays[0]?.dateString || '';
+          }
+          if (dateStr) inc(dateStr, clientName);
+        });
+      }
+    }
+
+    const overloaded: OverloadedDay[] = [];
+    dayLoad.forEach((count, date) => {
+      if (count >= 3) overloaded.push({ date, count, clients: dayClients.get(date) || [] });
+    });
+    overloaded.sort((a, b) => a.date.localeCompare(b.date));
+    return { overloaded, previousMonth };
+  };
+
   const handleCopyFromPreviousMonth = async () => {
     const previousMonth = getPreviousMonth();
     if (!previousMonth) {
@@ -1121,9 +1214,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       return;
     }
 
+    // Pre-flight: detect conflicts and ask for confirmation
+    const { overloaded } = simulateCopyFromPreviousMonth();
+    if (overloaded.length > 0) {
+      setConflictPreviewDays(overloaded);
+      setShowConflictDialog(true);
+      return; // wait for user confirmation
+    }
+
+    await executeCopyFromPreviousMonth();
+  };
+
+  const executeCopyFromPreviousMonth = async () => {
+    const previousMonth = getPreviousMonth();
+    if (!previousMonth) return;
+    const previousTasks = allTasks[previousMonth as keyof AllTasks] || [];
+    const clientNames = clients.map(c => c.nome.toLowerCase());
+    const tasksToClone = previousTasks.filter(t => clientNames.includes(t.client.toLowerCase()));
+    if (tasksToClone.length === 0) return;
+
     setCopyingFromPrevious(true);
     setShowTypeSelector(false);
-    
+
     try {
       const newTaskIds: string[] = [];
       const relocations: Relocation[] = [];
@@ -2542,6 +2654,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         overloadedDays={copyReportData.overloaded}
         relocations={copyReportData.relocations}
         totalCopied={copyReportData.total}
+      />
+
+      <CopyConflictDialog
+        isOpen={showConflictDialog}
+        onClose={() => setShowConflictDialog(false)}
+        onConfirm={() => {
+          setShowConflictDialog(false);
+          executeCopyFromPreviousMonth();
+        }}
+        overloadedDays={conflictPreviewDays}
+        monthLabel={monthsConfig[activeMonth]?.label || activeMonth}
       />
 
       {/* Copy Day Modal */}
