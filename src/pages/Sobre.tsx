@@ -31,6 +31,16 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.11.3',
+    date: '2026-05-06',
+    title: '📋 Relatório da Cópia de Mês',
+    summary: 'No fim de "Copiar mês anterior", aparece um relatório a listar dias com sobrecarga (3 ou mais fixos), os clientes envolvidos e as relocalizações automáticas que a app fez para evitar conflitos.',
+    changes: [
+      { text: 'Novo modal "Relatório da cópia" com dias problemáticos e relocalizações', type: 'new' },
+      { text: 'Cada relocalização mostra cliente, data original, nova data e motivo', type: 'new' },
+    ],
+  },
+  {
     version: '2.11.2',
     date: '2026-05-06',
     title: '🔀 Quinzenais Sem Coincidências com Semanais',

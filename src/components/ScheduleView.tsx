@@ -39,6 +39,7 @@ import type { Conflict } from '@/components/schedule';
 import PasteDatePickerDialog from '@/components/schedule/PasteDatePickerDialog';
 import ExtraValueModal from '@/components/schedule/ExtraValueModal';
 import FavoritesPromptDialog from '@/components/schedule/FavoritesPromptDialog';
+import CopyReportModal, { type Relocation, type OverloadedDay } from '@/components/schedule/CopyReportModal';
 
 import {
   generateMonthsConfig,
@@ -142,6 +143,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const [copyDayTarget, setCopyDayTarget] = useState<{ date: string; label: string }>({ date: '', label: '' });
   const [showFavoritesPrompt, setShowFavoritesPrompt] = useState(false);
   const [missingFavorites, setMissingFavorites] = useState<Client[]>([]);
+  const [showCopyReport, setShowCopyReport] = useState(false);
+  const [copyReportData, setCopyReportData] = useState<{ overloaded: OverloadedDay[]; relocations: Relocation[]; total: number }>({ overloaded: [], relocations: [], total: 0 });
 
   const activeConfig = monthsConfig[activeMonth];
   const currentMonthDays = useMemo(() => 
@@ -1123,6 +1126,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     
     try {
       const newTaskIds: string[] = [];
+      const relocations: Relocation[] = [];
 
       // Group tasks by client to detect recurrence patterns
       const tasksByClient: { [client: string]: Task[] } = {};
@@ -1140,9 +1144,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       // Track how many fixed tasks each day already holds, to redistribute conflicts
       const dayLoad = new Map<string, number>();
-      const incLoad = (d: string) => dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+      const dayClients = new Map<string, string[]>();
+      const incLoad = (d: string, client?: string) => {
+        dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+        if (client) {
+          const list = dayClients.get(d) || [];
+          if (!list.includes(client)) list.push(client);
+          dayClients.set(d, list);
+        }
+      };
       // Seed with already-existing tasks in the target month
-      (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => incLoad(t.date));
+      (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => incLoad(t.date, t.client));
       const MAX_PER_DAY = 2; // try to keep at most 2 fixed services per day
 
       // Helper: pick best alternative date for a biweekly task to avoid overcrowded days.
@@ -1208,7 +1220,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             });
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(targetDay.dateString);
+              incLoad(targetDay.dateString, templateTask.client);
             }
           }
         } else if (pattern.type === 'biweekly') {
@@ -1218,15 +1230,31 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           
           // Determine which weeks (odd: 1,3 or even: 2,4)
           const startWeek = pattern.startWeekParity || 'odd';
-          let targetWeekIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
+          const originalIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
+          let targetWeekIndices = [...originalIndices];
 
           // Conflict avoidance: if the chosen parity is overcrowded but the
           // alternate parity is free, swap the whole chain so quinzenais
           // partilhem dias alternados em vez de empilharem no mesmo dia.
           const altIndices = startWeek === 'odd' ? [1, 3] : [0, 2, 4];
           const loadOf = (idxs: number[]) => idxs.reduce((sum, i) => sum + (matchingDays[i] ? (dayLoad.get(matchingDays[i].dateString) || 0) : 0), 0);
-          if (loadOf(targetWeekIndices) > loadOf(altIndices) + 1) {
+          const swapped = loadOf(originalIndices) > loadOf(altIndices) + 1;
+          if (swapped) {
             targetWeekIndices = altIndices;
+            // Record relocations: each original index pairs with the closest alt index
+            originalIndices.forEach((origIdx, k) => {
+              const newIdx = altIndices[k] ?? altIndices[altIndices.length - 1];
+              const fromDay = matchingDays[origIdx];
+              const toDay = matchingDays[newIdx];
+              if (fromDay && toDay && fromDay.dateString !== toDay.dateString) {
+                relocations.push({
+                  client: clientTasks[0].client,
+                  from: fromDay.dateString,
+                  to: toDay.dateString,
+                  reason: 'Quinzena trocada para evitar sobrecarga',
+                });
+              }
+            });
           }
 
           for (let i = 0; i < matchingDays.length; i++) {
@@ -1248,7 +1276,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               });
               if (result) {
                 newTaskIds.push(result.id);
-                incLoad(targetDay.dateString);
+                incLoad(targetDay.dateString, templateTask.client);
               }
             }
           }
@@ -1285,7 +1313,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             });
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(targetDay.dateString);
+              incLoad(targetDay.dateString, templateTask.client);
             }
           }
         } else {
@@ -1326,7 +1354,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
             if (result) {
               newTaskIds.push(result.id);
-              incLoad(newDateStr);
+              incLoad(newDateStr, task.client);
             }
           }
         }
@@ -1343,9 +1371,32 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         // Also keep old undo bar for backwards compat
         setCopiedTaskIds(newTaskIds);
         setShowUndoBar(true);
+
+        // Compute overloaded days (3+ fixed services)
+        const overloaded: OverloadedDay[] = [];
+        dayLoad.forEach((count, date) => {
+          if (count >= 3) {
+            overloaded.push({
+              date,
+              count,
+              clients: dayClients.get(date) || [],
+            });
+          }
+        });
+        overloaded.sort((a, b) => a.date.localeCompare(b.date));
+
+        setCopyReportData({
+          overloaded,
+          relocations,
+          total: newTaskIds.length,
+        });
+        setShowCopyReport(true);
+
         toast({
           title: `${newTaskIds.length} agendamentos copiados`,
-          description: `Padrões de recorrência mantidos de ${monthsConfig[previousMonth]?.label || previousMonth}`,
+          description: overloaded.length > 0
+            ? `${overloaded.length} dia${overloaded.length !== 1 ? 's' : ''} com sobrecarga — ver relatório.`
+            : `Padrões de recorrência mantidos de ${monthsConfig[previousMonth]?.label || previousMonth}`,
         });
         
         setTimeout(() => {
@@ -2482,6 +2533,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         missingFavorites={missingFavorites}
         monthLabel={monthsConfig[activeMonth]?.label || activeMonth}
         onConfirm={handleAddMissingFavorites}
+      />
+
+      {/* Copy report modal */}
+      <CopyReportModal
+        isOpen={showCopyReport}
+        onClose={() => setShowCopyReport(false)}
+        overloadedDays={copyReportData.overloaded}
+        relocations={copyReportData.relocations}
+        totalCopied={copyReportData.total}
       />
 
       {/* Copy Day Modal */}
