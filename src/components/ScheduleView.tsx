@@ -1371,9 +1371,32 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         // Also keep old undo bar for backwards compat
         setCopiedTaskIds(newTaskIds);
         setShowUndoBar(true);
+
+        // Compute overloaded days (3+ fixed services)
+        const overloaded: OverloadedDay[] = [];
+        dayLoad.forEach((count, date) => {
+          if (count >= 3) {
+            overloaded.push({
+              date,
+              count,
+              clients: dayClients.get(date) || [],
+            });
+          }
+        });
+        overloaded.sort((a, b) => a.date.localeCompare(b.date));
+
+        setCopyReportData({
+          overloaded,
+          relocations,
+          total: newTaskIds.length,
+        });
+        setShowCopyReport(true);
+
         toast({
           title: `${newTaskIds.length} agendamentos copiados`,
-          description: `Padrões de recorrência mantidos de ${monthsConfig[previousMonth]?.label || previousMonth}`,
+          description: overloaded.length > 0
+            ? `${overloaded.length} dia${overloaded.length !== 1 ? 's' : ''} com sobrecarga — ver relatório.`
+            : `Padrões de recorrência mantidos de ${monthsConfig[previousMonth]?.label || previousMonth}`,
         });
         
         setTimeout(() => {
