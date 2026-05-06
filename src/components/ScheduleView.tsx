@@ -1144,9 +1144,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
       // Track how many fixed tasks each day already holds, to redistribute conflicts
       const dayLoad = new Map<string, number>();
-      const incLoad = (d: string) => dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+      const dayClients = new Map<string, string[]>();
+      const incLoad = (d: string, client?: string) => {
+        dayLoad.set(d, (dayLoad.get(d) || 0) + 1);
+        if (client) {
+          const list = dayClients.get(d) || [];
+          if (!list.includes(client)) list.push(client);
+          dayClients.set(d, list);
+        }
+      };
       // Seed with already-existing tasks in the target month
-      (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => incLoad(t.date));
+      (allTasks[activeMonth as keyof AllTasks] || []).forEach(t => incLoad(t.date, t.client));
       const MAX_PER_DAY = 2; // try to keep at most 2 fixed services per day
 
       // Helper: pick best alternative date for a biweekly task to avoid overcrowded days.
