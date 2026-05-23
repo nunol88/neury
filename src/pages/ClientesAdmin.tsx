@@ -1300,19 +1300,34 @@ const ClientesAdmin = () => {
           <div className="grid gap-3">
             {filteredClients.map((client) => {
               const stats = activeClientStats[client.nome];
+              const lifetimeStats = clientStats[client.nome];
               const isExpanded = expandedClient === client.id;
-              
+              const next = nextServices[client.nome];
+              const bday = birthdayInfo(client);
+              const isSelected = selected.has(client.id);
+
               return (
-                <div 
-                  key={client.id} 
-                  className="bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition overflow-hidden"
+                <div
+                  key={client.id}
+                  className={`bg-card rounded-xl shadow-sm border transition overflow-hidden ${
+                    isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:shadow-md'
+                  }`}
                 >
                   <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(client.id)}
+                          className="mt-2 h-4 w-4 accent-primary cursor-pointer"
+                          aria-label="Selecionar cliente"
+                        />
+                        <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <ClientAvatar name={client.nome} size="lg" />
                           <div className="min-w-0">
+
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
                               <button
