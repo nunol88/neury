@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Task } from '@/hooks/useAgendamentos';
+import { Task, AllTasks } from '@/hooks/useAgendamentos';
 import { Client } from '@/hooks/useClients';
 
 export interface InactiveFavorite {
@@ -11,7 +11,7 @@ export interface InactiveFavorite {
 const DAYS_THRESHOLD = 30;
 
 export const useInactiveFavorites = (
-  allTasks: Record<string, Task[]>,
+  allTasks: AllTasks,
   clients: Client[]
 ): InactiveFavorite[] => {
   return useMemo(() => {
