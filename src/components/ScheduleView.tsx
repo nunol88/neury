@@ -969,6 +969,39 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     });
   }, [toast]);
 
+  // Repeat a task +7 days with one click (skips paste dialog)
+  const handleRepeatNextWeek = useCallback(async (task: Task) => {
+    const [y, m, d] = task.date.split('-').map(Number);
+    const next = new Date(y, m - 1, d);
+    next.setDate(next.getDate() + 7);
+    const formatted = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+    const result = await addTask({
+      date: formatted,
+      client: task.client,
+      phone: task.phone || '',
+      startTime: task.startTime,
+      endTime: task.endTime,
+      address: task.address || '',
+      price: task.price,
+      pricePerHour: task.pricePerHour || '7',
+      notes: task.notes || '',
+      completed: false,
+      pago: false,
+    });
+    if (result) {
+      addAction({
+        type: 'create',
+        description: `Repetido +7 dias: ${result.client}`,
+        undoData: { taskId: result.id },
+      });
+      toast({
+        title: 'Repetido na próxima semana',
+        description: `${task.client} — ${next.getDate()}/${String(next.getMonth() + 1).padStart(2, '0')}`,
+      });
+    }
+  }, [addTask, addAction, toast]);
+
+
   // Paste task handler - creates a copy of the task on the selected date
   const handlePasteTask = useCallback(async (targetDate: Date) => {
     if (!copiedTask) return;
@@ -2062,6 +2095,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               onToggleStatus={handleToggleStatus}
               onTogglePayment={togglePaymentStatus}
                onCopyTask={isAdmin ? handleCopyTask : undefined}
+               onRepeatNextWeek={isAdmin ? handleRepeatNextWeek : undefined}
                onDeleteExtra={deleteExtra}
                onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
                  setCopyDayTarget({ date: targetDate, label: targetDayLabel });
