@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       agendamentos: {
         Row: {
+          arrived_at: string | null
           cliente_contacto: string | null
           cliente_nome: string
           completed_by: string | null
@@ -26,11 +27,13 @@ export type Database = {
           data_pagamento: string | null
           descricao: string | null
           id: string
+          left_at: string | null
           pago: boolean
           status: Database["public"]["Enums"]["agendamento_status"]
           updated_at: string
         }
         Insert: {
+          arrived_at?: string | null
           cliente_contacto?: string | null
           cliente_nome: string
           completed_by?: string | null
@@ -41,11 +44,13 @@ export type Database = {
           data_pagamento?: string | null
           descricao?: string | null
           id?: string
+          left_at?: string | null
           pago?: boolean
           status?: Database["public"]["Enums"]["agendamento_status"]
           updated_at?: string
         }
         Update: {
+          arrived_at?: string | null
           cliente_contacto?: string | null
           cliente_nome?: string
           completed_by?: string | null
@@ -56,6 +61,7 @@ export type Database = {
           data_pagamento?: string | null
           descricao?: string | null
           id?: string
+          left_at?: string | null
           pago?: boolean
           status?: Database["public"]["Enums"]["agendamento_status"]
           updated_at?: string
