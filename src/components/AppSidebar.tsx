@@ -33,6 +33,7 @@ import {
   UserCog,
   Bus,
   Settings,
+  MessageSquare,
 } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
@@ -41,6 +42,7 @@ const adminPrimary = [
   { title: 'Agendamentos', url: '/admin/agendamentos', icon: CalendarDays },
   { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
   { title: 'Clientes', url: '/admin/clientes', icon: Users },
+  { title: 'Recados', url: '/admin/recados', icon: MessageSquare },
   { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
   { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
 ];
@@ -54,6 +56,7 @@ const adminMore = [
 
 const neurySidebarItems = [
   { title: 'Agendamentos', url: '/neury/agendamentos', icon: CalendarDays },
+  { title: 'Recados', url: '/neury/recados', icon: MessageSquare },
   { title: 'Transportes', url: '/neury/transportes', icon: Bus },
   { title: 'Sobre', url: '/neury/sobre', icon: Info },
 ];
