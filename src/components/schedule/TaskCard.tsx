@@ -94,7 +94,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
       } ${
         task.completed
           ? 'bg-success/5 border-success/30'
-          : 'bg-card border-border/60 hover:border-primary/30'
+          : isOverdue
+            ? 'bg-card border-destructive/40 border-l-4 border-l-destructive hover:border-destructive/60'
+            : 'bg-card border-border/60 hover:border-primary/30'
       }`}
     >
       {/* Drag handle */}
