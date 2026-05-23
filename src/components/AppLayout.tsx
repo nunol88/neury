@@ -34,12 +34,21 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      {/* Global aurora background — premium v3 (matches login) */}
+      {/* Global aurora background — theme-aware */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222_47%_6%)] via-[hsl(225_45%_9%)] to-[hsl(240_50%_8%)]" />
-        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] rounded-full blur-3xl opacity-50 bg-[radial-gradient(circle,hsl(199_89%_48%/0.55),transparent_60%)] animate-float-bubble-slow" />
-        <div className="absolute top-1/3 -right-40 w-[38rem] h-[38rem] rounded-full blur-3xl opacity-40 bg-[radial-gradient(circle,hsl(262_83%_62%/0.55),transparent_60%)] animate-float-bubble-slow" style={{ animationDelay: '3s' }} />
-        <div className="absolute -bottom-40 left-1/4 w-[44rem] h-[44rem] rounded-full blur-3xl opacity-35 bg-[radial-gradient(circle,hsl(180_70%_50%/0.45),transparent_60%)] animate-float-bubble" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute inset-0" style={{ backgroundImage: 'var(--aurora-base)' }} />
+        <div
+          className="absolute -top-32 -left-32 w-[42rem] h-[42rem] rounded-full blur-3xl animate-float-bubble-slow"
+          style={{ background: 'radial-gradient(circle, var(--aurora-blob-1), transparent 60%)' }}
+        />
+        <div
+          className="absolute top-1/3 -right-40 w-[38rem] h-[38rem] rounded-full blur-3xl animate-float-bubble-slow"
+          style={{ background: 'radial-gradient(circle, var(--aurora-blob-2), transparent 60%)', animationDelay: '3s' }}
+        />
+        <div
+          className="absolute -bottom-40 left-1/4 w-[44rem] h-[44rem] rounded-full blur-3xl animate-float-bubble"
+          style={{ background: 'radial-gradient(circle, var(--aurora-blob-3), transparent 60%)', animationDelay: '1.5s' }}
+        />
         <div
           className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
           style={{
@@ -47,7 +56,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>\")",
           }}
         />
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-40" style={{ backgroundImage: 'var(--aurora-vignette)' }} />
       </div>
 
       <div className="min-h-screen flex w-full relative">
