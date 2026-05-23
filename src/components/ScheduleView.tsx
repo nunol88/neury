@@ -1937,7 +1937,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   const themeGradient = activeConfig ? getThemeGradient(activeConfig.color) : 'from-purple-600 to-purple-800';
   const bgColor = activeConfig ? getBgColor(activeConfig.color) : 'bg-purple-50';
-  const headerBg = theme === 'dark' ? 'bg-secondary' : bgColor;
+  const headerBg = 'bg-secondary/60 backdrop-blur-xl';
 
   const username = user?.user_metadata?.name || user?.email?.replace('@local.app', '') || '';
   const roleLabel = role === 'admin' ? 'Administrador' : 'Funcionário/a';
@@ -1957,7 +1957,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const previousMonthLabel = previousMonth ? monthsConfig[previousMonth]?.label : null;
 
   return (
-    <div className={`font-sans text-foreground pb-10 print:bg-white ${theme === 'dark' ? 'bg-background' : bgColor}`}>
+    <div className="font-sans text-foreground pb-10 print:bg-white bg-transparent">
 
       {/* Month Navigation Tabs */}
       <MonthTabs
