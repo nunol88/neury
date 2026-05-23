@@ -1149,6 +1149,11 @@ recommend short-term decisions and define one primary focus for improvement.
             </div>
           )}
         </div>
+
+        {/* Client Profitability (real €/h per client, year-to-date) */}
+        <div className="mt-6">
+          <ClientProfitabilityCard allTasksFlat={Object.values(allTasks).flat()} />
+        </div>
       </div>
     </div>
   );
