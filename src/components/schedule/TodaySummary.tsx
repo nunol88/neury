@@ -3,11 +3,14 @@ import { Task } from '@/hooks/useAgendamentos';
 import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText } from 'lucide-react';
 import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
 import { generateDailyRoutePdf } from '@/utils/dailyRoutePdf';
+import NextServiceHero from './NextServiceHero';
 
 interface TodaySummaryProps {
   tasks: Task[];
   onScrollToToday?: () => void;
   isAdmin?: boolean;
+  onArrived?: (id: string) => void;
+  onLeft?: (id: string) => void;
 }
 
 const NEURY_RATE = 7;
@@ -20,7 +23,7 @@ const getTaskPrice = (t: Task, isAdmin: boolean): number => {
   return hours * NEURY_RATE;
 };
 
-const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isAdmin = true }) => {
+const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isAdmin = true, onArrived, onLeft }) => {
   const [expanded, setExpanded] = useState(false);
   const todayTasks = tasks;
   const completedTasks = todayTasks.filter(t => t.completed);
@@ -40,6 +43,8 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
   const isAllDone = todayTasks.length > 0 && completedTasks.length === todayTasks.length;
 
   return (
+    <>
+      <NextServiceHero tasks={todayTasks} onArrived={onArrived} onLeft={onLeft} />
     <div
       className={`glass-card rounded-2xl p-4 mb-6 transition-all duration-300 hover:shadow-xl animate-fade-in ${
         isAllDone ? 'ring-2 ring-success shadow-glow-success' : ''
@@ -259,6 +264,7 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
         </>
       )}
     </div>
+    </>
   );
 };
 

@@ -31,6 +31,18 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.13.1',
+    date: '2026-05-23',
+    title: '📍 Próximo Serviço com Cheguei/Saí',
+    summary: 'Novo card destaque no topo de "Hoje" com o serviço seguinte: botão grande para Maps, ligar, e registar chegada/saída num toque.',
+    changes: [
+      { text: 'Card "Próximo serviço" com refresh automático — passa ao seguinte sem precisar de recarregar', type: 'new' },
+      { text: 'Botões grandes "Maps" e "Ligar" otimizados para usar no carro entre serviços', type: 'new' },
+      { text: 'Botão "Cheguei" regista a hora real de chegada (compara com a planeada)', type: 'new' },
+      { text: 'Botão "Saí & concluído" marca o serviço como feito e regista a saída num só toque', type: 'new' },
+    ],
+  },
+  {
     version: '2.13.0',
     date: '2026-05-23',
     title: '🔔 Lembrete de Serviços Por Marcar',

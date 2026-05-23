@@ -32,6 +32,8 @@ export interface Task {
   completedByRole?: string | null;
   pago: boolean;
   dataPagamento?: string | null;
+  arrivedAt?: string | null;
+  leftAt?: string | null;
 }
 
 export interface AllTasks {
@@ -149,7 +151,9 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
     completed: row.status === 'concluido',
     completedByRole: row.completed_by_role || null,
     pago: row.pago || false,
-    dataPagamento: row.data_pagamento || null
+    dataPagamento: row.data_pagamento || null,
+    arrivedAt: (row as any).arrived_at || null,
+    leftAt: (row as any).left_at || null
   };
 };
 
@@ -539,6 +543,59 @@ export const useAgendamentos = () => {
     }
   };
 
+  const registerArrival = async (id: string): Promise<boolean> => {
+    const now = new Date().toISOString();
+    setAllTasks(prev => {
+      const next = { ...prev };
+      (Object.keys(next) as (keyof AllTasks)[]).forEach(key => {
+        next[key] = prev[key].map(t => t.id === id ? { ...t, arrivedAt: now } : t);
+      });
+      return next;
+    });
+    const { error } = await supabase
+      .from('agendamentos')
+      .update({ arrived_at: now } as any)
+      .eq('id', id);
+    if (error) {
+      console.error('Error registering arrival:', error);
+      toast({ title: 'Erro ao registar chegada', description: error.message, variant: 'destructive' });
+      await fetchAgendamentos();
+      return false;
+    }
+    return true;
+  };
+
+  const registerDeparture = async (id: string, alsoComplete = true, userRole?: string): Promise<boolean> => {
+    const now = new Date().toISOString();
+    const roleToSave = userRole || 'user';
+    setAllTasks(prev => {
+      const next = { ...prev };
+      (Object.keys(next) as (keyof AllTasks)[]).forEach(key => {
+        next[key] = prev[key].map(t => t.id === id ? {
+          ...t,
+          leftAt: now,
+          ...(alsoComplete ? { completed: true, completedByRole: roleToSave } : {})
+        } : t);
+      });
+      return next;
+    });
+    const { data: { user } } = await supabase.auth.getUser();
+    const patch: any = { left_at: now };
+    if (alsoComplete) {
+      patch.status = 'concluido';
+      patch.completed_by = user?.id;
+      patch.completed_by_role = roleToSave;
+    }
+    const { error } = await supabase.from('agendamentos').update(patch).eq('id', id);
+    if (error) {
+      console.error('Error registering departure:', error);
+      toast({ title: 'Erro ao registar saída', description: error.message, variant: 'destructive' });
+      await fetchAgendamentos();
+      return false;
+    }
+    return true;
+  };
+
   return {
     allTasks,
     loading,
@@ -549,6 +606,8 @@ export const useAgendamentos = () => {
     toggleTaskStatus,
     togglePaymentStatus,
     moveTask,
+    registerArrival,
+    registerDeparture,
     refetch: fetchAgendamentos
   };
 };
