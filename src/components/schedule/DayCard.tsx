@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2 } from 'lucide-react';
+import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2, TrendingDown } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
