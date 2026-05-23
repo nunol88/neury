@@ -223,25 +223,31 @@ export type Database = {
       }
       messages: {
         Row: {
+          audio_duration: number | null
+          audio_url: string | null
           author_name: string
           author_role: string
-          content: string
+          content: string | null
           created_at: string
           id: string
           user_id: string
         }
         Insert: {
+          audio_duration?: number | null
+          audio_url?: string | null
           author_name: string
           author_role: string
-          content: string
+          content?: string | null
           created_at?: string
           id?: string
           user_id: string
         }
         Update: {
+          audio_duration?: number | null
+          audio_url?: string | null
           author_name?: string
           author_role?: string
-          content?: string
+          content?: string | null
           created_at?: string
           id?: string
           user_id?: string
