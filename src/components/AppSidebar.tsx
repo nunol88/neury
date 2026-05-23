@@ -89,13 +89,14 @@ export function AppSidebar() {
           asChild
           isActive={isActive}
           tooltip={showOverdueBadge ? `${item.title} — ${overdueCount} em atraso` : item.title}
+          className={isActive ? 'nav-pill-active font-semibold' : 'transition-colors'}
         >
           <NavLink to={item.url} onClick={handleNavClick} className="flex items-center gap-3">
             <item.icon className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1">{item.title}</span>
             {showOverdueBadge && (
               <span
-                className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none"
+                className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none shadow-glow"
                 aria-label={`${overdueCount} pagamentos em atraso`}
               >
                 {overdueCount > 99 ? '99+' : overdueCount}
@@ -109,15 +110,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-3">
+      <SidebarHeader className="border-b border-sidebar-border relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-80 pointer-events-none" />
+        <div className="relative flex items-center gap-3 px-3 py-3">
           <img
             src={logoMayslimpo}
             alt="Mayslimpo"
-            className="w-10 h-10 rounded-full object-cover shadow-sm border border-sidebar-border flex-shrink-0"
+            className="w-10 h-10 rounded-xl object-cover border border-sidebar-border flex-shrink-0 shadow-glow"
           />
           <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold text-sidebar-foreground truncate">Mayslimpo</span>
+            <span className="font-display font-bold text-sidebar-foreground truncate tracking-tight">Mayslimpo</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{roleLabel}</span>
           </div>
         </div>
       </SidebarHeader>

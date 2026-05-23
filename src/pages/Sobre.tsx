@@ -31,6 +31,20 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '3.0.0',
+    date: '2026-05-23',
+    title: '✨ v3 — Refresh visual global',
+    summary: 'Linguagem visual unificada em toda a aplicação: nova tipografia display (Space Grotesk) para títulos, sistema de gradientes e sombras "glow", glass refinado nos cards e um padrão único de cabeçalho de página. Tudo coerente entre Dashboard, Clientes, Agendamentos, Fiscal e Transportes — sem mexer em funcionalidades.',
+    changes: [
+      { text: 'Novos tokens de design: superfícies em camadas, gradiente primário e mesh, sombras "elevated" e "glow"', type: 'new' },
+      { text: 'Tipografia: Space Grotesk para títulos com tracking apertado; Inter mantém-se no corpo', type: 'new' },
+      { text: 'Componente PageHeader unificado (ícone + título + ações) com linha de acento e halo de gradiente', type: 'new' },
+      { text: 'Sidebar: header com gradiente, logo arredondado com glow, item ativo com pill colorida', type: 'improvement' },
+      { text: 'Cards: nova classe glass-v3 + hover-glow consistente em toda a app', type: 'improvement' },
+      { text: 'Border-radius escalonado (xl/2xl) e raios mais generosos nos painéis principais', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.15.1',
     date: '2026-05-23',
     title: '📊 Rentabilidade por Cliente: 12 métricas',
