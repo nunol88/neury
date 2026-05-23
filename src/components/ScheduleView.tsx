@@ -2040,6 +2040,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             data: data.data,
             observacoes: data.observacoes,
             mes_key: activeMonth,
+            tipo: data.tipo,
           });
           return !!result;
         }}
