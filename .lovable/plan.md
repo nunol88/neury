@@ -1,64 +1,72 @@
-## Objetivo
-Expandir o card "Rentabilidade por Cliente" no Dashboard com muito mais métricas para a Mayara perceber rapidamente quem dá mais lucro real por hora investida.
+## Contexto
+Estás na página de Clientes (`/admin/clientes`). Já tem: pesquisa, favoritos, badge de devedor, expandir cliente, histórico, relatório PDF, preferências de agendamento. Boa base — mas há margem para tornar a página muito mais útil no dia-a-dia da Mayara.
 
-## Métricas novas a adicionar
+## Melhorias propostas (por prioridade de impacto)
 
-Por cada cliente, calcular e mostrar:
+### 1. Quick actions no cartão do cliente (alto impacto, baixo risco)
+Botões grandes diretos, sem precisar de expandir:
+- **WhatsApp** (abre `wa.me/<telefone>` com mensagem opcional pré-feita: "Olá X, confirmo o serviço de amanhã?")
+- **Ligar** (`tel:`)
+- **Maps** (abre morada no Google Maps — já existe noutros sítios, replicar aqui)
+- **Agendar agora** (atalho que abre o calendário no próximo dia preferido do cliente já pré-preenchido)
 
-1. **€/hora real** (já existe) — preço total ÷ horas trabalhadas
-2. **€/hora líquido** — desconta despesas associadas àquele dia/cliente quando existirem (usa tabela `extras` com `tipo='despesa'` no mesmo dia)
-3. **Horas/mês médias** — total horas ÷ nº meses ativos
-4. **Frequência** — média de dias entre serviços (ex: "a cada 8 dias")
-5. **Total ano corrente** — receita acumulada YTD
-6. **Total vida** — receita histórica total
-7. **Tempo médio por serviço** — horas ÷ nº serviços (ajuda a ver quem leva sempre mais que o combinado)
-8. **% pagos vs. em dívida** — quanto já foi pago vs. ainda por receber
-9. **Tendência últimos 3 meses** — €/h subiu, desceu ou estável (seta + %)
-10. **Score de rentabilidade** (0-100) — combina €/h, frequência e fiabilidade de pagamento numa nota única para ranking rápido
-11. **Último serviço** — data + "há X dias"
-12. **Tipo** — favorito / ocasional / perdido (sem serviço há 30+ dias)
+### 2. Ordenação e filtros avançados
+Barra de filtros por cima da lista:
+- **Ordenar por**: nome (A-Z) · favoritos · dívida · último serviço · €/h · mais frequente
+- **Filtros rápidos** (chips): Todos · Favoritos · Com dívida · Inativos (30d+) · Aniversário este mês · Recibo verde
+- Contador "X de Y clientes"
 
-## Layout proposto
+### 3. Mini-stats no cartão (sem expandir)
+Linha discreta por baixo do nome com 3-4 números chave:
+`12 serviços · 36h · €420 · último há 8d`
+Permite varrer a lista visualmente sem clicar.
 
-Reformular `ClientProfitabilityCard.tsx` em **dois modos**:
+### 4. Badge "Próximo serviço agendado"
+Mostra a próxima data marcada (ex: "Próximo: 4ª feira, 28 Mai"). Se não houver e for favorito, mostra "Sem próximo serviço" a amarelo.
 
-**Modo compacto (default)** — lista atual melhorada:
-- Nome + badge tipo (favorito/ocasional/perdido)
-- €/h grande à direita + seta de tendência
-- Linha secundária: `12 serviços · 36h · €/h líquido €6.80 · pago 85%`
-- Score 0-100 como barra fininha por baixo
+### 5. Bulk actions / seleção múltipla
+Checkbox por cartão + barra flutuante quando há seleção:
+- Enviar mensagem WhatsApp em massa (abre cada conversa)
+- Marcar/desmarcar favorito
+- Exportar CSV dos selecionados
 
-**Modo tabela expandida** (toggle "Ver tabela completa"):
-- Tabela com todas as colunas: Cliente | Score | €/h | €/h líq | Horas/mês | Freq | Tempo médio | YTD | Vida | Pago % | Tendência | Último
-- Ordenável por qualquer coluna (clique no header)
-- Filtros: só favoritos, só com dívida, só ativos
+### 6. Insights no topo da página
+Cards finos com:
+- Total clientes ativos / inativos
+- Total em dívida (€) — clicável → filtra devedores
+- Top 3 clientes por receita YTD
+- Aniversariantes este mês (já existe na Dashboard, adicionar atalho aqui)
 
-**Filtros / ordenação no topo do card**:
-- Período: mês atual / últimos 3 meses / ano / sempre
-- Ordenar por: €/h asc, €/h desc, score, total receita, horas, último serviço
+### 7. Vista em mapa
+Toggle "Lista / Mapa" — mapa Leaflet com pin por cliente baseado na morada (geocoded). Útil para planear rota do dia.
+**Nota**: requer geocoding (Nominatim free). Pode ficar para uma segunda iteração se for muito.
 
-**Resumo no header** (já existe média €/h): adicionar
-- Total clientes ativos
-- €/h médio ponderado (já existe)
-- Cliente mais rentável + menos rentável (nomes em destaque)
+### 8. Notas rápidas timeline
+Na expansão do cliente, transformar `notas` num formato de timeline: cada nota com data e tipo (geral · contacto · problema · pagamento). Adicionar nota rápida sem editar tudo.
+
+### 9. Tags / categorias
+Campo de tags livres no cliente (ex: "vivenda", "alergia a químicos", "tem cão", "porteiro"). Filtrável.
+
+### 10. Importar contactos
+Botão "Importar do telefone" via CSV ou colar lista. Útil quando a Mayara quer migrar agenda antiga.
+
+### 11. Aniversário no cartão
+Se o cliente tem `data_nascimento` e o aniversário é nos próximos 7 dias, mostrar 🎂 + dias restantes no cartão. Botão direto WhatsApp parabéns.
+
+### 12. Duplicar cliente
+Quando cria um cliente parecido (ex: casal na mesma morada), botão "Duplicar" copia dados.
 
 ## Detalhes técnicos
+- Tudo client-side; não requer migrations (já há campos suficientes).
+- Vista mapa (#7) é o único que precisa biblioteca extra (já existe Leaflet no projeto para transportes — reutilizar) + geocoding gratuito.
+- Tags (#9) sim precisa migration: `ALTER TABLE clients ADD COLUMN tags text[] DEFAULT '{}'`.
 
-**Ficheiros a alterar:**
-- `src/components/admin/ClientProfitabilityCard.tsx` — reescrita do componente, adicionar todas as métricas, modo compacto + tabela, filtros, ordenação
-- `src/pages/Dashboard.tsx` — passar `extras` e `clients` ao card (para tipo favorito e despesas líquidas)
+## Sugestão de ordem
+**Fase A (rápida, alto valor)**: #1 Quick actions, #2 Filtros/ordenação, #3 Mini-stats, #4 Próximo serviço, #11 Aniversário no cartão.
 
-**Sem migrations.** Toda a lógica é cálculo em memória sobre `allTasks`, `extras` e `clients` já carregados.
+**Fase B (média)**: #6 Insights topo, #5 Bulk actions, #8 Notas timeline.
 
-**Cálculos chave:**
-- `scoreRentabilidade = 0.5 * normalizar(€/h) + 0.3 * normalizar(frequência) + 0.2 * (% pago)` (0–100)
-- `tendência = (€/h últimos 3 meses) / (€/h 3 meses anteriores) - 1`, mostrado se ≥ 3 serviços em cada janela
-- `frequênciaDias = (últimoServiço - primeiroServiço) / (nº serviços - 1)`
-- `tipo`: favorito (flag em `clients`) · perdido (favorito sem serviço há 30+ dias) · ocasional (resto)
+**Fase C (mais pesada)**: #7 Mapa, #9 Tags, #10 Importar, #12 Duplicar.
 
-**Versão**: bump para `2.15.1` em `appVersion.ts` + entrada no changelog em `Sobre.tsx`.
-
-## Fora de âmbito
-- Não tocar em migrations nem schema.
-- Não mexer noutros widgets do Dashboard.
-- Sem exportação PDF deste card (pode ser pedido depois).
+## Pergunta
+Diz quais queres (números) ou "Fase A", "tudo", etc., e avanço.
