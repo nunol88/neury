@@ -31,6 +31,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
 import ClientProfitabilityCard from '@/components/admin/ClientProfitabilityCard';
 import MonthProjectionCard from '@/components/admin/MonthProjectionCard';
+import InactiveFavoritesCard from '@/components/admin/InactiveFavoritesCard';
+import BirthdaysCard from '@/components/admin/BirthdaysCard';
 import {
   BarChart,
   Bar,
@@ -713,6 +715,13 @@ recommend short-term decisions and define one primary focus for improvement.
         <div className="mb-6">
           <MonthProjectionCard monthTasks={Object.values(allTasks).flat()} />
         </div>
+
+        {/* Birthdays + Inactive favorites */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-2">
+          <BirthdaysCard />
+          <InactiveFavoritesCard />
+        </div>
+
 
 
         {/* Hero Stats Cards with Glassmorphism */}
