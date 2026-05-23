@@ -121,58 +121,77 @@ const Login = () => {
     );
   }
 
-  const bgClass = theme === 'dark' 
-    ? 'bg-background' 
-    : 'bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950';
+  const isDark = theme === 'dark';
 
   return (
-    <main className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-[10%] left-[15%] w-32 h-32 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/5' : 'bg-white/5'}`} />
-        <div className={`absolute top-[60%] right-[10%] w-48 h-48 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/8' : 'bg-blue-400/8'}`} style={{ animationDelay: '2s' }} />
-        <div className={`absolute bottom-[15%] left-[5%] w-24 h-24 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/6' : 'bg-indigo-400/6'}`} style={{ animationDelay: '4s' }} />
-        <div className={`absolute top-[25%] right-[25%] w-16 h-16 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/4' : 'bg-cyan-400/8'}`} style={{ animationDelay: '1s' }} />
-        <div className={`absolute bottom-[40%] right-[35%] w-20 h-20 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/3' : 'bg-purple-400/5'}`} style={{ animationDelay: '3s' }} />
-        <div className={`absolute top-[5%] left-[50%] w-40 h-40 rounded-full animate-float-bubble-slow ${theme === 'dark' ? 'bg-primary/4' : 'bg-teal-400/5'}`} style={{ animationDelay: '5s' }} />
+    <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[hsl(222_47%_6%)]">
+      {/* Premium aurora background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222_47%_6%)] via-[hsl(225_45%_9%)] to-[hsl(240_50%_8%)]" />
+        {/* Aurora blobs */}
+        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] rounded-full blur-3xl opacity-50 bg-[radial-gradient(circle,hsl(199_89%_48%/0.55),transparent_60%)] animate-float-bubble-slow" />
+        <div className="absolute top-1/3 -right-40 w-[38rem] h-[38rem] rounded-full blur-3xl opacity-40 bg-[radial-gradient(circle,hsl(262_83%_62%/0.55),transparent_60%)] animate-float-bubble-slow" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-40 left-1/4 w-[44rem] h-[44rem] rounded-full blur-3xl opacity-35 bg-[radial-gradient(circle,hsl(180_70%_50%/0.45),transparent_60%)] animate-float-bubble" style={{ animationDelay: '1.5s' }} />
+        {/* Grain / noise overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>\")",
+          }}
+        />
+        {/* Top vignette */}
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
       </div>
 
       {/* Theme toggle button */}
       <button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 z-10 backdrop-blur-sm hover:scale-110"
-        title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/5 hover:bg-white/10 transition-all duration-300 z-10 backdrop-blur-md border border-white/10 hover:scale-110"
+        title={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
       >
-        {theme === 'dark' ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-white" />}
+        {isDark ? <Sun size={18} className="text-amber-300" /> : <Moon size={18} className="text-white" />}
       </button>
 
       {/* Glass card */}
       <div className={`relative w-full max-w-md animate-login-card-entry ${shake ? 'animate-shake' : ''}`}>
-        <div className={`absolute inset-0 backdrop-blur-2xl rounded-3xl ${theme === 'dark' ? 'bg-card/95' : 'bg-white/10'}`} />
-        <div className={`absolute inset-0 rounded-3xl ${theme === 'dark' ? 'bg-gradient-to-br from-card via-card to-card' : 'bg-gradient-to-br from-white/15 via-white/5 to-white/10'}`} />
-        <div className={`absolute inset-[1px] rounded-3xl border ${theme === 'dark' ? 'border-border' : 'border-white/20'}`} />
-        <div className={`absolute -inset-[1px] rounded-3xl opacity-50 ${theme === 'dark' ? '' : 'bg-gradient-to-br from-white/20 via-transparent to-white/10'}`} style={{ mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'xor', WebkitMaskComposite: 'xor', padding: '1px', borderRadius: '1.5rem' }} />
-        
-        <div className="relative p-10 space-y-8">
-          {/* Logo */}
-          <div className="flex flex-col items-center space-y-5">
-            <div className={`w-24 h-24 rounded-full overflow-hidden ring-3 shadow-xl animate-logo-glow ${theme === 'dark' ? 'ring-primary/40' : 'ring-white/30'}`}>
-              <img src={logoMayslimpo} alt="Mayslimpo Logo" width={96} height={96} fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
-            </div>
-            <div className="text-center">
-              <h1 className={`text-3xl font-extrabold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
-                Agenda Mayara Godoi
-              </h1>
-              <div className={`mt-3 flex items-center justify-center gap-2 animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-muted-foreground' : 'text-white/60'}`}>
-                {greeting.icon === 'night' ? (
-                  <Moon size={16} className="text-amber-300" />
-                ) : (
-                  <Sun size={16} className="text-amber-400" />
-                )}
-                <span className="text-sm font-light tracking-wide">{greeting.text}! Bem-vindo de volta.</span>
+        {/* Gradient border halo */}
+        <div className="absolute -inset-px rounded-[2rem] bg-gradient-to-br from-white/30 via-primary/30 to-purple-400/20 opacity-60 blur-[2px]" />
+        {/* Card body */}
+        <div className="relative rounded-[2rem] overflow-hidden backdrop-blur-2xl bg-white/[0.06] border border-white/15 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
+          {/* Top reflection */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+          <div className="absolute inset-x-12 top-0 h-24 bg-gradient-to-b from-white/10 to-transparent rounded-b-full blur-2xl pointer-events-none" />
+
+          <div className="relative p-10 space-y-8">
+            {/* Logo */}
+            <div className="flex flex-col items-center space-y-5">
+              <div className="relative">
+                {/* Concentric glow */}
+                <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-primary/40 via-purple-400/30 to-cyan-400/20 blur-2xl animate-logo-glow" />
+                <div className="relative w-24 h-24 rounded-full overflow-hidden ring-2 ring-white/25 shadow-2xl">
+                  <img src={logoMayslimpo} alt="Mayslimpo Logo" width={96} height={96} fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
+                </div>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-[0.18em] text-white/60 animate-fade-in">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  Mayslimpo · v3
+                </div>
+                <h1 className="font-display text-3xl font-bold tracking-tight text-white animate-fade-in animation-delay-100">
+                  Agenda Mayara Godoi
+                </h1>
+                <div className="flex items-center justify-center gap-2 text-white/55 animate-fade-in animation-delay-200">
+                  {greeting.icon === 'night' ? (
+                    <Moon size={14} className="text-amber-300" />
+                  ) : (
+                    <Sun size={14} className="text-amber-400" />
+                  )}
+                  <span className="text-sm font-light tracking-wide">{greeting.text}! Bem-vinda de volta.</span>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -390,7 +409,9 @@ const Login = () => {
             v{APP_VERSION}
           </div>
         </div>
+        </div>
       </div>
+
       
       {/* Help Modal */}
       <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
