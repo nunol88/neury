@@ -606,6 +606,21 @@ const ClientesAdmin = () => {
                     placeholder="Observações..."
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">
+                    Data de nascimento
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.data_nascimento}
+                    onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
+                    className="w-full p-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Opcional — usada para lembrar aniversários no Dashboard.
+                  </p>
+                </div>
+
 
                 {/* === Preferências de agendamento === */}
                 <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
