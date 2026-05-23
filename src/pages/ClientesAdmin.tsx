@@ -35,6 +35,7 @@ const ClientesAdmin = () => {
   const monthsConfig = useMemo(() => generateMonthsConfig(), []);
   
   const { clientStats, getClientHistory, getStatsForMonth, getMonthsWithData } = useClientStats(allTasks, clients, monthsConfig);
+  const debtsByClient = useClientDebts(allTasks);
   
   // Get current month key
   const getCurrentMonthKey = (): string => {
