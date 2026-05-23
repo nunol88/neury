@@ -34,19 +34,34 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen flex w-full">
+      {/* Global aurora background — premium v3 */}
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-background" />
+        <div className="absolute -top-40 -left-40 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-30 bg-[radial-gradient(circle,hsl(199_89%_48%/0.45),transparent_60%)] animate-float-bubble-slow" />
+        <div className="absolute top-1/3 -right-48 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-25 bg-[radial-gradient(circle,hsl(262_83%_62%/0.45),transparent_60%)] animate-float-bubble-slow" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-40 left-1/3 w-[42rem] h-[42rem] rounded-full blur-3xl opacity-20 bg-[radial-gradient(circle,hsl(180_70%_50%/0.35),transparent_60%)] animate-float-bubble" style={{ animationDelay: '1.5s' }} />
+        <div
+          className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>\")",
+          }}
+        />
+      </div>
+
+      <div className="min-h-screen flex w-full relative">
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1 min-w-0">
-          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 print:hidden">
+        <SidebarInset className="flex flex-col flex-1 min-w-0 bg-transparent">
+          <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b border-border/50 bg-background/40 backdrop-blur-xl px-4 print:hidden">
             <SidebarTrigger className="-ml-1" />
             {isMobile && (
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <img
                   src={logoMayslimpo}
                   alt="Mayslimpo"
-                  className="w-7 h-7 rounded-full object-cover"
+                  className="w-7 h-7 rounded-full object-cover ring-1 ring-white/20 shadow-glow"
                 />
-                <span className="font-semibold text-sm truncate">Mayslimpo</span>
+                <span className="font-display font-bold text-sm truncate">Mayslimpo</span>
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
@@ -68,7 +83,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <button
                   type="button"
                   onClick={() => navigate('/admin/pagamentos')}
-                  className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shadow-glow hover:opacity-90 transition-opacity"
                   aria-label={`${overdueCount} pagamentos em atraso`}
                   title={`${overdueCount} pagamento(s) em atraso`}
                 >
