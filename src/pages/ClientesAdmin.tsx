@@ -557,16 +557,67 @@ const ClientesAdmin = () => {
     <div className="bg-background">
       <div className="max-w-4xl mx-auto p-4">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Users size={24} className="text-primary" />
             Gestão de Clientes
           </h1>
-          <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90">
-            <Plus size={16} className="mr-1" />
-            Novo Cliente
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowImport(true)}>
+              <Upload size={16} className="mr-1" />
+              Importar
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90">
+              <Plus size={16} className="mr-1" />
+              Novo Cliente
+            </Button>
+          </div>
         </div>
+
+        {/* Insights row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+          <button
+            onClick={() => setFilterChip(filterChip === 'inativos' ? 'all' : 'inativos')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'inativos' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">Sem serviço 30d+</p>
+            <p className="text-lg font-bold text-foreground">{insights.inactiveCount}</p>
+          </button>
+          <button
+            onClick={() => setFilterChip(filterChip === 'devedores' ? 'all' : 'devedores')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'devedores' ? 'border-destructive bg-destructive/10' : 'border-border bg-card hover:border-destructive/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">Em dívida</p>
+            <p className="text-lg font-bold text-destructive">€{insights.totalDebt.toFixed(0)}</p>
+            <p className="text-[10px] text-muted-foreground">{insights.totalUnpaidServices} serviços</p>
+          </button>
+          <button
+            onClick={() => setFilterChip(filterChip === 'aniversario' ? 'all' : 'aniversario')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'aniversario' ? 'border-pink-500 bg-pink-500/10' : 'border-border bg-card hover:border-pink-500/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">🎂 Este mês</p>
+            <p className="text-lg font-bold text-pink-500">{insights.birthdayCount}</p>
+          </button>
+          <div className="p-3 rounded-xl border border-border bg-card">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Top YTD</p>
+            {insights.top3.length === 0 ? (
+              <p className="text-xs text-muted-foreground">—</p>
+            ) : (
+              insights.top3.map((t, i) => (
+                <p key={t.name} className="text-[11px] text-foreground truncate">
+                  {i + 1}. {t.name} <span className="text-success font-semibold">€{t.total.toFixed(0)}</span>
+                </p>
+              ))
+            )}
+          </div>
+        </div>
+
 
         {/* Month Selector - Compact horizontal scroll */}
         <div className="mb-6">
