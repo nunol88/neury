@@ -1,51 +1,39 @@
-# Plano: melhorias UX completas
+## Objetivo
+Avisar a Mayara, de forma passiva mas visível, sobre serviços cujo horário já terminou e que continuam por marcar como concluídos — sem usar notificações push.
 
-Vou implementar tudo em **3 fases sequenciais**, da maior fricção diária ao polimento. Cada fase fica funcional sozinha — podes testar entre fases.
+## O que vai aparecer
 
----
+### 1. Banner persistente no topo de Agendamentos
+- Componente novo `PendingCompletionBanner` colocado em `ScheduleView`, acima do `TodaySummary`.
+- Calcula serviços "esquecidos": `task.completed === false` E (`task.date < hoje` OU (`task.date === hoje` E `task.endTime` já passou)).
+- Mostra contagem total + lista compacta (cliente + dia + hora) com botão "Marcar concluído" por item e "Marcar todos" no rodapé.
+- Visível para admin e funcionária. Auto-some quando lista fica vazia. Dispensável por sessão (botão X que esconde até refresh).
+- Se zero pendentes: não renderiza nada.
 
-## Fase 1 — Alta prioridade (fricção diária)
-
-1. **Vista "Hoje" no topo de Agendamentos** — `TodaySummary` promovido a bloco fixo no topo (não enterrado), colapsável. Mostra: serviços de hoje com hora, cliente, morada (link Google Maps), total a receber, próximo serviço destacado. Botões inline: "Marcar pago".
-2. **Botão WhatsApp em Pagamentos** — Em cada cliente com pendentes, botão "Lembrete WhatsApp" usando o `whatsappMessages.ts` que já existe. Inclui botão "Copiar resumo".
-3. **Reorganizar sidebar** — Manter no topo: Agendamentos, Dashboard, Clientes, Pagamentos, Gestão Fiscal. Agrupar em secção "Mais": Utilizadores, Transportes, Sobre, **Definições** (nova).
-4. **Página Definições** (`/admin/definicoes`) — Move "Login por email" e "Novos registos" da sidebar para aqui. Sidebar fica mais limpa.
-
-## Fase 2 — Média prioridade (qualidade de vida)
-
-5. **Badge pendências também no header mobile** — Badge `useOverduePayments` visível no header (não só na sidebar oculta em mobile).
-6. **Busca global `Ctrl/Cmd+K`** — `Command` do shadcn no `AppLayout`. Pesquisa clientes + agendamentos, navega ao resultado.
-7. **Folha do dia em PDF** — Reaproveita `dailyRoutePdf.ts` (já existe) e expõe botão "Imprimir dia" na vista Hoje.
-8. **"Repetir próxima semana"** — Item no menu do `TaskCard.tsx` que clona o agendamento para +7 dias sem abrir modal de fixo.
-
-## Fase 3 — Polimento
-
-9. **Estados vazios com CTA** — Meses futuros vazios mostram "Copiar do mês anterior" ou "Adicionar primeiro serviço".
-10. **Loading uniforme** — Padronizar skeletons (já existe `skeleton-loader.tsx`) nas páginas que ainda usam spinners ad-hoc.
-11. **Indicador permanente em dias sobrecarregados** — Marca visual (ícone ⚠️) no `DayCard` quando >=3 fixos, sem depender do copiar.
-12. **Ordenar por zona** — Toggle "Ordenar por morada" nos serviços do dia (agrupa por morada/zona em vez de hora de criação).
-
----
+### 2. Destaque visual nos cards
+- Em `TaskCard.tsx`, adicionar derivação `isOverdueUnmarked` com a mesma regra acima.
+- Quando true e `!task.completed`:
+  - Borda esquerda `border-l-4 border-l-destructive`
+  - Pulso suave (`animate-pulse` no badge de hora)
+  - Pequeno chip "Por marcar" ao lado do horário
+- Em `DayCard.tsx`, badge numérico vermelho no header do dia com nº de pendentes em atraso (complementa o ⚠️ de sobrecarga já existente, mas com cor `destructive`).
 
 ## Detalhes técnicos
 
-| # | Ficheiros principais | Backend? |
-|---|---|---|
-| 1 | `ScheduleView.tsx`, `TodaySummary.tsx` | Não |
-| 2 | `Pagamentos.tsx` + `whatsappMessages.ts` (já existe) | Não |
-| 3 | `AppSidebar.tsx` (agrupar em `SidebarGroup`) | Não |
-| 4 | Novo `Definicoes.tsx` + rota em `App.tsx` | Não |
-| 5 | `AppLayout.tsx` (header) | Não |
-| 6 | Novo `GlobalSearch.tsx` em `AppLayout` | Não |
-| 7 | `dailyRoutePdf.ts` (existe) + botão | Não |
-| 8 | `TaskCard.tsx` + `useAgendamentos` | Não |
-| 9 | `DayCard.tsx` / `ScheduleView.tsx` | Não |
-| 10 | Várias páginas | Não |
-| 11 | `DayCard.tsx` + helper de contagem | Não |
-| 12 | `DayCard.tsx` + util de ordenação | Não |
+- Hook novo `usePendingCompletions(tasks)` em `src/hooks/usePendingCompletions.ts` — recebe lista de tasks, devolve `{ overdueTasks, count, isOverdue(task) }`. Memoizado por minuto (re-cálculo a cada 60s via `useEffect` com setInterval para apanhar o momento em que um serviço de hoje "vira" overdue).
+- Banner reusa o handler `onToggleStatus` já existente em `ScheduleView`.
+- Sem alterações de BD nem RLS — usa apenas campos existentes (`completed`, `date`, `endTime`).
+- Bump `APP_VERSION` para `2.13.0` e nota em `Sobre.tsx`.
 
-Sem alterações de base de dados nem novas dependências (`cmdk` já vem com shadcn).
+## Ficheiros
+- novo: `src/hooks/usePendingCompletions.ts`
+- novo: `src/components/schedule/PendingCompletionBanner.tsx`
+- editar: `src/components/ScheduleView.tsx` (montar banner)
+- editar: `src/components/schedule/TaskCard.tsx` (destaque)
+- editar: `src/components/schedule/DayCard.tsx` (badge no header)
+- editar: `src/utils/appVersion.ts`, `src/pages/Sobre.tsx`
 
----
-
-Confirmas avançar com tudo nesta ordem? Posso fazer as 3 fases em sequência sem pausa, ou parar após a Fase 1 para validares.
+## Fora do âmbito
+- Notificações push do browser (não escolhido).
+- Modal auto-prompt ao abrir (não escolhido).
+- Alterações ao schema ou regras de pagamento.
