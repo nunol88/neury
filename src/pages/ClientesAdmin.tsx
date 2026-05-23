@@ -78,8 +78,15 @@ const ClientesAdmin = () => {
     periodo_preferido: null as 'manha' | 'tarde' | 'noite' | null,
     duracao_preferida_horas: 3,
     data_nascimento: '' as string,
+    tags: [] as string[],
   });
+  const [tagInput, setTagInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  // New: filters, sorting, bulk selection, import
+  const [sortBy, setSortBy] = useState<'name' | 'favorites' | 'debt' | 'recent' | 'rate' | 'frequent'>('favorites');
+  const [filterChip, setFilterChip] = useState<'all' | 'favoritos' | 'devedores' | 'inativos' | 'aniversario' | 'recibo'>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showImport, setShowImport] = useState(false);
 
   // Get stats for selected month
   const monthlyStats = useMemo(() => {
@@ -120,8 +127,9 @@ const ClientesAdmin = () => {
     setFormData({
       nome: '', telefone: '', morada: '', preco_hora: '7', notas: '',
       dias_preferidos: [], frequencia_preferida: 'semanal', periodo_preferido: null,
-      duracao_preferida_horas: 3, data_nascimento: '',
+      duracao_preferida_horas: 3, data_nascimento: '', tags: [],
     });
+    setTagInput('');
     setEditingClient(null);
     setShowForm(false);
   };
@@ -139,6 +147,25 @@ const ClientesAdmin = () => {
       periodo_preferido: client.periodo_preferido,
       duracao_preferida_horas: client.duracao_preferida_horas || 3,
       data_nascimento: client.data_nascimento || '',
+      tags: client.tags || [],
+    });
+    setShowForm(true);
+  };
+
+  const handleDuplicate = (client: Client) => {
+    setEditingClient(null);
+    setFormData({
+      nome: `${client.nome} (cópia)`,
+      telefone: client.telefone,
+      morada: client.morada,
+      preco_hora: client.preco_hora,
+      notas: client.notas,
+      dias_preferidos: client.dias_preferidos || [],
+      frequencia_preferida: client.frequencia_preferida || 'semanal',
+      periodo_preferido: client.periodo_preferido,
+      duracao_preferida_horas: client.duracao_preferida_horas || 3,
+      data_nascimento: client.data_nascimento || '',
+      tags: client.tags || [],
     });
     setShowForm(true);
   };
