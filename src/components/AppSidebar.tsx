@@ -109,15 +109,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-3">
+      <SidebarHeader className="border-b border-sidebar-border relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-80 pointer-events-none" />
+        <div className="relative flex items-center gap-3 px-3 py-3">
           <img
             src={logoMayslimpo}
             alt="Mayslimpo"
-            className="w-10 h-10 rounded-full object-cover shadow-sm border border-sidebar-border flex-shrink-0"
+            className="w-10 h-10 rounded-xl object-cover border border-sidebar-border flex-shrink-0 shadow-glow"
           />
           <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold text-sidebar-foreground truncate">Mayslimpo</span>
+            <span className="font-display font-bold text-sidebar-foreground truncate tracking-tight">Mayslimpo</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{roleLabel}</span>
           </div>
         </div>
       </SidebarHeader>
