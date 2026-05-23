@@ -1,27 +1,62 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Mail, Users } from 'lucide-react';
-import { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
+import { Settings, Mail, Users, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  EMAIL_LOGIN_SETTING,
+  NEW_REGISTRATIONS_SETTING,
+  getBooleanSetting,
+  setBooleanSetting,
+} from '@/utils/appSettings';
 
 const Definicoes: React.FC = () => {
-  const [emailLoginEnabled, setEmailLoginEnabled] = useState(
-    () => localStorage.getItem(EMAIL_LOGIN_KEY) === 'true'
-  );
-  const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(
-    () => localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true'
-  );
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [emailLoginEnabled, setEmailLoginEnabled] = useState(false);
+  const [newRegistrationsEnabled, setNewRegistrationsEnabled] = useState(false);
 
-  const toggleEmailLogin = () => {
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const [email, reg] = await Promise.all([
+        getBooleanSetting(EMAIL_LOGIN_SETTING),
+        getBooleanSetting(NEW_REGISTRATIONS_SETTING),
+      ]);
+      if (!mounted) return;
+      setEmailLoginEnabled(email);
+      setNewRegistrationsEnabled(reg);
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const toggleEmailLogin = async () => {
     const v = !emailLoginEnabled;
+    setSaving(EMAIL_LOGIN_SETTING);
+    const previous = emailLoginEnabled;
     setEmailLoginEnabled(v);
-    localStorage.setItem(EMAIL_LOGIN_KEY, String(v));
+    const { error } = await setBooleanSetting(EMAIL_LOGIN_SETTING, v);
+    setSaving(null);
+    if (error) {
+      setEmailLoginEnabled(previous);
+      toast.error('Não foi possível guardar (apenas administradores).');
+    }
   };
 
-  const toggleNewRegistrations = () => {
+  const toggleNewRegistrations = async () => {
     const v = !newRegistrationsEnabled;
+    setSaving(NEW_REGISTRATIONS_SETTING);
+    const previous = newRegistrationsEnabled;
     setNewRegistrationsEnabled(v);
-    localStorage.setItem(NEW_REGISTRATIONS_KEY, String(v));
+    const { error } = await setBooleanSetting(NEW_REGISTRATIONS_SETTING, v);
+    setSaving(null);
+    if (error) {
+      setNewRegistrationsEnabled(previous);
+      toast.error('Não foi possível guardar (apenas administradores).');
+    }
   };
 
   return (
@@ -40,31 +75,47 @@ const Definicoes: React.FC = () => {
           <CardDescription>Controla como utilizadores entram e registam-se</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                <Mail size={18} />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Login por email</p>
-                <p className="text-xs text-muted-foreground">Permite entrar com email + palavra-passe (além do Google)</p>
-              </div>
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin" size={16} /> A carregar definições…
             </div>
-            <Switch checked={emailLoginEnabled} onCheckedChange={toggleEmailLogin} />
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                    <Mail size={18} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Login por email</p>
+                    <p className="text-xs text-muted-foreground">Permite entrar com email + palavra-passe (além do Google)</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={emailLoginEnabled}
+                  onCheckedChange={toggleEmailLogin}
+                  disabled={saving === EMAIL_LOGIN_SETTING}
+                />
+              </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                <Users size={18} />
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Novos registos</p>
+                    <p className="text-xs text-muted-foreground">Permite que novas pessoas criem conta no ecrã de login</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={newRegistrationsEnabled}
+                  onCheckedChange={toggleNewRegistrations}
+                  disabled={saving === NEW_REGISTRATIONS_SETTING}
+                />
               </div>
-              <div>
-                <p className="font-medium text-foreground">Novos registos</p>
-                <p className="text-xs text-muted-foreground">Permite que novas pessoas criem conta no ecrã de login</p>
-              </div>
-            </div>
-            <Switch checked={newRegistrationsEnabled} onCheckedChange={toggleNewRegistrations} />
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -14,10 +14,8 @@ import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
 
 
-import { REMEMBER_USER_KEY, EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
-
-// Re-export for backward compatibility
-export { EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY };
+import { REMEMBER_USER_KEY } from '@/utils/authConstants';
+import { EMAIL_LOGIN_SETTING, getBooleanSetting } from '@/utils/appSettings';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -40,7 +38,17 @@ const Login = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
-  const emailLoginEnabled = localStorage.getItem(EMAIL_LOGIN_KEY) === 'true';
+  const [emailLoginEnabled, setEmailLoginEnabled] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    getBooleanSetting(EMAIL_LOGIN_SETTING).then((v) => {
+      if (mounted) setEmailLoginEnabled(v);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
   
   const { signIn, user, role, loading } = useAuth();
   const navigate = useNavigate();
