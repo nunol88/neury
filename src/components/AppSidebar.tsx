@@ -89,13 +89,14 @@ export function AppSidebar() {
           asChild
           isActive={isActive}
           tooltip={showOverdueBadge ? `${item.title} — ${overdueCount} em atraso` : item.title}
+          className={isActive ? 'nav-pill-active font-semibold' : 'transition-colors'}
         >
           <NavLink to={item.url} onClick={handleNavClick} className="flex items-center gap-3">
             <item.icon className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1">{item.title}</span>
             {showOverdueBadge && (
               <span
-                className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none"
+                className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none shadow-glow"
                 aria-label={`${overdueCount} pagamentos em atraso`}
               >
                 {overdueCount > 99 ? '99+' : overdueCount}
