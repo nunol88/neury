@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Euro, StickyNote, Calendar, Loader2 } from 'lucide-react';
+import { X, Euro, StickyNote, Calendar, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -7,11 +7,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import type { ExtraTipo } from '@/hooks/useExtras';
 
 interface ExtraValueModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { valor: number; data: string; observacoes: string }) => Promise<boolean>;
+  onSubmit: (data: { valor: number; data: string; observacoes: string; tipo: ExtraTipo }) => Promise<boolean>;
   defaultDate?: string;
 }
 
@@ -21,6 +22,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
   onSubmit,
   defaultDate,
 }) => {
+  const [tipo, setTipo] = useState<ExtraTipo>('receita');
   const [valor, setValor] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     defaultDate ? new Date(defaultDate + 'T00:00:00') : new Date()
@@ -29,6 +31,14 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   if (!isOpen) return null;
+
+  const isDespesa = tipo === 'despesa';
+  const accentClass = isDespesa ? 'text-destructive' : 'text-success';
+  const accentBg = isDespesa ? 'bg-destructive/20' : 'bg-success/20';
+  const accentGradient = isDespesa ? 'from-destructive/10 to-transparent' : 'from-success/10 to-transparent';
+  const buttonClass = isDespesa
+    ? 'bg-destructive text-destructive-foreground'
+    : 'bg-success text-success-foreground';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +50,14 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
       valor: parseFloat(valor),
       data: dateString,
       observacoes,
+      tipo,
     });
 
     if (success) {
       setValor('');
       setObservacoes('');
       setSelectedDate(new Date());
+      setTipo('receita');
       onClose();
     }
     setSaving(false);
@@ -55,14 +67,20 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md border border-border overflow-hidden animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border bg-gradient-to-r from-success/10 to-transparent">
+        <div className={cn("flex items-center justify-between p-5 border-b border-border bg-gradient-to-r", accentGradient)}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
-              <Euro size={20} className="text-success" />
+            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", accentBg)}>
+              {isDespesa
+                ? <TrendingDown size={20} className={accentClass} />
+                : <TrendingUp size={20} className={accentClass} />}
             </div>
             <div>
-              <h2 className="font-bold text-card-foreground text-lg">Valor Extra</h2>
-              <p className="text-xs text-muted-foreground">Adicionar rendimento extra ao mês</p>
+              <h2 className="font-bold text-card-foreground text-lg">
+                {isDespesa ? 'Despesa' : 'Valor Extra'}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {isDespesa ? 'Registar despesa do dia (produtos, transportes...)' : 'Adicionar rendimento extra ao mês'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
@@ -72,10 +90,43 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Tipo toggle */}
+          <div>
+            <label className="block text-sm font-medium text-card-foreground mb-1.5">Tipo</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTipo('receita')}
+                className={cn(
+                  'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all',
+                  tipo === 'receita'
+                    ? 'border-success bg-success/10 text-success'
+                    : 'border-border text-muted-foreground hover:border-success/40'
+                )}
+              >
+                <TrendingUp size={16} />
+                Receita
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipo('despesa')}
+                className={cn(
+                  'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all',
+                  tipo === 'despesa'
+                    ? 'border-destructive bg-destructive/10 text-destructive'
+                    : 'border-border text-muted-foreground hover:border-destructive/40'
+                )}
+              >
+                <TrendingDown size={16} />
+                Despesa
+              </button>
+            </div>
+          </div>
+
           {/* Valor */}
           <div>
             <label className="block text-sm font-medium text-card-foreground mb-1.5 flex items-center gap-1.5">
-              <Euro size={14} className="text-success" />
+              <Euro size={14} className={accentClass} />
               Valor (€) <span className="text-destructive">*</span>
             </label>
             <input
@@ -86,7 +137,12 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
               placeholder="Ex: 50.00"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              className="w-full p-3 border border-border rounded-xl bg-input text-foreground text-lg font-bold focus:ring-2 focus:ring-success/50 focus:border-success transition-all"
+              className={cn(
+                "w-full p-3 border border-border rounded-xl bg-input text-foreground text-lg font-bold transition-all",
+                isDespesa
+                  ? "focus:ring-2 focus:ring-destructive/50 focus:border-destructive"
+                  : "focus:ring-2 focus:ring-success/50 focus:border-success"
+              )}
             />
           </div>
 
@@ -130,7 +186,9 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
               Observações
             </label>
             <Textarea
-              placeholder="De onde vem este valor? Ex: Gorjeta, trabalho extra, etc."
+              placeholder={isDespesa
+                ? 'O que comprou? Ex: detergente, sacos do lixo, gasolina...'
+                : 'De onde vem este valor? Ex: gorjeta, trabalho extra...'}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               className="rounded-xl resize-none"
@@ -142,10 +200,13 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
           <button
             type="submit"
             disabled={saving || !valor || !selectedDate}
-            className="w-full bg-success text-success-foreground font-bold py-3 rounded-xl shadow transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+            className={cn(
+              "w-full font-bold py-3 rounded-xl shadow transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50",
+              buttonClass
+            )}
           >
             {saving ? <Loader2 size={18} className="animate-spin" /> : <Euro size={18} />}
-            Adicionar Valor Extra
+            {isDespesa ? 'Registar Despesa' : 'Adicionar Valor Extra'}
           </button>
         </form>
       </div>
