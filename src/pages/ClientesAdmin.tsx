@@ -5,14 +5,16 @@ import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
 import { useClientDebts } from '@/hooks/useClientDebts';
+import { useNextServices } from '@/hooks/useNextServices';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMonthsConfig } from '@/utils/monthConfig';
-import { 
-  Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
+import {
+  Users, Pencil, Trash2, Save, X, Plus, ArrowLeft,
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search, CalendarDays, Sparkles, FileText, Star
+  Navigation, Search, CalendarDays, Sparkles, FileText, Star,
+  MessageCircle, Copy, Upload, Tag, Cake, AlertTriangle, CalendarPlus,
 } from 'lucide-react';
 import { generateClientReportPdf } from '@/utils/clientReportPdf';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,11 @@ import { ClientsViewSkeleton } from '@/components/ui/skeleton-loader';
 import ClientAvatar from '@/components/ui/client-avatar';
 import EmptyState from '@/components/ui/empty-state';
 import LiquidGlassReportModal from '@/components/clients/LiquidGlassReportModal';
+import ImportClientsModal from '@/components/clients/ImportClientsModal';
+import { openWhatsApp, buildServiceConfirmationMessage, normalizePhoneForWhatsApp } from '@/utils/whatsappMessages';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { pt } from 'date-fns/locale';
+
 
 const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
@@ -36,6 +43,8 @@ const ClientesAdmin = () => {
   
   const { clientStats, getClientHistory, getStatsForMonth, getMonthsWithData } = useClientStats(allTasks, clients, monthsConfig);
   const debtsByClient = useClientDebts(allTasks);
+  const nextServices = useNextServices(allTasks);
+
   
   // Get current month key
   const getCurrentMonthKey = (): string => {
