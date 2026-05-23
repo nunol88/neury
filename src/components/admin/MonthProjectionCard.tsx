@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Crystal, Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp } from 'lucide-react';
 import { parseISO, getDaysInMonth } from 'date-fns';
 
 interface Props {
