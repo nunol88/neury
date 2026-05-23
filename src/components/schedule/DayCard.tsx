@@ -34,6 +34,7 @@ interface DayCardProps {
   onRepeatNextWeek?: (task: Task) => void;
   onDeleteExtra?: (id: string) => void;
   onCopyDay?: (targetDate: string, targetDayLabel: string) => void;
+  isOverdue?: (task: Task) => boolean;
   animationDelay?: number;
 }
 
@@ -57,6 +58,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onRepeatNextWeek,
   onDeleteExtra,
   onCopyDay,
+  isOverdue,
   animationDelay = 0,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
