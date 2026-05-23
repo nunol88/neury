@@ -111,17 +111,204 @@ const ClientesAdmin = () => {
     return monthlyStats.clients;
   }, [selectedMonth, monthlyStats, clientStats]);
 
-  // Filter clients based on search term
+  // Helper: birthday this month / days until birthday
+  const birthdayInfo = (client: Client): { isBirthdayMonth: boolean; daysUntil: number | null } => {
+    if (!client.data_nascimento) return { isBirthdayMonth: false, daysUntil: null };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const [, m, d] = client.data_nascimento.split('-').map(Number);
+    if (!m || !d) return { isBirthdayMonth: false, daysUntil: null };
+    const isBirthdayMonth = (today.getMonth() + 1) === m;
+    let next = new Date(today.getFullYear(), m - 1, d);
+    if (next < today) next = new Date(today.getFullYear() + 1, m - 1, d);
+    const daysUntil = Math.floor((next.getTime() - today.getTime()) / 86_400_000);
+    return { isBirthdayMonth, daysUntil };
+  };
+
+  // Filter + sort clients
   const filteredClients = useMemo(() => {
-    if (!searchTerm.trim()) return clients;
-    const term = searchTerm.toLowerCase().trim();
-    return clients.filter(client =>
-      client.nome.toLowerCase().includes(term) ||
-      client.telefone.toLowerCase().includes(term) ||
-      client.morada.toLowerCase().includes(term) ||
-      client.notas.toLowerCase().includes(term)
-    );
-  }, [clients, searchTerm]);
+    const today = new Date();
+    let list = [...clients];
+
+    // Search
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(c =>
+        c.nome.toLowerCase().includes(term) ||
+        c.telefone.toLowerCase().includes(term) ||
+        c.morada.toLowerCase().includes(term) ||
+        c.notas.toLowerCase().includes(term) ||
+        (c.tags || []).some(t => t.toLowerCase().includes(term)),
+      );
+    }
+
+    // Filter chips
+    if (filterChip === 'favoritos') list = list.filter(c => c.favorito);
+    if (filterChip === 'devedores') list = list.filter(c => debtsByClient[c.nome]?.totalDue > 0);
+    if (filterChip === 'recibo') list = list.filter(c => c.recibo_verde);
+    if (filterChip === 'inativos') {
+      list = list.filter(c => {
+        const s = clientStats[c.nome];
+        if (!s?.lastService) return true;
+        return differenceInDays(today, parseISO(s.lastService)) > 30;
+      });
+    }
+    if (filterChip === 'aniversario') {
+      list = list.filter(c => birthdayInfo(c).isBirthdayMonth);
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'name': return a.nome.localeCompare(b.nome);
+        case 'favorites':
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+          return a.nome.localeCompare(b.nome);
+        case 'debt': {
+          const da = debtsByClient[a.nome]?.totalDue || 0;
+          const db = debtsByClient[b.nome]?.totalDue || 0;
+          return db - da;
+        }
+        case 'recent': {
+          const la = clientStats[a.nome]?.lastService || '0';
+          const lb = clientStats[b.nome]?.lastService || '0';
+          return lb.localeCompare(la);
+        }
+        case 'rate': {
+          const ra = parseFloat(a.preco_hora) || 0;
+          const rb = parseFloat(b.preco_hora) || 0;
+          return rb - ra;
+        }
+        case 'frequent': {
+          const ca = clientStats[a.nome]?.totalAgendamentos || 0;
+          const cb = clientStats[b.nome]?.totalAgendamentos || 0;
+          return cb - ca;
+        }
+      }
+    });
+
+    return list;
+  }, [clients, searchTerm, filterChip, sortBy, debtsByClient, clientStats]);
+
+  // Aggregate insights (top of page)
+  const insights = useMemo(() => {
+    const today = new Date();
+    let inactiveCount = 0;
+    let totalDebt = 0;
+    let totalUnpaidServices = 0;
+    let birthdayCount = 0;
+    const ytdStart = new Date(today.getFullYear(), 0, 1);
+    const ytdByClient: Record<string, number> = {};
+
+    clients.forEach(c => {
+      const s = clientStats[c.nome];
+      if (s?.lastService && differenceInDays(today, parseISO(s.lastService)) > 30) inactiveCount++;
+      const d = debtsByClient[c.nome];
+      if (d) { totalDebt += d.totalDue; totalUnpaidServices += d.unpaidCount; }
+      if (birthdayInfo(c).isBirthdayMonth) birthdayCount++;
+    });
+
+    Object.values(allTasks).flat().forEach(t => {
+      if (!t.completed) return;
+      if (parseISO(t.date) < ytdStart) return;
+      ytdByClient[t.client] = (ytdByClient[t.client] || 0) + (parseFloat(t.price || '0') || 0);
+    });
+
+    const top3 = Object.entries(ytdByClient)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([name, total]) => ({ name, total }));
+
+    return { inactiveCount, totalDebt, totalUnpaidServices, birthdayCount, top3 };
+  }, [clients, clientStats, debtsByClient, allTasks]);
+
+  // Tag helpers
+  const addTag = () => {
+    const t = tagInput.trim().toLowerCase();
+    if (!t) return;
+    if (formData.tags.includes(t)) { setTagInput(''); return; }
+    setFormData(prev => ({ ...prev, tags: [...prev.tags, t] }));
+    setTagInput('');
+  };
+  const removeTag = (t: string) => {
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(x => x !== t) }));
+  };
+
+  // Bulk selection helpers
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelected(new Set());
+
+  const handleBulkFavorite = async (favorito: boolean) => {
+    for (const id of selected) {
+      const c = clients.find(x => x.id === id);
+      if (c && c.favorito !== favorito) await toggleFavorite(id);
+    }
+    toast({ title: favorito ? 'Marcados como favoritos' : 'Removidos dos favoritos' });
+    clearSelection();
+  };
+  const handleBulkExportCsv = () => {
+    const rows = clients.filter(c => selected.has(c.id));
+    const csv = ['Nome,Telefone,Morada,€/h,Tags']
+      .concat(rows.map(c => [
+        `"${c.nome.replace(/"/g, '""')}"`,
+        `"${c.telefone}"`,
+        `"${(c.morada || '').replace(/"/g, '""')}"`,
+        c.preco_hora,
+        `"${(c.tags || []).join('; ')}"`,
+      ].join(',')))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${rows.length} clientes exportados` });
+  };
+  const handleBulkWhatsApp = () => {
+    const rows = clients.filter(c => selected.has(c.id) && c.telefone);
+    if (rows.length === 0) { toast({ title: 'Nenhum tem telefone', variant: 'destructive' }); return; }
+    rows.forEach((c, idx) => {
+      // Stagger to avoid popup blocker
+      setTimeout(() => {
+        openWhatsApp(c.telefone, `Olá ${c.nome.split(' ')[0]}! 🌸`);
+      }, idx * 150);
+    });
+  };
+
+  // Import handler
+  const handleImportClients = async (rows: { nome: string; telefone: string; morada: string }[]) => {
+    let added = 0;
+    let skipped = 0;
+    for (const r of rows) {
+      if (clientExists(r.nome)) { skipped++; continue; }
+      const result = await addClient({
+        nome: r.nome,
+        telefone: r.telefone || '',
+        morada: r.morada || '',
+        preco_hora: '7',
+        notas: '',
+        recibo_verde: false,
+        favorito: false,
+        dias_preferidos: [],
+        frequencia_preferida: 'semanal',
+        periodo_preferido: null,
+        hora_preferida: null,
+        duracao_preferida_horas: 3,
+        data_nascimento: null,
+        tags: [],
+      });
+      if (result) added++;
+    }
+    toast({ title: `${added} criados, ${skipped} ignorados (duplicados)` });
+    setShowImport(false);
+  };
+
 
   // Get months for selector (sorted newest first) - must be before any early return
   const sortedMonths = useMemo(() => {
