@@ -31,6 +31,18 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.15.0',
+    date: '2026-05-23',
+    title: '🎂 Aniversários, Favoritos Parados e Resumo do Dia',
+    summary: 'Mais ferramentas para cuidar da relação com os clientes: lembrete de aniversários, alerta de favoritos sem serviço há muito tempo e um botão para copiar o resumo do dia num toque.',
+    changes: [
+      { text: 'Card "Aniversários próximos" no Dashboard com botão WhatsApp já com mensagem pronta (parabéns no próprio dia)', type: 'new' },
+      { text: 'Novo campo "Data de nascimento" (opcional) na ficha do cliente', type: 'new' },
+      { text: 'Card "Favoritos parados há +30 dias" no Dashboard para reativar clientes esquecidos', type: 'new' },
+      { text: 'Botão "Resumo" em Hoje copia para a área de transferência o resumo do dia (serviços, horas, valor) pronto a colar', type: 'new' },
+    ],
+  },
+  {
     version: '2.14.0',
     date: '2026-05-23',
     title: '💰 Despesas, Devedores e Projeção do Mês',

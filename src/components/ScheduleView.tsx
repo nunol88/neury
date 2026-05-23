@@ -678,6 +678,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           periodo_preferido: null,
           hora_preferida: null,
           duracao_preferida_horas: 3,
+          data_nascimento: null,
         });
       }
 

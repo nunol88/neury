@@ -113,6 +113,7 @@ export type Database = {
       clients: {
         Row: {
           created_at: string
+          data_nascimento: string | null
           dias_preferidos: number[]
           duracao_preferida_horas: number
           favorito: boolean
@@ -130,6 +131,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data_nascimento?: string | null
           dias_preferidos?: number[]
           duracao_preferida_horas?: number
           favorito?: boolean
@@ -147,6 +149,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data_nascimento?: string | null
           dias_preferidos?: number[]
           duracao_preferida_horas?: number
           favorito?: boolean
