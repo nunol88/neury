@@ -2111,6 +2111,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                onCopyTask={isAdmin ? handleCopyTask : undefined}
                onRepeatNextWeek={isAdmin ? handleRepeatNextWeek : undefined}
                onDeleteExtra={deleteExtra}
+               isOverdue={pendingCompletions.isOverdue}
                onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
                  setCopyDayTarget({ date: targetDate, label: targetDayLabel });
                  setShowCopyDayModal(true);
