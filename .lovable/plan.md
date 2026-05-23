@@ -1,72 +1,88 @@
-## Contexto
-Estás na página de Clientes (`/admin/clientes`). Já tem: pesquisa, favoritos, badge de devedor, expandir cliente, histórico, relatório PDF, preferências de agendamento. Boa base — mas há margem para tornar a página muito mais útil no dia-a-dia da Mayara.
+# v3 — Redesign visual global do site
 
-## Melhorias propostas (por prioridade de impacto)
+Refresh visual em toda a aplicação, mantendo 100% da funcionalidade. Sem novas features, sem migrations, sem mudanças de dados.
 
-### 1. Quick actions no cartão do cliente (alto impacto, baixo risco)
-Botões grandes diretos, sem precisar de expandir:
-- **WhatsApp** (abre `wa.me/<telefone>` com mensagem opcional pré-feita: "Olá X, confirmo o serviço de amanhã?")
-- **Ligar** (`tel:`)
-- **Maps** (abre morada no Google Maps — já existe noutros sítios, replicar aqui)
-- **Agendar agora** (atalho que abre o calendário no próximo dia preferido do cliente já pré-preenchido)
+## Princípios
 
-### 2. Ordenação e filtros avançados
-Barra de filtros por cima da lista:
-- **Ordenar por**: nome (A-Z) · favoritos · dívida · último serviço · €/h · mais frequente
-- **Filtros rápidos** (chips): Todos · Favoritos · Com dívida · Inativos (30d+) · Aniversário este mês · Recibo verde
-- Contador "X de Y clientes"
+- Manter a estética **liquid glass** já existente, mas elevá-la: mais contraste, mais hierarquia, mais personalidade.
+- Densidade equilibrada — informação relevante mais rápida de ler.
+- Microinterações subtis (fade/slide stagger, hover glow), sem exageros.
+- Consistência total: mesmos tokens, mesmos raios, mesmas sombras em todas as páginas.
 
-### 3. Mini-stats no cartão (sem expandir)
-Linha discreta por baixo do nome com 3-4 números chave:
-`12 serviços · 36h · €420 · último há 8d`
-Permite varrer a lista visualmente sem clicar.
+## Tokens (base de tudo)
 
-### 4. Badge "Próximo serviço agendado"
-Mostra a próxima data marcada (ex: "Próximo: 4ª feira, 28 Mai"). Se não houver e for favorito, mostra "Sem próximo serviço" a amarelo.
+Atualizar `src/index.css` + `tailwind.config.ts`:
+- Paleta refinada (HSL) com 2 accents (primário + secundário), surface levels (0/1/2/3) e tints coloridos para sombras.
+- Border-radius escalonado: `sm 8 / md 12 / lg 16 / xl 20 / 2xl 28`.
+- Sombras coloridas suaves (`shadow-glow`, `shadow-elevated`) usando tint do accent.
+- Gradientes utilitários (`bg-gradient-hero`, `bg-gradient-card`).
+- Tipografia: escala mais expressiva para números/headings (display font opcional via Google Fonts, mantendo Inter para corpo).
 
-### 5. Bulk actions / seleção múltipla
-Checkbox por cartão + barra flutuante quando há seleção:
-- Enviar mensagem WhatsApp em massa (abre cada conversa)
-- Marcar/desmarcar favorito
-- Exportar CSV dos selecionados
+## Componentes globais
 
-### 6. Insights no topo da página
-Cards finos com:
-- Total clientes ativos / inativos
-- Total em dívida (€) — clicável → filtra devedores
-- Top 3 clientes por receita YTD
-- Aniversariantes este mês (já existe na Dashboard, adicionar atalho aqui)
+1. **Sidebar / Navegação**
+   - Items com ícone + label, indicador ativo com pill colorida e glow.
+   - Avatar do utilizador no topo com estado (admin/funcionária) e badge de notificações.
+   - Versão colapsável em desktop intermédio.
 
-### 7. Vista em mapa
-Toggle "Lista / Mapa" — mapa Leaflet com pin por cliente baseado na morada (geocoded). Útil para planear rota do dia.
-**Nota**: requer geocoding (Nominatim free). Pode ficar para uma segunda iteração se for muito.
+2. **Headers de página**
+   - Padrão único: título + subtítulo + ações à direita, com faixa de gradiente subtil.
+   - Breadcrumb visual onde fizer sentido.
 
-### 8. Notas rápidas timeline
-Na expansão do cliente, transformar `notas` num formato de timeline: cada nota com data e tipo (geral · contacto · problema · pagamento). Adicionar nota rápida sem editar tudo.
+3. **Cards**
+   - Glass refinado (`backdrop-blur-xl`, borders translúcidos, gradient overlay no top).
+   - Hover: elevação + glow do accent + scale 1.01.
 
-### 9. Tags / categorias
-Campo de tags livres no cliente (ex: "vivenda", "alergia a químicos", "tem cão", "porteiro"). Filtrável.
+4. **Botões**
+   - Variantes: `default`, `glass`, `glow`, `ghost`. Glow com gradient e shadow colorida.
+   - Loading states com spinner integrado.
 
-### 10. Importar contactos
-Botão "Importar do telefone" via CSV ou colar lista. Útil quando a Mayara quer migrar agenda antiga.
+5. **Inputs / Selects / Dialogs**
+   - Borders mais finos, focus ring colorido, dialogs com glass + entry animation.
 
-### 11. Aniversário no cartão
-Se o cliente tem `data_nascimento` e o aniversário é nos próximos 7 dias, mostrar 🎂 + dias restantes no cartão. Botão direto WhatsApp parabéns.
+6. **Empty states e skeletons**
+   - Shimmer consistente em todas as listas (clientes, calendário, fiscal).
+   - Empty states ilustrados (ícone grande + texto + CTA).
 
-### 12. Duplicar cliente
-Quando cria um cliente parecido (ex: casal na mesma morada), botão "Duplicar" copia dados.
+## Páginas a tocar (apenas visual)
 
-## Detalhes técnicos
-- Tudo client-side; não requer migrations (já há campos suficientes).
-- Vista mapa (#7) é o único que precisa biblioteca extra (já existe Leaflet no projeto para transportes — reutilizar) + geocoding gratuito.
-- Tags (#9) sim precisa migration: `ALTER TABLE clients ADD COLUMN tags text[] DEFAULT '{}'`.
+- **Dashboard** — bento grid assimétrico, números grandes, sparklines onde já há dados.
+- **ClientesAdmin** — conforme plano v3 anterior (cards horizontais densos, chips coloridos, modo lista/cartões/tabela).
+- **Calendário / ScheduleView** — header sticky refinado, células com melhor estado vazio/ocupado, tooltips mais ricos.
+- **Fiscal** — cards de KPI no topo, tabela com zebra + hover, badges de estado.
+- **Sobre / Changelog** — timeline estilizada com versões marcadas, ícones por tipo de mudança.
+- **Login** — manter liquid glass, refinar tipografia e espaçamento.
+- **Transportes Lisboa** — header e cards alinhados ao novo sistema.
 
-## Sugestão de ordem
-**Fase A (rápida, alto valor)**: #1 Quick actions, #2 Filtros/ordenação, #3 Mini-stats, #4 Próximo serviço, #11 Aniversário no cartão.
+## Microinterações
 
-**Fase B (média)**: #6 Insights topo, #5 Bulk actions, #8 Notas timeline.
+- Stagger fade-in em listas (30ms).
+- Page transition fade.
+- Toasts com glass + accent border.
+- FAB "Novo" em mobile nas páginas principais.
 
-**Fase C (mais pesada)**: #7 Mapa, #9 Tags, #10 Importar, #12 Duplicar.
+## Fora do âmbito
 
-## Pergunta
-Diz quais queres (números) ou "Fase A", "tudo", etc., e avanço.
+- Sem novas features, sem mudanças de lógica/negócio.
+- Sem migrations.
+- Sem alterar fluxos (cliques, navegação) — só aparência.
+
+## Execução faseada
+
+Para evitar uma PR gigante, sugiro 3 etapas:
+
+1. **Fundação** — tokens, botões, cards base, sidebar. (impacto visível em tudo)
+2. **Páginas pesadas** — Dashboard, ClientesAdmin, Calendário, Fiscal.
+3. **Polish** — Login, Sobre, Transportes, empty states, microinterações finais.
+
+## Versão
+
+Bump global para **v3.0.0** quando as 3 fases estiverem concluídas. Cada fase intermédia: `v2.16.0`, `v2.17.0`.
+
+---
+
+**Antes de avançar, escolhe:**
+
+a) Quero ver **3 direções visuais renderizadas** (paleta + tipografia + layout) lado a lado e escolho uma — caminho recomendado para "v3 global".
+b) Avança já com a Fase 1 mantendo a paleta atual, só elevando o sistema.
+c) Ajusta o plano — diz o que tirar/adicionar.
