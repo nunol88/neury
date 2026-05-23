@@ -1428,8 +1428,71 @@ const ClientesAdmin = () => {
                         {client.notas && (
                           <p className="mt-2 text-xs text-muted-foreground italic">{client.notas}</p>
                         )}
+                        {/* Tags */}
+                        {(client.tags || []).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {client.tags.map(t => (
+                              <span key={t} className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                                <Tag size={9} />{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {/* Mini stats + next service + birthday */}
+                        {(lifetimeStats?.totalAgendamentos > 0 || next || bday.isBirthdayMonth) && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {lifetimeStats?.totalAgendamentos > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                {lifetimeStats.concluidos} ✓ · {lifetimeStats.totalHours.toFixed(0)}h · €{lifetimeStats.totalRevenue.toFixed(0)}
+                                {lifetimeStats.lastService && ` · há ${differenceInDays(new Date(), parseISO(lifetimeStats.lastService))}d`}
+                              </span>
+                            )}
+                            {next && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-medium">
+                                <CalendarPlus size={10} className="inline mr-0.5" />
+                                Próximo: {format(parseISO(next.date), "d MMM", { locale: pt })} {next.startTime}
+                                {next.daysAhead === 0 ? ' (hoje)' : next.daysAhead === 1 ? ' (amanhã)' : ` (em ${next.daysAhead}d)`}
+                              </span>
+                            )}
+                            {!next && client.favorito && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+                                <AlertTriangle size={10} className="inline mr-0.5" />
+                                Sem próximo serviço
+                              </span>
+                            )}
+                            {bday.daysUntil !== null && bday.daysUntil <= 14 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/15 text-pink-600 dark:text-pink-400 font-medium">
+                                <Cake size={10} className="inline mr-0.5" />
+                                {bday.daysUntil === 0 ? 'Aniversário hoje!' : `Aniv. em ${bday.daysUntil}d`}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {client.telefone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openWhatsApp(client.telefone, next
+                              ? buildServiceConfirmationMessage(client.nome, next.date, next.startTime, next.endTime)
+                              : `Olá ${client.nome.split(' ')[0]}! 🌸`)}
+                            className="text-green-600 hover:bg-green-500/10"
+                            title="Enviar WhatsApp"
+                          >
+                            <MessageCircle size={14} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDuplicate(client)}
+                          title="Duplicar cliente"
+                        >
+                          <Copy size={14} />
+                        </Button>
+
                         {client.morada && (
                           <Button
                             variant="outline"
