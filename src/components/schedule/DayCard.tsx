@@ -132,6 +132,7 @@ const DayCard: React.FC<DayCardProps> = ({
   const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length && extras.length === 0;
   const isEmpty = tasks.length === 0 && extras.length === 0;
   const isOverloaded = tasks.length >= 3;
+  const overdueCount = isOverdue ? tasks.filter(t => isOverdue(t)).length : 0;
 
   return (
     <div
@@ -200,6 +201,24 @@ const DayCard: React.FC<DayCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {overdueCount > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[10px] font-bold border border-destructive/30 animate-pulse"
+                    aria-label={`${overdueCount} por marcar como concluído`}
+                  >
+                    <AlertTriangle size={10} />
+                    {overdueCount}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {overdueCount === 1 ? '1 serviço por marcar' : `${overdueCount} serviços por marcar`}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {isOverloaded && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -287,6 +306,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 onTogglePayment={onTogglePayment}
                 onCopy={onCopyTask}
                 onRepeatNextWeek={onRepeatNextWeek}
+                isOverdue={isOverdue ? isOverdue(task) : false}
                 animationDelay={index * 50}
               />
             ))}
