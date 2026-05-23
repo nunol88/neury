@@ -38,6 +38,10 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     title: 'Sobre — Mayslimpo',
     description: 'Versão, novidades e informação sobre a aplicação Mayslimpo.',
   },
+  '/admin/definicoes': {
+    title: 'Definições — Mayslimpo',
+    description: 'Configurações de acesso e preferências da plataforma Mayslimpo.',
+  },
   '/neury/agendamentos': {
     title: 'Agenda do Dia — Mayslimpo',
     description: 'Vista diária e mensal da agenda para o funcionário.',

@@ -31,6 +31,20 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.12.0',
+    date: '2026-05-23',
+    title: '🧹 Sidebar Mais Limpa, Busca Global e Repetir +7 dias',
+    summary: 'Reorganização da navegação para reduzir ruído, atalho de pesquisa global, alerta de pagamentos em atraso sempre visível e um clique para repetir um serviço na semana seguinte.',
+    changes: [
+      { text: 'Sidebar dividida em "Principal" e "Mais" — itens raros (Utilizadores, Transportes, Definições, Sobre) agrupados', type: 'improvement' },
+      { text: 'Nova página Definições com os switches de "Login por email" e "Novos registos" (removidos da sidebar)', type: 'new' },
+      { text: 'Busca global com Ctrl/⌘+K em todas as páginas — pesquisa clientes, agendamentos e secções', type: 'new' },
+      { text: 'Badge "X em atraso" no header (mobile e desktop), com um clique vai direto a Pagamentos', type: 'new' },
+      { text: 'Botão "Repetir +7 dias" em cada agendamento — duplica para a semana seguinte sem abrir modais', type: 'new' },
+      { text: 'Ícone permanente ⚠️ em dias com 3+ serviços para detetar sobrecarga sem ter de copiar', type: 'new' },
+    ],
+  },
+  {
     version: '2.11.4',
     date: '2026-05-06',
     title: '⚠️ Aviso de Conflitos Antes de Copiar',
