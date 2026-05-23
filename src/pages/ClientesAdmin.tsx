@@ -967,6 +967,36 @@ const ClientesAdmin = () => {
                   </p>
                 </div>
 
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">
+                    Tags / Etiquetas
+                  </label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {formData.tags.map(t => (
+                      <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {t}
+                        <button type="button" onClick={() => removeTag(t)} className="hover:text-destructive">
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                      className="flex-1 p-2 border border-border rounded-lg bg-input text-foreground text-sm"
+                      placeholder="ex: vivenda, tem cão, porteiro..."
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={addTag}>+</Button>
+                  </div>
+                </div>
+
+
+
 
                 {/* === Preferências de agendamento === */}
                 <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
