@@ -2056,6 +2056,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         />
       </div>
 
+      {/* Pending completions banner — overdue tasks not yet marked */}
+      {pendingCompletions.count > 0 && (
+        <div className="max-w-7xl mx-auto px-4 mt-4 print:hidden relative z-0">
+          <PendingCompletionBanner
+            overdueTasks={pendingCompletions.overdueTasks}
+            onToggleStatus={handleToggleStatus}
+            userRole={role || 'user'}
+          />
+        </div>
+      )}
+
       {/* Today Summary Card - Only show in current month */}
       {activeMonth === getCurrentMonthKey() && (
         <div className="max-w-7xl mx-auto px-4 mt-4 print:hidden relative z-0">
