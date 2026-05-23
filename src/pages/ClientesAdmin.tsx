@@ -77,6 +77,7 @@ const ClientesAdmin = () => {
     frequencia_preferida: 'semanal' as 'semanal' | 'quinzenal',
     periodo_preferido: null as 'manha' | 'tarde' | 'noite' | null,
     duracao_preferida_horas: 3,
+    data_nascimento: '' as string,
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -119,7 +120,7 @@ const ClientesAdmin = () => {
     setFormData({
       nome: '', telefone: '', morada: '', preco_hora: '7', notas: '',
       dias_preferidos: [], frequencia_preferida: 'semanal', periodo_preferido: null,
-      duracao_preferida_horas: 3,
+      duracao_preferida_horas: 3, data_nascimento: '',
     });
     setEditingClient(null);
     setShowForm(false);
@@ -137,6 +138,7 @@ const ClientesAdmin = () => {
       frequencia_preferida: client.frequencia_preferida || 'semanal',
       periodo_preferido: client.periodo_preferido,
       duracao_preferida_horas: client.duracao_preferida_horas || 3,
+      data_nascimento: client.data_nascimento || '',
     });
     setShowForm(true);
   };
@@ -171,6 +173,7 @@ const ClientesAdmin = () => {
             frequencia_preferida: formData.frequencia_preferida,
             periodo_preferido: formData.periodo_preferido,
             duracao_preferida_horas: formData.duracao_preferida_horas,
+            data_nascimento: formData.data_nascimento || null,
           } as any)
           .eq('id', editingClient.id);
 
@@ -186,6 +189,7 @@ const ClientesAdmin = () => {
           periodo_preferido: formData.periodo_preferido,
           hora_preferida: null,
           duracao_preferida_horas: formData.duracao_preferida_horas,
+          data_nascimento: formData.data_nascimento || null,
         });
       }
       await refetch();
