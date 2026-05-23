@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText } from 'lucide-react';
+import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText, Copy } from 'lucide-react';
 import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
 import { generateDailyRoutePdf } from '@/utils/dailyRoutePdf';
 import NextServiceHero from './NextServiceHero';
@@ -177,7 +177,41 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
               <FileText size={14} />
               PDF
             </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const totalHoras = todayTasks.reduce((s, t) => {
+                  const start = new Date(`1970-01-01T${t.startTime}`);
+                  const end = new Date(`1970-01-01T${t.endTime}`);
+                  return s + (end.getTime() - start.getTime()) / 3_600_000;
+                }, 0);
+                const valor = todayTasks.reduce((s, t) => s + getTaskPrice(t, isAdmin), 0);
+                const feitos = completedTasks.length;
+                const total = todayTasks.length;
+                const dataStr = new Date().toLocaleDateString('pt-PT', {
+                  weekday: 'long', day: 'numeric', month: 'long',
+                });
+                const text =
+                  `📅 ${dataStr}\n` +
+                  `✅ ${feitos}/${total} serviços concluídos\n` +
+                  `⏱️ ${totalHoras.toFixed(1)}h trabalhadas\n` +
+                  `💶 ${valor.toFixed(0)}€`;
+                try {
+                  await navigator.clipboard.writeText(text);
+                  // Best-effort UI feedback via title attr; toast not imported here
+                  alert('Resumo copiado para a área de transferência! 📋');
+                } catch {
+                  window.prompt('Copia este resumo:', text);
+                }
+              }}
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-secondary/60 hover:bg-secondary text-card-foreground transition-colors"
+              title="Copiar resumo do dia"
+            >
+              <Copy size={14} />
+              Resumo
+            </button>
           </div>
+
 
           {/* Expanded service list */}
           {expanded && (
