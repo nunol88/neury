@@ -5,6 +5,10 @@ const corsHeaders = {
 
 const GRAPHQL_URL = "https://api.proximometro.pt/graphql";
 
+// Allowlist: station IDs in the upstream API are alphanumeric/short. Restrict
+// strictly to avoid GraphQL injection via crafted query fragments.
+const STATION_ID_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,18 +42,23 @@ Deno.serve(async (req) => {
 
     if (action === "wait") {
       const stationId = url.searchParams.get("station_id");
-      if (!stationId) {
-        return new Response(JSON.stringify({ error: "station_id required" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (!stationId || !STATION_ID_PATTERN.test(stationId)) {
+        return new Response(
+          JSON.stringify({ error: "invalid station_id" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
 
       const res = await fetch(GRAPHQL_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: `{ station(id: "${stationId}") { id name waitTimes { destination { id name } arrivalTimes { timeLeft } live } } }`,
+          query:
+            "query GetStation($id: ID!) { station(id: $id) { id name waitTimes { destination { id name } arrivalTimes { timeLeft } live } } }",
+          variables: { id: stationId },
         }),
       });
       const json = await res.json();
@@ -62,10 +71,10 @@ Deno.serve(async (req) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (_error) {
     return new Response(
       JSON.stringify({ error: "Failed to fetch metro data" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

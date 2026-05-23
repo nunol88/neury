@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
+import { getBooleanSetting, NEW_REGISTRATIONS_SETTING } from '@/utils/appSettings';
 import { AuthContext, type AppRole } from '@/contexts/auth-context';
 
 // Valid roles that can be returned from the database
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             // Block new users if registrations are disabled
             if (!result.role) {
-              const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true';
+              const registrationsEnabled = await getBooleanSetting(NEW_REGISTRATIONS_SETTING);
               if (!registrationsEnabled) {
                 console.warn('New registrations disabled - signing out unregistered user');
                 await supabase.auth.signOut();
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchUserRole(session.user.id).then(async (result) => {
           // Block new users if registrations are disabled
           if (!result.role) {
-            const registrationsEnabled = localStorage.getItem(NEW_REGISTRATIONS_KEY) === 'true';
+            const registrationsEnabled = await getBooleanSetting(NEW_REGISTRATIONS_SETTING);
             if (!registrationsEnabled) {
               await supabase.auth.signOut();
               setUser(null);
