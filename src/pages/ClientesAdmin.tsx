@@ -201,6 +201,7 @@ const ClientesAdmin = () => {
             periodo_preferido: formData.periodo_preferido,
             duracao_preferida_horas: formData.duracao_preferida_horas,
             data_nascimento: formData.data_nascimento || null,
+            tags: formData.tags,
           } as any)
           .eq('id', editingClient.id);
 
@@ -217,6 +218,7 @@ const ClientesAdmin = () => {
           hora_preferida: null,
           duracao_preferida_horas: formData.duracao_preferida_horas,
           data_nascimento: formData.data_nascimento || null,
+          tags: formData.tags,
         });
       }
       await refetch();
