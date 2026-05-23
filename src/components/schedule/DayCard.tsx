@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { CalendarPlus, Check, Copy, Euro, StickyNote, Trash2 } from 'lucide-react';
+import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2 } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -31,6 +31,7 @@ interface DayCardProps {
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopyTask?: (task: Task) => void;
+  onRepeatNextWeek?: (task: Task) => void;
   onDeleteExtra?: (id: string) => void;
   onCopyDay?: (targetDate: string, targetDayLabel: string) => void;
   animationDelay?: number;
@@ -53,6 +54,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onToggleStatus,
   onTogglePayment,
   onCopyTask,
+  onRepeatNextWeek,
   onDeleteExtra,
   onCopyDay,
   animationDelay = 0,
@@ -127,6 +129,7 @@ const DayCard: React.FC<DayCardProps> = ({
   const completedTasks = tasks.filter(t => t.completed).length;
   const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length && extras.length === 0;
   const isEmpty = tasks.length === 0 && extras.length === 0;
+  const isOverloaded = tasks.length >= 3;
 
   return (
     <div
@@ -193,8 +196,26 @@ const DayCard: React.FC<DayCardProps> = ({
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
+          {isOverloaded && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-warning/15 text-warning text-[10px] font-bold border border-warning/30"
+                    aria-label={`Dia sobrecarregado com ${tasks.length} serviços`}
+                  >
+                    <AlertTriangle size={10} />
+                    {tasks.length}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Dia sobrecarregado — {tasks.length} serviços
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {isAdmin && onCopyDay && (
             <button
               onClick={(e) => {
@@ -263,6 +284,7 @@ const DayCard: React.FC<DayCardProps> = ({
                 onToggleStatus={onToggleStatus}
                 onTogglePayment={onTogglePayment}
                 onCopy={onCopyTask}
+                onRepeatNextWeek={onRepeatNextWeek}
                 animationDelay={index * 50}
               />
             ))}
