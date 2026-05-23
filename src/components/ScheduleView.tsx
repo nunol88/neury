@@ -2079,6 +2079,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             })}
             onScrollToToday={scrollToToday}
             isAdmin={isAdmin}
+            onArrived={(id) => registerArrival(id)}
+            onLeft={(id) => registerDeparture(id, true, role || 'user')}
           />
         </div>
       )}
