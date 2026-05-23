@@ -41,6 +41,8 @@ import ExtraValueModal from '@/components/schedule/ExtraValueModal';
 import FavoritesPromptDialog from '@/components/schedule/FavoritesPromptDialog';
 import CopyReportModal, { type Relocation, type OverloadedDay } from '@/components/schedule/CopyReportModal';
 import CopyConflictDialog from '@/components/schedule/CopyConflictDialog';
+import PendingCompletionBanner from '@/components/schedule/PendingCompletionBanner';
+import { usePendingCompletions } from '@/hooks/usePendingCompletions';
 
 import {
   generateMonthsConfig,
