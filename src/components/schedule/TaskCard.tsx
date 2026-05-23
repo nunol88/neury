@@ -16,6 +16,7 @@ interface TaskCardProps {
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopy?: (task: Task) => void;
   onRepeatNextWeek?: (task: Task) => void;
+  isOverdue?: boolean;
   animationDelay?: number;
 }
 
@@ -31,6 +32,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onTogglePayment,
   onCopy,
   onRepeatNextWeek,
+  isOverdue = false,
   animationDelay = 0,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
