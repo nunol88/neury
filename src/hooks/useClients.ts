@@ -21,6 +21,7 @@ export interface Client {
   hora_preferida: string | null; // ex: "09:00"
   duracao_preferida_horas: number; // ex: 3
   data_nascimento: string | null; // yyyy-mm-dd
+  tags: string[]; // ex: ["vivenda", "tem cão"]
 }
 
 export const useClients = () => {
@@ -55,6 +56,7 @@ export const useClients = () => {
           hora_preferida: r.hora_preferida || null,
           duracao_preferida_horas: typeof r.duracao_preferida_horas === 'number' ? r.duracao_preferida_horas : Number(r.duracao_preferida_horas) || 3,
           data_nascimento: r.data_nascimento || null,
+          tags: Array.isArray(r.tags) ? r.tags : [],
         };
       }));
     } catch (error: any) {
@@ -108,6 +110,7 @@ export const useClients = () => {
           hora_preferida: clientData.hora_preferida,
           duracao_preferida_horas: clientData.duracao_preferida_horas ?? 3,
           data_nascimento: clientData.data_nascimento || null,
+          tags: clientData.tags || [],
         } as any)
         .select()
         .single();
@@ -130,6 +133,7 @@ export const useClients = () => {
         hora_preferida: d.hora_preferida || null,
         duracao_preferida_horas: typeof d.duracao_preferida_horas === 'number' ? d.duracao_preferida_horas : Number(d.duracao_preferida_horas) || 3,
         data_nascimento: d.data_nascimento || null,
+        tags: Array.isArray(d.tags) ? d.tags : [],
       };
 
       setClients(prev => sortClients([...prev, newClient]));
