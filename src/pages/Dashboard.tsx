@@ -709,6 +709,11 @@ recommend short-term decisions and define one primary focus for improvement.
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
+        {/* Month Projection (only visible if viewing current month-ish) */}
+        <div className="mb-6">
+          <MonthProjectionCard monthTasks={Object.values(allTasks).flat()} />
+        </div>
+
 
         {/* Hero Stats Cards with Glassmorphism */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
