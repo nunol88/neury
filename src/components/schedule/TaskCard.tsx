@@ -16,6 +16,7 @@ interface TaskCardProps {
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopy?: (task: Task) => void;
   onRepeatNextWeek?: (task: Task) => void;
+  isOverdue?: boolean;
   animationDelay?: number;
 }
 
@@ -31,6 +32,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onTogglePayment,
   onCopy,
   onRepeatNextWeek,
+  isOverdue = false,
   animationDelay = 0,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -92,7 +94,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
       } ${
         task.completed
           ? 'bg-success/5 border-success/30'
-          : 'bg-card border-border/60 hover:border-primary/30'
+          : isOverdue
+            ? 'bg-card border-destructive/40 border-l-4 border-l-destructive hover:border-destructive/60'
+            : 'bg-card border-border/60 hover:border-primary/30'
       }`}
     >
       {/* Drag handle */}
@@ -145,6 +149,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {isOverdue && !task.completed && (
+            <span className="text-[10px] font-bold bg-destructive/15 text-destructive px-1.5 py-0.5 rounded-md border border-destructive/30 animate-pulse">
+              Por marcar
+            </span>
+          )}
           <Clock size={10} className="text-muted-foreground" />
           <span className="text-xs bg-secondary px-2 py-0.5 rounded-md text-muted-foreground font-medium">
             {task.startTime} - {task.endTime}

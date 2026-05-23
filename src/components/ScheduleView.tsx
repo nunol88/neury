@@ -41,6 +41,8 @@ import ExtraValueModal from '@/components/schedule/ExtraValueModal';
 import FavoritesPromptDialog from '@/components/schedule/FavoritesPromptDialog';
 import CopyReportModal, { type Relocation, type OverloadedDay } from '@/components/schedule/CopyReportModal';
 import CopyConflictDialog from '@/components/schedule/CopyConflictDialog';
+import PendingCompletionBanner from '@/components/schedule/PendingCompletionBanner';
+import { usePendingCompletions } from '@/hooks/usePendingCompletions';
 
 import {
   generateMonthsConfig,
@@ -65,6 +67,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
   const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
+  const pendingCompletions = usePendingCompletions(allTasks);
   const { clients, addClient } = useClients();
   const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate } = useExtras();
   const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
@@ -2054,6 +2057,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         />
       </div>
 
+      {/* Pending completions banner — overdue tasks not yet marked */}
+      {pendingCompletions.count > 0 && (
+        <div className="max-w-7xl mx-auto px-4 mt-4 print:hidden relative z-0">
+          <PendingCompletionBanner
+            overdueTasks={pendingCompletions.overdueTasks}
+            onToggleStatus={handleToggleStatus}
+            userRole={role || 'user'}
+          />
+        </div>
+      )}
+
       {/* Today Summary Card - Only show in current month */}
       {activeMonth === getCurrentMonthKey() && (
         <div className="max-w-7xl mx-auto px-4 mt-4 print:hidden relative z-0">
@@ -2097,6 +2111,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                onCopyTask={isAdmin ? handleCopyTask : undefined}
                onRepeatNextWeek={isAdmin ? handleRepeatNextWeek : undefined}
                onDeleteExtra={deleteExtra}
+               isOverdue={pendingCompletions.isOverdue}
                onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
                  setCopyDayTarget({ date: targetDate, label: targetDayLabel });
                  setShowCopyDayModal(true);

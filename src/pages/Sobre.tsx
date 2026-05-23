@@ -31,6 +31,18 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.13.0',
+    date: '2026-05-23',
+    title: '🔔 Lembrete de Serviços Por Marcar',
+    summary: 'A app passa a avisar de forma visível sempre que um serviço já passou da hora de fim e continua sem ser marcado como concluído — para deixar de "escapar".',
+    changes: [
+      { text: 'Banner vermelho no topo dos Agendamentos com lista de serviços pendentes (hoje + dias anteriores) e botões "Concluído" e "Marcar todos"', type: 'new' },
+      { text: 'Cards de serviços por marcar ganham borda vermelha e chip "Por marcar" ao lado do horário', type: 'new' },
+      { text: 'Badge vermelho com contagem nos dias que ainda têm serviços pendentes em atraso', type: 'new' },
+      { text: 'Re-avalia automaticamente a cada minuto — um serviço de hoje passa a "esquecido" assim que o horário de fim acaba', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.12.0',
     date: '2026-05-23',
     title: '🧹 Sidebar Mais Limpa, Busca Global e Repetir +7 dias',
