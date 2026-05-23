@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
+import { SeoHead } from '@/components/SeoHead';
 
 import { REMEMBER_USER_KEY, EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
 
