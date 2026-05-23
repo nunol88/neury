@@ -446,7 +446,7 @@ const Login = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 };
 
