@@ -20,6 +20,7 @@ export interface Client {
   periodo_preferido: PeriodoPreferido;
   hora_preferida: string | null; // ex: "09:00"
   duracao_preferida_horas: number; // ex: 3
+  data_nascimento: string | null; // yyyy-mm-dd
 }
 
 export const useClients = () => {
@@ -53,6 +54,7 @@ export const useClients = () => {
           periodo_preferido: (['manha', 'tarde', 'noite'].includes(r.periodo_preferido) ? r.periodo_preferido : null) as PeriodoPreferido,
           hora_preferida: r.hora_preferida || null,
           duracao_preferida_horas: typeof r.duracao_preferida_horas === 'number' ? r.duracao_preferida_horas : Number(r.duracao_preferida_horas) || 3,
+          data_nascimento: r.data_nascimento || null,
         };
       }));
     } catch (error: any) {
@@ -105,6 +107,7 @@ export const useClients = () => {
           periodo_preferido: clientData.periodo_preferido,
           hora_preferida: clientData.hora_preferida,
           duracao_preferida_horas: clientData.duracao_preferida_horas ?? 3,
+          data_nascimento: clientData.data_nascimento || null,
         } as any)
         .select()
         .single();
@@ -126,6 +129,7 @@ export const useClients = () => {
         periodo_preferido: (['manha', 'tarde', 'noite'].includes(d.periodo_preferido) ? d.periodo_preferido : null) as PeriodoPreferido,
         hora_preferida: d.hora_preferida || null,
         duracao_preferida_horas: typeof d.duracao_preferida_horas === 'number' ? d.duracao_preferida_horas : Number(d.duracao_preferida_horas) || 3,
+        data_nascimento: d.data_nascimento || null,
       };
 
       setClients(prev => sortClients([...prev, newClient]));
