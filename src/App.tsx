@@ -18,6 +18,7 @@ import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
 import Definicoes from "./pages/Definicoes";
+import Recados from "./pages/Recados";
 import RouteSeo from "@/components/RouteSeo";
 
 const queryClient = new QueryClient();
@@ -148,6 +149,26 @@ const App = () => (
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AppLayout>
                     <Definicoes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/recados"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Recados />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/neury/recados"
+              element={
+                <ProtectedRoute allowedRoles={['neury']}>
+                  <AppLayout>
+                    <Recados />
                   </AppLayout>
                 </ProtectedRoute>
               }
