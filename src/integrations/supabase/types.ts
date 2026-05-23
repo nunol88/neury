@@ -126,6 +126,7 @@ export type Database = {
           periodo_preferido: string | null
           preco_hora: string | null
           recibo_verde: boolean
+          tags: string[]
           telefone: string | null
           updated_at: string
         }
@@ -144,6 +145,7 @@ export type Database = {
           periodo_preferido?: string | null
           preco_hora?: string | null
           recibo_verde?: boolean
+          tags?: string[]
           telefone?: string | null
           updated_at?: string
         }
@@ -162,6 +164,7 @@ export type Database = {
           periodo_preferido?: string | null
           preco_hora?: string | null
           recibo_verde?: boolean
+          tags?: string[]
           telefone?: string | null
           updated_at?: string
         }

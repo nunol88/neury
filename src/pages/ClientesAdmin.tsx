@@ -5,14 +5,16 @@ import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
 import { useClientDebts } from '@/hooks/useClientDebts';
+import { useNextServices } from '@/hooks/useNextServices';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMonthsConfig } from '@/utils/monthConfig';
-import { 
-  Users, Pencil, Trash2, Save, X, Plus, ArrowLeft, 
+import {
+  Users, Pencil, Trash2, Save, X, Plus, ArrowLeft,
   Phone, MapPin, Loader2, LogOut, History, Euro, Clock,
   CheckCircle, Calendar, TrendingUp, ChevronDown, ChevronUp, Sun, Moon,
-  Navigation, Search, CalendarDays, Sparkles, FileText, Star
+  Navigation, Search, CalendarDays, Sparkles, FileText, Star,
+  MessageCircle, Copy, Upload, Tag, Cake, AlertTriangle, CalendarPlus,
 } from 'lucide-react';
 import { generateClientReportPdf } from '@/utils/clientReportPdf';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,11 @@ import { ClientsViewSkeleton } from '@/components/ui/skeleton-loader';
 import ClientAvatar from '@/components/ui/client-avatar';
 import EmptyState from '@/components/ui/empty-state';
 import LiquidGlassReportModal from '@/components/clients/LiquidGlassReportModal';
+import ImportClientsModal from '@/components/clients/ImportClientsModal';
+import { openWhatsApp, buildServiceConfirmationMessage, normalizePhoneForWhatsApp } from '@/utils/whatsappMessages';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { pt } from 'date-fns/locale';
+
 
 const ClientesAdmin = () => {
   const { user, role, signOut } = useAuth();
@@ -36,6 +43,8 @@ const ClientesAdmin = () => {
   
   const { clientStats, getClientHistory, getStatsForMonth, getMonthsWithData } = useClientStats(allTasks, clients, monthsConfig);
   const debtsByClient = useClientDebts(allTasks);
+  const nextServices = useNextServices(allTasks);
+
   
   // Get current month key
   const getCurrentMonthKey = (): string => {
@@ -78,8 +87,15 @@ const ClientesAdmin = () => {
     periodo_preferido: null as 'manha' | 'tarde' | 'noite' | null,
     duracao_preferida_horas: 3,
     data_nascimento: '' as string,
+    tags: [] as string[],
   });
+  const [tagInput, setTagInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  // New: filters, sorting, bulk selection, import
+  const [sortBy, setSortBy] = useState<'name' | 'favorites' | 'debt' | 'recent' | 'rate' | 'frequent'>('favorites');
+  const [filterChip, setFilterChip] = useState<'all' | 'favoritos' | 'devedores' | 'inativos' | 'aniversario' | 'recibo'>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showImport, setShowImport] = useState(false);
 
   // Get stats for selected month
   const monthlyStats = useMemo(() => {
@@ -95,17 +111,204 @@ const ClientesAdmin = () => {
     return monthlyStats.clients;
   }, [selectedMonth, monthlyStats, clientStats]);
 
-  // Filter clients based on search term
+  // Helper: birthday this month / days until birthday
+  const birthdayInfo = (client: Client): { isBirthdayMonth: boolean; daysUntil: number | null } => {
+    if (!client.data_nascimento) return { isBirthdayMonth: false, daysUntil: null };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const [, m, d] = client.data_nascimento.split('-').map(Number);
+    if (!m || !d) return { isBirthdayMonth: false, daysUntil: null };
+    const isBirthdayMonth = (today.getMonth() + 1) === m;
+    let next = new Date(today.getFullYear(), m - 1, d);
+    if (next < today) next = new Date(today.getFullYear() + 1, m - 1, d);
+    const daysUntil = Math.floor((next.getTime() - today.getTime()) / 86_400_000);
+    return { isBirthdayMonth, daysUntil };
+  };
+
+  // Filter + sort clients
   const filteredClients = useMemo(() => {
-    if (!searchTerm.trim()) return clients;
-    const term = searchTerm.toLowerCase().trim();
-    return clients.filter(client =>
-      client.nome.toLowerCase().includes(term) ||
-      client.telefone.toLowerCase().includes(term) ||
-      client.morada.toLowerCase().includes(term) ||
-      client.notas.toLowerCase().includes(term)
-    );
-  }, [clients, searchTerm]);
+    const today = new Date();
+    let list = [...clients];
+
+    // Search
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(c =>
+        c.nome.toLowerCase().includes(term) ||
+        c.telefone.toLowerCase().includes(term) ||
+        c.morada.toLowerCase().includes(term) ||
+        c.notas.toLowerCase().includes(term) ||
+        (c.tags || []).some(t => t.toLowerCase().includes(term)),
+      );
+    }
+
+    // Filter chips
+    if (filterChip === 'favoritos') list = list.filter(c => c.favorito);
+    if (filterChip === 'devedores') list = list.filter(c => debtsByClient[c.nome]?.totalDue > 0);
+    if (filterChip === 'recibo') list = list.filter(c => c.recibo_verde);
+    if (filterChip === 'inativos') {
+      list = list.filter(c => {
+        const s = clientStats[c.nome];
+        if (!s?.lastService) return true;
+        return differenceInDays(today, parseISO(s.lastService)) > 30;
+      });
+    }
+    if (filterChip === 'aniversario') {
+      list = list.filter(c => birthdayInfo(c).isBirthdayMonth);
+    }
+
+    // Sort
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'name': return a.nome.localeCompare(b.nome);
+        case 'favorites':
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+          return a.nome.localeCompare(b.nome);
+        case 'debt': {
+          const da = debtsByClient[a.nome]?.totalDue || 0;
+          const db = debtsByClient[b.nome]?.totalDue || 0;
+          return db - da;
+        }
+        case 'recent': {
+          const la = clientStats[a.nome]?.lastService || '0';
+          const lb = clientStats[b.nome]?.lastService || '0';
+          return lb.localeCompare(la);
+        }
+        case 'rate': {
+          const ra = parseFloat(a.preco_hora) || 0;
+          const rb = parseFloat(b.preco_hora) || 0;
+          return rb - ra;
+        }
+        case 'frequent': {
+          const ca = clientStats[a.nome]?.totalAgendamentos || 0;
+          const cb = clientStats[b.nome]?.totalAgendamentos || 0;
+          return cb - ca;
+        }
+      }
+    });
+
+    return list;
+  }, [clients, searchTerm, filterChip, sortBy, debtsByClient, clientStats]);
+
+  // Aggregate insights (top of page)
+  const insights = useMemo(() => {
+    const today = new Date();
+    let inactiveCount = 0;
+    let totalDebt = 0;
+    let totalUnpaidServices = 0;
+    let birthdayCount = 0;
+    const ytdStart = new Date(today.getFullYear(), 0, 1);
+    const ytdByClient: Record<string, number> = {};
+
+    clients.forEach(c => {
+      const s = clientStats[c.nome];
+      if (s?.lastService && differenceInDays(today, parseISO(s.lastService)) > 30) inactiveCount++;
+      const d = debtsByClient[c.nome];
+      if (d) { totalDebt += d.totalDue; totalUnpaidServices += d.unpaidCount; }
+      if (birthdayInfo(c).isBirthdayMonth) birthdayCount++;
+    });
+
+    Object.values(allTasks).flat().forEach(t => {
+      if (!t.completed) return;
+      if (parseISO(t.date) < ytdStart) return;
+      ytdByClient[t.client] = (ytdByClient[t.client] || 0) + (parseFloat(t.price || '0') || 0);
+    });
+
+    const top3 = Object.entries(ytdByClient)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([name, total]) => ({ name, total }));
+
+    return { inactiveCount, totalDebt, totalUnpaidServices, birthdayCount, top3 };
+  }, [clients, clientStats, debtsByClient, allTasks]);
+
+  // Tag helpers
+  const addTag = () => {
+    const t = tagInput.trim().toLowerCase();
+    if (!t) return;
+    if (formData.tags.includes(t)) { setTagInput(''); return; }
+    setFormData(prev => ({ ...prev, tags: [...prev.tags, t] }));
+    setTagInput('');
+  };
+  const removeTag = (t: string) => {
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(x => x !== t) }));
+  };
+
+  // Bulk selection helpers
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelected(new Set());
+
+  const handleBulkFavorite = async (favorito: boolean) => {
+    for (const id of selected) {
+      const c = clients.find(x => x.id === id);
+      if (c && c.favorito !== favorito) await toggleFavorite(id);
+    }
+    toast({ title: favorito ? 'Marcados como favoritos' : 'Removidos dos favoritos' });
+    clearSelection();
+  };
+  const handleBulkExportCsv = () => {
+    const rows = clients.filter(c => selected.has(c.id));
+    const csv = ['Nome,Telefone,Morada,€/h,Tags']
+      .concat(rows.map(c => [
+        `"${c.nome.replace(/"/g, '""')}"`,
+        `"${c.telefone}"`,
+        `"${(c.morada || '').replace(/"/g, '""')}"`,
+        c.preco_hora,
+        `"${(c.tags || []).join('; ')}"`,
+      ].join(',')))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${rows.length} clientes exportados` });
+  };
+  const handleBulkWhatsApp = () => {
+    const rows = clients.filter(c => selected.has(c.id) && c.telefone);
+    if (rows.length === 0) { toast({ title: 'Nenhum tem telefone', variant: 'destructive' }); return; }
+    rows.forEach((c, idx) => {
+      // Stagger to avoid popup blocker
+      setTimeout(() => {
+        openWhatsApp(c.telefone, `Olá ${c.nome.split(' ')[0]}! 🌸`);
+      }, idx * 150);
+    });
+  };
+
+  // Import handler
+  const handleImportClients = async (rows: { nome: string; telefone: string; morada: string }[]) => {
+    let added = 0;
+    let skipped = 0;
+    for (const r of rows) {
+      if (clientExists(r.nome)) { skipped++; continue; }
+      const result = await addClient({
+        nome: r.nome,
+        telefone: r.telefone || '',
+        morada: r.morada || '',
+        preco_hora: '7',
+        notas: '',
+        recibo_verde: false,
+        favorito: false,
+        dias_preferidos: [],
+        frequencia_preferida: 'semanal',
+        periodo_preferido: null,
+        hora_preferida: null,
+        duracao_preferida_horas: 3,
+        data_nascimento: null,
+        tags: [],
+      });
+      if (result) added++;
+    }
+    toast({ title: `${added} criados, ${skipped} ignorados (duplicados)` });
+    setShowImport(false);
+  };
+
 
   // Get months for selector (sorted newest first) - must be before any early return
   const sortedMonths = useMemo(() => {
@@ -120,8 +323,9 @@ const ClientesAdmin = () => {
     setFormData({
       nome: '', telefone: '', morada: '', preco_hora: '7', notas: '',
       dias_preferidos: [], frequencia_preferida: 'semanal', periodo_preferido: null,
-      duracao_preferida_horas: 3, data_nascimento: '',
+      duracao_preferida_horas: 3, data_nascimento: '', tags: [],
     });
+    setTagInput('');
     setEditingClient(null);
     setShowForm(false);
   };
@@ -139,6 +343,25 @@ const ClientesAdmin = () => {
       periodo_preferido: client.periodo_preferido,
       duracao_preferida_horas: client.duracao_preferida_horas || 3,
       data_nascimento: client.data_nascimento || '',
+      tags: client.tags || [],
+    });
+    setShowForm(true);
+  };
+
+  const handleDuplicate = (client: Client) => {
+    setEditingClient(null);
+    setFormData({
+      nome: `${client.nome} (cópia)`,
+      telefone: client.telefone,
+      morada: client.morada,
+      preco_hora: client.preco_hora,
+      notas: client.notas,
+      dias_preferidos: client.dias_preferidos || [],
+      frequencia_preferida: client.frequencia_preferida || 'semanal',
+      periodo_preferido: client.periodo_preferido,
+      duracao_preferida_horas: client.duracao_preferida_horas || 3,
+      data_nascimento: client.data_nascimento || '',
+      tags: client.tags || [],
     });
     setShowForm(true);
   };
@@ -174,6 +397,7 @@ const ClientesAdmin = () => {
             periodo_preferido: formData.periodo_preferido,
             duracao_preferida_horas: formData.duracao_preferida_horas,
             data_nascimento: formData.data_nascimento || null,
+            tags: formData.tags,
           } as any)
           .eq('id', editingClient.id);
 
@@ -190,6 +414,7 @@ const ClientesAdmin = () => {
           hora_preferida: null,
           duracao_preferida_horas: formData.duracao_preferida_horas,
           data_nascimento: formData.data_nascimento || null,
+          tags: formData.tags,
         });
       }
       await refetch();
@@ -332,16 +557,67 @@ const ClientesAdmin = () => {
     <div className="bg-background">
       <div className="max-w-4xl mx-auto p-4">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Users size={24} className="text-primary" />
             Gestão de Clientes
           </h1>
-          <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90">
-            <Plus size={16} className="mr-1" />
-            Novo Cliente
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowImport(true)}>
+              <Upload size={16} className="mr-1" />
+              Importar
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="bg-primary hover:bg-primary/90">
+              <Plus size={16} className="mr-1" />
+              Novo Cliente
+            </Button>
+          </div>
         </div>
+
+        {/* Insights row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+          <button
+            onClick={() => setFilterChip(filterChip === 'inativos' ? 'all' : 'inativos')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'inativos' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">Sem serviço 30d+</p>
+            <p className="text-lg font-bold text-foreground">{insights.inactiveCount}</p>
+          </button>
+          <button
+            onClick={() => setFilterChip(filterChip === 'devedores' ? 'all' : 'devedores')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'devedores' ? 'border-destructive bg-destructive/10' : 'border-border bg-card hover:border-destructive/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">Em dívida</p>
+            <p className="text-lg font-bold text-destructive">€{insights.totalDebt.toFixed(0)}</p>
+            <p className="text-[10px] text-muted-foreground">{insights.totalUnpaidServices} serviços</p>
+          </button>
+          <button
+            onClick={() => setFilterChip(filterChip === 'aniversario' ? 'all' : 'aniversario')}
+            className={`text-left p-3 rounded-xl border transition ${
+              filterChip === 'aniversario' ? 'border-pink-500 bg-pink-500/10' : 'border-border bg-card hover:border-pink-500/40'
+            }`}
+          >
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">🎂 Este mês</p>
+            <p className="text-lg font-bold text-pink-500">{insights.birthdayCount}</p>
+          </button>
+          <div className="p-3 rounded-xl border border-border bg-card">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Top YTD</p>
+            {insights.top3.length === 0 ? (
+              <p className="text-xs text-muted-foreground">—</p>
+            ) : (
+              insights.top3.map((t, i) => (
+                <p key={t.name} className="text-[11px] text-foreground truncate">
+                  {i + 1}. {t.name} <span className="text-success font-semibold">€{t.total.toFixed(0)}</span>
+                </p>
+              ))
+            )}
+          </div>
+        </div>
+
 
         {/* Month Selector - Compact horizontal scroll */}
         <div className="mb-6">
@@ -513,13 +789,13 @@ const ClientesAdmin = () => {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search + Filter + Sort Bar */}
+        <div className="mb-4 space-y-2">
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Pesquisar por nome, telefone, morada..."
+              placeholder="Pesquisar por nome, telefone, morada, tag..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-10 py-3 border border-border rounded-xl bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
@@ -533,12 +809,82 @@ const ClientesAdmin = () => {
               </button>
             )}
           </div>
-          {searchTerm && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {filteredClients.length} de {clients.length} cliente{clients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
-            </p>
-          )}
+
+          {/* Filter chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              { v: 'all', label: 'Todos' },
+              { v: 'favoritos', label: '⭐ Favoritos' },
+              { v: 'devedores', label: '💸 Devedores' },
+              { v: 'inativos', label: '⏳ Inativos 30d+' },
+              { v: 'aniversario', label: '🎂 Aniv. este mês' },
+              { v: 'recibo', label: '🧾 Recibo verde' },
+            ] as const).map(c => (
+              <button
+                key={c.v}
+                onClick={() => setFilterChip(c.v)}
+                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition ${
+                  filterChip === c.v
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+
+            <div className="ml-auto flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Ordenar:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-card border border-border rounded-md px-2 py-1 text-foreground"
+              >
+                <option value="favorites">Favoritos primeiro</option>
+                <option value="name">Nome (A-Z)</option>
+                <option value="debt">Maior dívida</option>
+                <option value="recent">Mais recente</option>
+                <option value="rate">€/h mais alto</option>
+                <option value="frequent">Mais frequente</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {filteredClients.length} de {clients.length} cliente{clients.length !== 1 ? 's' : ''}
+          </p>
         </div>
+
+        {/* Bulk action bar */}
+        {selected.size > 0 && (
+          <div className="sticky top-2 z-30 mb-4 p-3 rounded-xl bg-primary text-primary-foreground shadow-lg flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold">{selected.size} selecionado{selected.size !== 1 ? 's' : ''}</span>
+            <Button size="sm" variant="secondary" onClick={handleBulkWhatsApp}>
+              <MessageCircle size={14} className="mr-1" /> WhatsApp
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => handleBulkFavorite(true)}>
+              <Star size={14} className="mr-1" /> Favoritar
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => handleBulkFavorite(false)}>
+              Remover favorito
+            </Button>
+            <Button size="sm" variant="secondary" onClick={handleBulkExportCsv}>
+              <FileText size={14} className="mr-1" /> Exportar CSV
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto text-primary-foreground" onClick={clearSelection}>
+              <X size={14} className="mr-1" /> Limpar
+            </Button>
+          </div>
+        )}
+
+        {/* Import modal */}
+        {showImport && (
+          <ImportClientsModal
+            onImport={handleImportClients}
+            onClose={() => setShowImport(false)}
+          />
+        )}
+
 
         {/* Form Modal */}
         {showForm && (
@@ -620,6 +966,36 @@ const ClientesAdmin = () => {
                     Opcional — usada para lembrar aniversários no Dashboard.
                   </p>
                 </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-card-foreground mb-1">
+                    Tags / Etiquetas
+                  </label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {formData.tags.map(t => (
+                      <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {t}
+                        <button type="button" onClick={() => removeTag(t)} className="hover:text-destructive">
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                      className="flex-1 p-2 border border-border rounded-lg bg-input text-foreground text-sm"
+                      placeholder="ex: vivenda, tem cão, porteiro..."
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={addTag}>+</Button>
+                  </div>
+                </div>
+
+
 
 
                 {/* === Preferências de agendamento === */}
@@ -924,19 +1300,34 @@ const ClientesAdmin = () => {
           <div className="grid gap-3">
             {filteredClients.map((client) => {
               const stats = activeClientStats[client.nome];
+              const lifetimeStats = clientStats[client.nome];
               const isExpanded = expandedClient === client.id;
-              
+              const next = nextServices[client.nome];
+              const bday = birthdayInfo(client);
+              const isSelected = selected.has(client.id);
+
               return (
-                <div 
-                  key={client.id} 
-                  className="bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition overflow-hidden"
+                <div
+                  key={client.id}
+                  className={`bg-card rounded-xl shadow-sm border transition overflow-hidden ${
+                    isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:shadow-md'
+                  }`}
                 >
                   <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(client.id)}
+                          className="mt-2 h-4 w-4 accent-primary cursor-pointer"
+                          aria-label="Selecionar cliente"
+                        />
+                        <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <ClientAvatar name={client.nome} size="lg" />
                           <div className="min-w-0">
+
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-bold text-card-foreground text-lg">{client.nome}</h3>
                               <button
@@ -1037,8 +1428,71 @@ const ClientesAdmin = () => {
                         {client.notas && (
                           <p className="mt-2 text-xs text-muted-foreground italic">{client.notas}</p>
                         )}
+                        {/* Tags */}
+                        {(client.tags || []).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {client.tags.map(t => (
+                              <span key={t} className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                                <Tag size={9} />{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {/* Mini stats + next service + birthday */}
+                        {(lifetimeStats?.totalAgendamentos > 0 || next || bday.isBirthdayMonth) && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {lifetimeStats?.totalAgendamentos > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                {lifetimeStats.concluidos} ✓ · {lifetimeStats.totalHours.toFixed(0)}h · €{lifetimeStats.totalRevenue.toFixed(0)}
+                                {lifetimeStats.lastService && ` · há ${differenceInDays(new Date(), parseISO(lifetimeStats.lastService))}d`}
+                              </span>
+                            )}
+                            {next && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-medium">
+                                <CalendarPlus size={10} className="inline mr-0.5" />
+                                Próximo: {format(parseISO(next.date), "d MMM", { locale: pt })} {next.startTime}
+                                {next.daysAhead === 0 ? ' (hoje)' : next.daysAhead === 1 ? ' (amanhã)' : ` (em ${next.daysAhead}d)`}
+                              </span>
+                            )}
+                            {!next && client.favorito && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+                                <AlertTriangle size={10} className="inline mr-0.5" />
+                                Sem próximo serviço
+                              </span>
+                            )}
+                            {bday.daysUntil !== null && bday.daysUntil <= 14 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/15 text-pink-600 dark:text-pink-400 font-medium">
+                                <Cake size={10} className="inline mr-0.5" />
+                                {bday.daysUntil === 0 ? 'Aniversário hoje!' : `Aniv. em ${bday.daysUntil}d`}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {client.telefone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openWhatsApp(client.telefone, next
+                              ? buildServiceConfirmationMessage(client.nome, next.date, next.startTime, next.endTime)
+                              : `Olá ${client.nome.split(' ')[0]}! 🌸`)}
+                            className="text-green-600 hover:bg-green-500/10"
+                            title="Enviar WhatsApp"
+                          >
+                            <MessageCircle size={14} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDuplicate(client)}
+                          title="Duplicar cliente"
+                        >
+                          <Copy size={14} />
+                        </Button>
+
                         {client.morada && (
                           <Button
                             variant="outline"

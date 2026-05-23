@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
