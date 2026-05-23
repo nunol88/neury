@@ -149,6 +149,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {isOverdue && !task.completed && (
+            <span className="text-[10px] font-bold bg-destructive/15 text-destructive px-1.5 py-0.5 rounded-md border border-destructive/30 animate-pulse">
+              Por marcar
+            </span>
+          )}
           <Clock size={10} className="text-muted-foreground" />
           <span className="text-xs bg-secondary px-2 py-0.5 rounded-md text-muted-foreground font-medium">
             {task.startTime} - {task.endTime}
