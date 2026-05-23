@@ -31,6 +31,22 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.15.1',
+    date: '2026-05-23',
+    title: '📊 Rentabilidade por Cliente: 12 métricas',
+    summary: 'O card "Rentabilidade por Cliente" no Dashboard ganhou um nível de análise totalmente novo: score 0-100, €/hora líquido (com despesas), tendência dos últimos 3 meses, frequência média, tempo médio por serviço, YTD, total de vida, % pago e muito mais. Inclui modo tabela com 13 colunas, filtros e ordenação.',
+    changes: [
+      { text: 'Score de rentabilidade 0-100 por cliente (€/h + frequência + fiabilidade de pagamento)', type: 'new' },
+      { text: '€/hora líquido: desconta automaticamente despesas do dia alocadas proporcionalmente', type: 'new' },
+      { text: 'Tendência ↑/↓ comparando últimos 3 meses vs. 3 meses anteriores', type: 'new' },
+      { text: 'Novas métricas: horas/mês, frequência média de visita, tempo médio por serviço, YTD, vida, % pago, dias desde último serviço', type: 'new' },
+      { text: 'Etiquetas automáticas: Favorito, Ocasional, Perdido (sem serviço há +30 dias)', type: 'new' },
+      { text: 'Filtros (todos / favoritos / devedores / ativos) e período (30d / 3m / YTD / sempre)', type: 'new' },
+      { text: 'Modo tabela com 13 colunas ordenáveis para análise detalhada', type: 'new' },
+      { text: 'Destaques no cabeçalho: cliente mais rentável e menos rentável', type: 'improvement' },
+    ],
+  },
+  {
     version: '2.15.0',
     date: '2026-05-23',
     title: '🎂 Aniversários, Favoritos Parados e Resumo do Dia',

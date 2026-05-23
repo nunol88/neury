@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useClients } from '@/hooks/useClients';
+import { useExtras } from '@/hooks/useExtras';
 import { useTheme } from '@/hooks/useTheme';
 import { CountUp } from '@/hooks/useCountUp';
 import { Sparkline, TrendIndicator } from '@/components/ui/sparkline';
@@ -94,6 +95,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { allTasks, loading: loadingAgendamentos } = useAgendamentos();
   const { clients, loading: loadingClients } = useClients();
+  const { extras } = useExtras();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -1161,7 +1163,11 @@ recommend short-term decisions and define one primary focus for improvement.
 
         {/* Client Profitability (real €/h per client, year-to-date) */}
         <div className="mt-6">
-          <ClientProfitabilityCard allTasksFlat={Object.values(allTasks).flat()} />
+          <ClientProfitabilityCard
+            allTasksFlat={Object.values(allTasks).flat()}
+            extras={extras}
+            clients={clients}
+          />
         </div>
       </div>
     </div>
