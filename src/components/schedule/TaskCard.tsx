@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User, Copy } from 'lucide-react';
+import { Phone, MapPin, Trash2, Check, Pencil, Navigation, GripVertical, Euro, Clock, StickyNote, Shield, User, Copy, Repeat } from 'lucide-react';
 import ClientAvatar from '@/components/ui/client-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -15,6 +15,7 @@ interface TaskCardProps {
   onToggleStatus: (id: string, completed: boolean, userRole?: string) => void;
   onTogglePayment?: (id: string, pago: boolean) => void;
   onCopy?: (task: Task) => void;
+  onRepeatNextWeek?: (task: Task) => void;
   animationDelay?: number;
 }
 
@@ -29,6 +30,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onToggleStatus,
   onTogglePayment,
   onCopy,
+  onRepeatNextWeek,
   animationDelay = 0,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -276,6 +278,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
           
           {isAdmin && (
             <>
+              {onRepeatNextWeek && (
+                <button
+                  onClick={() => onRepeatNextWeek(task)}
+                  className="p-1.5 hover:bg-primary/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                  title="Repetir na próxima semana"
+                >
+                  <Repeat size={13} className="text-primary" />
+                </button>
+              )}
               {onCopy && (
                 <button onClick={() => onCopy(task)} className="p-1.5 hover:bg-success/10 rounded-full transition-colors opacity-0 group-hover:opacity-100" title="Copiar para outro dia">
                   <Copy size={13} className="text-success" />

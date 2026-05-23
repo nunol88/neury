@@ -17,6 +17,7 @@ import Sobre from "./pages/Sobre";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
+import Definicoes from "./pages/Definicoes";
 import RouteSeo from "@/components/RouteSeo";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,16 @@ const App = () => (
                   </AppLayout>
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/admin/definicoes"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Definicoes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
