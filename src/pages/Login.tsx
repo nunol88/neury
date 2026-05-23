@@ -126,7 +126,13 @@ const Login = () => {
     : 'bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950';
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
+    <main className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
+      <SeoHead
+        title="Entrar — Agenda Mayara Godoi | Mayslimpo"
+        description="Acesso à plataforma interna de gestão de agendamentos, clientes e pagamentos da Mayslimpo (Mayara Godoi)."
+        path="/"
+        noindex={false}
+      />
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-[10%] left-[15%] w-32 h-32 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/5' : 'bg-white/5'}`} />
