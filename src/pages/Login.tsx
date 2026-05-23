@@ -409,7 +409,9 @@ const Login = () => {
             v{APP_VERSION}
           </div>
         </div>
+        </div>
       </div>
+
       
       {/* Help Modal */}
       <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
