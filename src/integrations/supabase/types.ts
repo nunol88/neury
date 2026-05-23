@@ -221,6 +221,33 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          author_name: string
+          author_role: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          author_name: string
+          author_role: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          author_role?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           action: string
