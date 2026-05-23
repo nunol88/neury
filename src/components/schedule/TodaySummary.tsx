@@ -264,6 +264,7 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
         </>
       )}
     </div>
+    </>
   );
 };
 
