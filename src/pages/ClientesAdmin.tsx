@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
+import { useClientDebts } from '@/hooks/useClientDebts';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMonthsConfig } from '@/utils/monthConfig';
@@ -34,6 +35,7 @@ const ClientesAdmin = () => {
   const monthsConfig = useMemo(() => generateMonthsConfig(), []);
   
   const { clientStats, getClientHistory, getStatsForMonth, getMonthsWithData } = useClientStats(allTasks, clients, monthsConfig);
+  const debtsByClient = useClientDebts(allTasks);
   
   // Get current month key
   const getCurrentMonthKey = (): string => {
@@ -935,6 +937,22 @@ const ClientesAdmin = () => {
                                   Fixo
                                 </span>
                               )}
+                              {(() => {
+                                const debt = debtsByClient[client.nome];
+                                if (!debt || debt.daysOld < 7) return null;
+                                const tone = debt.daysOld >= 30
+                                  ? 'bg-destructive/15 text-destructive border-destructive/30'
+                                  : 'bg-warning/15 text-warning border-warning/30';
+                                return (
+                                  <span
+                                    title={`€${debt.totalDue.toFixed(2)} em ${debt.unpaidCount} serviço(s) por pagar há ${debt.daysOld} dia(s)`}
+                                    className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${tone}`}
+                                  >
+                                    <Euro size={10} />
+                                    {debt.daysOld}d · €{debt.totalDue.toFixed(0)}
+                                  </span>
+                                );
+                              })()}
                             </div>
                             {stats && stats.totalAgendamentos > 0 && (
                               <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full inline-block mt-1">

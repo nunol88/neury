@@ -171,6 +171,7 @@ export type Database = {
           id: string
           mes_key: string
           observacoes: string | null
+          tipo: string
           user_id: string
           valor: number
         }
@@ -180,6 +181,7 @@ export type Database = {
           id?: string
           mes_key: string
           observacoes?: string | null
+          tipo?: string
           user_id: string
           valor: number
         }
@@ -189,6 +191,7 @@ export type Database = {
           id?: string
           mes_key?: string
           observacoes?: string | null
+          tipo?: string
           user_id?: string
           valor?: number
         }

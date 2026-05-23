@@ -29,6 +29,8 @@ import { ExportDropdown } from '@/components/ExportDropdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
+import ClientProfitabilityCard from '@/components/admin/ClientProfitabilityCard';
+import MonthProjectionCard from '@/components/admin/MonthProjectionCard';
 import {
   BarChart,
   Bar,
@@ -707,6 +709,11 @@ recommend short-term decisions and define one primary focus for improvement.
           <p className="text-lg font-semibold text-foreground capitalize">{getPeriodDisplay()}</p>
         </div>
 
+        {/* Month Projection (only visible if viewing current month-ish) */}
+        <div className="mb-6">
+          <MonthProjectionCard monthTasks={Object.values(allTasks).flat()} />
+        </div>
+
 
         {/* Hero Stats Cards with Glassmorphism */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1141,6 +1148,11 @@ recommend short-term decisions and define one primary focus for improvement.
               <p>Sem dados para o período selecionado</p>
             </div>
           )}
+        </div>
+
+        {/* Client Profitability (real €/h per client, year-to-date) */}
+        <div className="mt-6">
+          <ClientProfitabilityCard allTasksFlat={Object.values(allTasks).flat()} />
         </div>
       </div>
     </div>

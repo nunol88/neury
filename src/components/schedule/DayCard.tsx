@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2 } from 'lucide-react';
+import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2, TrendingDown } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -310,48 +310,58 @@ const DayCard: React.FC<DayCardProps> = ({
                 animationDelay={index * 50}
               />
             ))}
-            {/* Extra values */}
-            {extras.map((extra) => (
-              <div
-                key={extra.id}
-                className="relative group p-3 rounded-xl border border-success/30 bg-success/5 transition-all duration-200 text-sm animate-fade-in"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-7 h-7 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                      <Euro size={14} className="text-success" />
+            {/* Extra values (receitas e despesas) */}
+            {extras.map((extra) => {
+              const isDespesa = extra.tipo === 'despesa';
+              const toneBorder = isDespesa ? 'border-destructive/30 bg-destructive/5' : 'border-success/30 bg-success/5';
+              const toneIconBg = isDespesa ? 'bg-destructive/20' : 'bg-success/20';
+              const toneText = isDespesa ? 'text-destructive' : 'text-success';
+              const Icon = isDespesa ? TrendingDown : Euro;
+              const sign = isDespesa ? '-' : '+';
+              return (
+                <div
+                  key={extra.id}
+                  className={`relative group p-3 rounded-xl border transition-all duration-200 text-sm animate-fade-in ${toneBorder}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${toneIconBg}`}>
+                        <Icon size={14} className={toneText} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className={`font-bold text-sm ${toneText}`}>
+                          {sign}€{Number(extra.valor).toFixed(2)}
+                        </span>
+                        {extra.observacoes && (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-xs text-muted-foreground truncate flex items-center gap-1 cursor-help">
+                                  <StickyNote size={10} />
+                                  {extra.observacoes}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                <p className="whitespace-pre-wrap">{extra.observacoes}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <span className="font-bold text-success text-sm">+€{Number(extra.valor).toFixed(2)}</span>
-                      {extra.observacoes && (
-                        <TooltipProvider delayDuration={200}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1 cursor-help">
-                                <StickyNote size={10} />
-                                {extra.observacoes}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[250px] text-xs">
-                              <p className="whitespace-pre-wrap">{extra.observacoes}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </div>
+                    {onDeleteExtra && (
+                      <button
+                        onClick={() => onDeleteExtra(extra.id)}
+                        className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        title="Remover"
+                      >
+                        <Trash2 size={13} className="text-destructive" />
+                      </button>
+                    )}
                   </div>
-                  {onDeleteExtra && (
-                    <button
-                      onClick={() => onDeleteExtra(extra.id)}
-                      className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                      title="Remover extra"
-                    >
-                      <Trash2 size={13} className="text-destructive" />
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

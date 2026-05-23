@@ -31,6 +31,18 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '2.14.0',
+    date: '2026-05-23',
+    title: '💰 Despesas, Devedores e Projeção do Mês',
+    summary: 'Quatro novidades para ter o negócio sempre debaixo de olho: registar despesas no calendário, ver de relance quem deve há muito tempo, projetar a faturação do mês e saber a rentabilidade real (€/h) por cliente.',
+    changes: [
+      { text: 'O botão "Valor extra" passa a ter um toggle Receita/Despesa — as despesas aparecem a vermelho com sinal "-" e descontam ao total do mês', type: 'new' },
+      { text: 'Badge de "Devedor" ao lado do nome de cada cliente: amarelo a partir de 7 dias por pagar, vermelho a partir de 30 dias, com valor total em dívida', type: 'new' },
+      { text: 'Card "Projeção do Mês" no Dashboard: soma o que já foi feito + o que está agendado para os próximos dias + extras', type: 'new' },
+      { text: 'Nova secção "Rentabilidade por Cliente" no Dashboard: lista ordenada pelo €/hora real, destacando quem está abaixo da média', type: 'new' },
+    ],
+  },
+  {
     version: '2.13.1',
     date: '2026-05-23',
     title: '📍 Próximo Serviço com Cheguei/Saí',

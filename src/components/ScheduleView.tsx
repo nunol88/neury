@@ -69,7 +69,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus, registerArrival, registerDeparture } = useAgendamentos();
   const pendingCompletions = usePendingCompletions(allTasks);
   const { clients, addClient } = useClients();
-  const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate } = useExtras();
+  const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate, getExtrasNetForMonth } = useExtras();
   const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
   
   // Static month configuration matching useAgendamentos
@@ -2040,6 +2040,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             data: data.data,
             observacoes: data.observacoes,
             mes_key: activeMonth,
+            tipo: data.tipo,
           });
           return !!result;
         }}
@@ -2053,7 +2054,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           monthLabel={activeConfig?.label || ''}
           totalDays={currentMonthDays.length}
           isAdmin={isAdmin}
-          extrasTotal={getExtrasForMonth(activeMonth).reduce((sum, e) => sum + Number(e.valor), 0)}
+          extrasTotal={getExtrasNetForMonth(activeMonth)}
         />
       </div>
 
@@ -2127,8 +2128,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       <FloatingTotal
         totalValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          const monthExtras = getExtrasForMonth(activeMonth);
-          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
+          const extrasTotal = getExtrasNetForMonth(activeMonth);
           const EMPLOYEE_RATE = 7;
           return monthTasks.reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
@@ -2139,8 +2139,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         })()}
         completedValue={(() => {
           const monthTasks = allTasks[activeMonth as keyof AllTasks] || [];
-          const monthExtras = getExtrasForMonth(activeMonth);
-          const extrasTotal = monthExtras.reduce((sum, e) => sum + Number(e.valor), 0);
+          const extrasTotal = getExtrasNetForMonth(activeMonth);
           const EMPLOYEE_RATE = 7;
           return monthTasks.filter(t => t.completed).reduce((acc, curr) => {
             if (isAdmin) return acc + (parseFloat(curr.price) || 0);
