@@ -66,7 +66,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-  const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus } = useAgendamentos();
+  const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus, registerArrival, registerDeparture } = useAgendamentos();
   const pendingCompletions = usePendingCompletions(allTasks);
   const { clients, addClient } = useClients();
   const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate } = useExtras();
