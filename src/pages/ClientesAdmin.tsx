@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClientStats, ClientHistory } from '@/hooks/useClientStats';
+import { useClientDebts } from '@/hooks/useClientDebts';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMonthsConfig } from '@/utils/monthConfig';
