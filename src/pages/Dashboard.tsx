@@ -29,6 +29,8 @@ import { ExportDropdown } from '@/components/ExportDropdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { PeriodComparisonWidget } from '@/components/PeriodComparisonWidget';
+import ClientProfitabilityCard from '@/components/admin/ClientProfitabilityCard';
+import MonthProjectionCard from '@/components/admin/MonthProjectionCard';
 import {
   BarChart,
   Bar,
