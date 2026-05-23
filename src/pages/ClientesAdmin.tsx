@@ -789,13 +789,13 @@ const ClientesAdmin = () => {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search + Filter + Sort Bar */}
+        <div className="mb-4 space-y-2">
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Pesquisar por nome, telefone, morada..."
+              placeholder="Pesquisar por nome, telefone, morada, tag..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-10 py-3 border border-border rounded-xl bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
@@ -809,12 +809,82 @@ const ClientesAdmin = () => {
               </button>
             )}
           </div>
-          {searchTerm && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {filteredClients.length} de {clients.length} cliente{clients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
-            </p>
-          )}
+
+          {/* Filter chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              { v: 'all', label: 'Todos' },
+              { v: 'favoritos', label: '⭐ Favoritos' },
+              { v: 'devedores', label: '💸 Devedores' },
+              { v: 'inativos', label: '⏳ Inativos 30d+' },
+              { v: 'aniversario', label: '🎂 Aniv. este mês' },
+              { v: 'recibo', label: '🧾 Recibo verde' },
+            ] as const).map(c => (
+              <button
+                key={c.v}
+                onClick={() => setFilterChip(c.v)}
+                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition ${
+                  filterChip === c.v
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-card text-muted-foreground border-border hover:border-primary/50'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+
+            <div className="ml-auto flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Ordenar:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-card border border-border rounded-md px-2 py-1 text-foreground"
+              >
+                <option value="favorites">Favoritos primeiro</option>
+                <option value="name">Nome (A-Z)</option>
+                <option value="debt">Maior dívida</option>
+                <option value="recent">Mais recente</option>
+                <option value="rate">€/h mais alto</option>
+                <option value="frequent">Mais frequente</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {filteredClients.length} de {clients.length} cliente{clients.length !== 1 ? 's' : ''}
+          </p>
         </div>
+
+        {/* Bulk action bar */}
+        {selected.size > 0 && (
+          <div className="sticky top-2 z-30 mb-4 p-3 rounded-xl bg-primary text-primary-foreground shadow-lg flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold">{selected.size} selecionado{selected.size !== 1 ? 's' : ''}</span>
+            <Button size="sm" variant="secondary" onClick={handleBulkWhatsApp}>
+              <MessageCircle size={14} className="mr-1" /> WhatsApp
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => handleBulkFavorite(true)}>
+              <Star size={14} className="mr-1" /> Favoritar
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => handleBulkFavorite(false)}>
+              Remover favorito
+            </Button>
+            <Button size="sm" variant="secondary" onClick={handleBulkExportCsv}>
+              <FileText size={14} className="mr-1" /> Exportar CSV
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto text-primary-foreground" onClick={clearSelection}>
+              <X size={14} className="mr-1" /> Limpar
+            </Button>
+          </div>
+        )}
+
+        {/* Import modal */}
+        {showImport && (
+          <ImportClientsModal
+            onImport={handleImportClients}
+            onClose={() => setShowImport(false)}
+          />
+        )}
+
 
         {/* Form Modal */}
         {showForm && (
