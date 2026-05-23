@@ -43,6 +43,8 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
   const isAllDone = todayTasks.length > 0 && completedTasks.length === todayTasks.length;
 
   return (
+    <>
+      <NextServiceHero tasks={todayTasks} onArrived={onArrived} onLeft={onLeft} />
     <div
       className={`glass-card rounded-2xl p-4 mb-6 transition-all duration-300 hover:shadow-xl animate-fade-in ${
         isAllDone ? 'ring-2 ring-success shadow-glow-success' : ''
