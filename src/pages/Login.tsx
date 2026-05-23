@@ -13,6 +13,7 @@ import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
 import { lovable } from '@/integrations/lovable/index';
 
+
 import { REMEMBER_USER_KEY, EMAIL_LOGIN_KEY, NEW_REGISTRATIONS_KEY } from '@/utils/authConstants';
 
 // Re-export for backward compatibility
@@ -125,7 +126,7 @@ const Login = () => {
     : 'bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950';
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
+    <main className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgClass}`}>
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-[10%] left-[15%] w-32 h-32 rounded-full animate-float-bubble ${theme === 'dark' ? 'bg-primary/5' : 'bg-white/5'}`} />
@@ -156,7 +157,7 @@ const Login = () => {
           {/* Logo */}
           <div className="flex flex-col items-center space-y-5">
             <div className={`w-24 h-24 rounded-full overflow-hidden ring-3 shadow-xl animate-logo-glow ${theme === 'dark' ? 'ring-primary/40' : 'ring-white/30'}`}>
-              <img src={logoMayslimpo} alt="Mayslimpo Logo" className="w-full h-full object-cover" />
+              <img src={logoMayslimpo} alt="Mayslimpo Logo" width={96} height={96} fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
             </div>
             <div className="text-center">
               <h1 className={`text-3xl font-extrabold tracking-tight animate-fade-in animation-delay-100 ${theme === 'dark' ? 'text-foreground' : 'text-white'}`}>
@@ -439,7 +440,7 @@ const Login = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 };
 

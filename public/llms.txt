@@ -1,0 +1,9 @@
+# Agenda Mayara Godoi
+
+> Internal scheduling and management tool for Mayslimpo (Mayara Godoi), a freelance cleaning service. Access is restricted to the owner and authorized employees.
+
+This is a private business application. All routes beyond the login page require authentication and are not intended for public crawling or AI indexing.
+
+## Pages
+
+- [Login](/): Sign-in page for Mayslimpo staff.

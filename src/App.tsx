@@ -17,6 +17,7 @@ import Sobre from "./pages/Sobre";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
+import RouteSeo from "@/components/RouteSeo";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RouteSeo />
           <Routes>
             <Route path="/" element={<Login />} />
             <Route 
