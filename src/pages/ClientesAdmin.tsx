@@ -25,7 +25,8 @@ import ClientAvatar from '@/components/ui/client-avatar';
 import EmptyState from '@/components/ui/empty-state';
 import LiquidGlassReportModal from '@/components/clients/LiquidGlassReportModal';
 import ImportClientsModal from '@/components/clients/ImportClientsModal';
-import { openWhatsApp, buildServiceConfirmationMessage, normalizePhoneForWhatsApp } from '@/utils/whatsappMessages';
+import { openWhatsApp, buildServiceConfirmationMessage, buildSimpleGreeting, normalizePhoneForWhatsApp } from '@/utils/whatsappMessages';
+import WhatsAppLangButton from '@/components/whatsapp/WhatsAppLangButton';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
@@ -276,7 +277,7 @@ const ClientesAdmin = () => {
     rows.forEach((c, idx) => {
       // Stagger to avoid popup blocker
       setTimeout(() => {
-        openWhatsApp(c.telefone, `Olá ${c.nome.split(' ')[0]}! 🌸`);
+        openWhatsApp(c.telefone, buildSimpleGreeting(c.nome, 'pt'));
       }, idx * 150);
     });
   };
@@ -1472,17 +1473,18 @@ const ClientesAdmin = () => {
                       </div>
                       <div className="flex flex-wrap gap-1 justify-end">
                         {client.telefone && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openWhatsApp(client.telefone, next
-                              ? buildServiceConfirmationMessage(client.nome, next.date, next.startTime, next.endTime)
-                              : `Olá ${client.nome.split(' ')[0]}! 🌸`)}
-                            className="text-green-600 hover:bg-green-500/10"
+                          <WhatsAppLangButton
+                            prefKey={client.id}
+                            getMessage={(lang) => next
+                              ? buildServiceConfirmationMessage(client.nome, next.date, next.startTime, next.endTime, lang)
+                              : buildSimpleGreeting(client.nome, lang)}
+                            onPick={(msg) => openWhatsApp(client.telefone, msg)}
+                            className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input bg-background hover:bg-accent text-green-600 hover:bg-green-500/10 text-sm font-medium"
                             title="Enviar WhatsApp"
+                            ariaLabel="WhatsApp"
                           >
                             <MessageCircle size={14} />
-                          </Button>
+                          </WhatsAppLangButton>
                         )}
                         <Button
                           variant="outline"
