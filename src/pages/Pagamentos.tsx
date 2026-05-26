@@ -33,7 +33,9 @@ import {
   openWhatsApp,
   copyToClipboard,
   normalizePhoneForWhatsApp,
+  WhatsAppLang,
 } from '@/utils/whatsappMessages';
+import WhatsAppLangButton from '@/components/whatsapp/WhatsAppLangButton';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -101,12 +103,15 @@ const Pagamentos: React.FC = () => {
     }
   };
 
-  const handleSendWhatsApp = (clientName: string) => {
+  const getReminderMessage = (clientName: string, lang: WhatsAppLang): string | null => {
     const client = clientSummaries.find(c => c.clientName === clientName);
-    if (!client) return;
+    if (!client) return null;
     const pendingServices = client.services.filter(s => !s.pago);
+    return buildPaymentReminderMessage(clientName, pendingServices, client.totalPending, lang);
+  };
+
+  const handleSendWhatsApp = (clientName: string, message: string) => {
     const phone = phoneByName.get(clientName.toLowerCase()) || null;
-    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
     const hasPhone = openWhatsApp(phone, message);
     if (!hasPhone) {
       toast({
@@ -116,11 +121,7 @@ const Pagamentos: React.FC = () => {
     }
   };
 
-  const handleCopySummary = async (clientName: string) => {
-    const client = clientSummaries.find(c => c.clientName === clientName);
-    if (!client) return;
-    const pendingServices = client.services.filter(s => !s.pago);
-    const message = buildPaymentReminderMessage(clientName, pendingServices, client.totalPending);
+  const handleCopySummary = async (message: string) => {
     const ok = await copyToClipboard(message);
     toast({
       title: ok ? 'Mensagem copiada' : 'Não foi possível copiar',
@@ -342,28 +343,32 @@ const Pagamentos: React.FC = () => {
                         <CheckCircle2 size={16} className="mr-2" />
                         Marcar pago ({formatCurrency(client.totalPending)})
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800"
-                        onClick={() => handleSendWhatsApp(client.clientName)}
+                      <WhatsAppLangButton
+                        prefKey={client.clientName}
+                        getMessage={(lang) => getReminderMessage(client.clientName, lang) ?? ''}
+                        onPick={(msg) => handleSendWhatsApp(client.clientName, msg)}
+                        className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 dark:text-emerald-400 text-sm font-medium"
                         title={
                           normalizePhoneForWhatsApp(phoneByName.get(client.clientName.toLowerCase()))
-                            ? 'Abrir WhatsApp com lembrete'
+                            ? 'Escolher idioma e abrir WhatsApp'
                             : 'Sem telefone — abre WhatsApp Web'
                         }
+                        ariaLabel="Enviar WhatsApp"
                       >
-                        <MessageCircle size={16} className="mr-2" />
+                        <MessageCircle size={16} />
                         WhatsApp
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopySummary(client.clientName)}
+                      </WhatsAppLangButton>
+                      <WhatsAppLangButton
+                        prefKey={client.clientName}
+                        getMessage={(lang) => getReminderMessage(client.clientName, lang) ?? ''}
+                        onPick={(msg) => handleCopySummary(msg)}
+                        className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm font-medium"
+                        title="Escolher idioma e copiar mensagem"
+                        ariaLabel="Copiar resumo"
                       >
-                        <Copy size={16} className="mr-2" />
+                        <Copy size={16} />
                         Copiar resumo
-                      </Button>
+                      </WhatsAppLangButton>
                     </div>
                   )}
                 </CardContent>
