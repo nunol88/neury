@@ -1,8 +1,10 @@
 import React from 'react';
-import { Cake, MessageCircle } from 'lucide-react';
+import { Cake } from 'lucide-react';
 import { useBirthdays } from '@/hooks/useBirthdays';
 import { useClients } from '@/hooks/useClients';
-import { openWhatsApp } from '@/utils/whatsappMessages';
+import { openWhatsApp, buildBirthdayMessage } from '@/utils/whatsappMessages';
+import WhatsAppLangButton from '@/components/whatsapp/WhatsAppLangButton';
+import { MessageCircle } from 'lucide-react';
 
 const BirthdaysCard: React.FC = () => {
   const { clients } = useClients();
@@ -29,10 +31,6 @@ const BirthdaysCard: React.FC = () => {
               : `Em ${daysUntil} dias`;
           const d = new Date(date + 'T00:00:00');
           const dateStr = d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' });
-          const message =
-            daysUntil === 0
-              ? `Parabéns, ${client.nome}! 🎂 Muitas felicidades e um dia maravilhoso! 💐`
-              : `Olá ${client.nome}! Só passar por aqui a desejar um excelente dia ${dateStr} 🎂`;
           return (
             <li
               key={client.id}
@@ -56,14 +54,16 @@ const BirthdaysCard: React.FC = () => {
                 </p>
               </div>
               {client.telefone && (
-                <button
-                  type="button"
-                  onClick={() => openWhatsApp(client.telefone, message)}
+                <WhatsAppLangButton
+                  prefKey={client.id}
+                  getMessage={(lang) => buildBirthdayMessage(client.nome, date, daysUntil, lang)}
+                  onPick={(msg) => openWhatsApp(client.telefone, msg)}
                   className="p-2 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0"
                   title="Enviar parabéns por WhatsApp"
+                  ariaLabel="WhatsApp"
                 >
                   <MessageCircle size={16} />
-                </button>
+                </WhatsAppLangButton>
               )}
             </li>
           );
