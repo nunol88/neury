@@ -47,6 +47,8 @@ const AudioPlayer: React.FC<{ url: string; duration: number | null; mine: boolea
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [current, setCurrent] = useState(0);
+  const [realDuration, setRealDuration] = useState<number | null>(null);
+  const [failed, setFailed] = useState(false);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -54,9 +56,27 @@ const AudioPlayer: React.FC<{ url: string; duration: number | null; mine: boolea
     if (playing) {
       a.pause();
     } else {
-      a.play().catch(() => toast.error('Não foi possível reproduzir'));
+      a.play().catch(() => {
+        setFailed(true);
+        toast.error('Formato de áudio não suportado neste dispositivo');
+      });
     }
   };
+
+  const shownDuration = realDuration ?? duration ?? 0;
+
+  if (failed) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`inline-flex items-center gap-2 text-xs underline ${mine ? 'text-primary-foreground' : 'text-foreground'}`}
+      >
+        🔊 Abrir áudio numa nova aba
+      </a>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 min-w-[180px]">
@@ -76,7 +96,7 @@ const AudioPlayer: React.FC<{ url: string; duration: number | null; mine: boolea
           />
         </div>
         <span className="text-[10px] opacity-70 tabular-nums">
-          {formatDuration(current)} / {formatDuration(duration ?? 0)}
+          {formatDuration(current)} / {formatDuration(shownDuration)}
         </span>
       </div>
       <audio
@@ -85,6 +105,11 @@ const AudioPlayer: React.FC<{ url: string; duration: number | null; mine: boolea
         preload="metadata"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        onError={() => setFailed(true)}
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration;
+          if (d && isFinite(d)) setRealDuration(d);
+        }}
         onEnded={() => {
           setPlaying(false);
           setProgress(0);
@@ -101,6 +126,24 @@ const AudioPlayer: React.FC<{ url: string; duration: number | null; mine: boolea
     </div>
   );
 };
+
+/**
+ * Pick the best supported MediaRecorder mime — prefer mp4/aac for iOS/Safari
+ * compatibility, fall back to webm/opus on Chrome/Firefox/Android.
+ */
+function pickAudioMime(): string {
+  const candidates = [
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/aac',
+    'audio/webm;codecs=opus',
+    'audio/webm',
+  ];
+  for (const c of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return '';
+}
 
 const Recados: React.FC = () => {
   const { user, role } = useAuth();
@@ -184,14 +227,14 @@ const Recados: React.FC = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      const mime = pickAudioMime();
       const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       recordChunksRef.current = [];
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) recordChunksRef.current.push(e.data);
       };
       mr.onstop = () => {
-        const blob = new Blob(recordChunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        const blob = new Blob(recordChunksRef.current, { type: mr.mimeType || mime || 'audio/webm' });
         const duration = (Date.now() - recordStartRef.current) / 1000;
         const url = URL.createObjectURL(blob);
         setPendingAudio({ blob, duration, url });
@@ -265,11 +308,16 @@ const Recados: React.FC = () => {
       let audio_duration: number | null = null;
 
       if (pendingAudio) {
-        const ext = pendingAudio.blob.type.includes('mp4') ? 'm4a' : 'webm';
+        const type = pendingAudio.blob.type || '';
+        const ext = type.includes('mp4') || type.includes('aac')
+          ? 'm4a'
+          : type.includes('webm')
+          ? 'webm'
+          : 'bin';
         const path = `${user.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('recados-audio')
-          .upload(path, pendingAudio.blob, { contentType: pendingAudio.blob.type, upsert: false });
+          .upload(path, pendingAudio.blob, { contentType: type || 'audio/webm', upsert: false });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from('recados-audio').getPublicUrl(path);
         audio_url = pub.publicUrl;
