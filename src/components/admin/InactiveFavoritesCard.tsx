@@ -3,7 +3,8 @@ import { AlertCircle, Phone, MessageCircle } from 'lucide-react';
 import { useInactiveFavorites } from '@/hooks/useInactiveFavorites';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useClients } from '@/hooks/useClients';
-import { openWhatsApp } from '@/utils/whatsappMessages';
+import { openWhatsApp, buildInactiveFavoriteMessage } from '@/utils/whatsappMessages';
+import WhatsAppLangButton from '@/components/whatsapp/WhatsAppLangButton';
 
 const InactiveFavoritesCard: React.FC = () => {
   const { allTasks } = useAgendamentos();
@@ -48,19 +49,16 @@ const InactiveFavoritesCard: React.FC = () => {
                   >
                     <Phone size={14} />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openWhatsApp(
-                        client.telefone,
-                        `Olá ${client.nome}! Está tudo bem? Há algum tempo que não a/o vejo. Posso passar para combinar a próxima limpeza?`
-                      )
-                    }
+                  <WhatsAppLangButton
+                    prefKey={client.id}
+                    getMessage={(lang) => buildInactiveFavoriteMessage(client.nome, lang)}
+                    onPick={(msg) => openWhatsApp(client.telefone, msg)}
                     className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     title="WhatsApp"
+                    ariaLabel="WhatsApp"
                   >
                     <MessageCircle size={14} />
-                  </button>
+                  </WhatsAppLangButton>
                 </>
               )}
             </div>

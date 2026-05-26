@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { CalendarCheck, Clock, Euro, TrendingUp, Sparkles, ChevronDown, ChevronUp, Phone, Navigation, MessageCircle, FileText, Copy } from 'lucide-react';
 import { buildServiceConfirmationMessage, openWhatsApp } from '@/utils/whatsappMessages';
+import WhatsAppLangButton from '@/components/whatsapp/WhatsAppLangButton';
 import { generateDailyRoutePdf } from '@/utils/dailyRoutePdf';
 import NextServiceHero from './NextServiceHero';
 
@@ -257,25 +258,24 @@ const TodaySummary: React.FC<TodaySummaryProps> = ({ tasks, onScrollToToday, isA
                           </a>
                         )}
                         {task.phone && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openWhatsApp(
-                                task.phone,
-                                buildServiceConfirmationMessage(
-                                  task.client,
-                                  task.date,
-                                  task.startTime,
-                                  task.endTime
-                                )
+                          <WhatsAppLangButton
+                            prefKey={task.client}
+                            getMessage={(lang) =>
+                              buildServiceConfirmationMessage(
+                                task.client,
+                                task.date,
+                                task.startTime,
+                                task.endTime,
+                                lang
                               )
                             }
+                            onPick={(msg) => openWhatsApp(task.phone, msg)}
                             className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            aria-label="Confirmar por WhatsApp"
                             title="Confirmar por WhatsApp"
+                            ariaLabel="Confirmar por WhatsApp"
                           >
                             <MessageCircle size={14} />
-                          </button>
+                          </WhatsAppLangButton>
                         )}
                         {mapsHref && (
                           <a
