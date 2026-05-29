@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle, Mail, Phone, User } from 'lucide-react';
+import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff, AlertTriangle, HelpCircle, Mail, Phone, User, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import { APP_VERSION } from '@/utils/appVersion';
@@ -31,6 +31,7 @@ const Login = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [oauthFallbackUrl, setOauthFallbackUrl] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [shake, setShake] = useState(false);
@@ -85,6 +86,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setOauthFallbackUrl('');
     setIsLoading(true);
 
     try {
@@ -118,6 +120,37 @@ const Login = () => {
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+    const setProviderLoading = provider === 'google' ? setIsGoogleLoading : setIsAppleLoading;
+    const providerLabel = provider === 'google' ? 'Google' : 'Apple';
+
+    setProviderLoading(true);
+    setError('');
+    setOauthFallbackUrl('');
+
+    try {
+      const { error } = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+
+      if (error) {
+        const isPopupBlocked = error.message.toLowerCase().includes('popup') || error.message.toLowerCase().includes('preview');
+        if (isPopupBlocked) {
+          setOauthFallbackUrl(window.location.origin);
+          setError('O browser bloqueou a janela de login. Abre a app numa nova aba e tenta novamente.');
+        } else {
+          setError(`Erro ao iniciar sessão com ${providerLabel}.`);
+        }
+        console.error(`${providerLabel} sign-in error:`, error);
+      }
+    } catch (err) {
+      setError(`Erro inesperado ao iniciar sessão com ${providerLabel}.`);
+      console.error(`${providerLabel} sign-in unexpected error:`, err);
+    } finally {
+      setProviderLoading(false);
     }
   };
 
@@ -204,9 +237,22 @@ const Login = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-destructive/20 backdrop-blur-sm border border-destructive/30 text-destructive rounded-xl p-3 flex items-start gap-2 animate-fade-in">
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                <span className="text-sm">{error}</span>
+              <div className="bg-destructive/20 backdrop-blur-sm border border-destructive/30 text-destructive rounded-xl p-3 animate-fade-in">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <span className="text-sm">{error}</span>
+                </div>
+                {oauthFallbackUrl && (
+                  <a
+                    href={oauthFallbackUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir app para entrar
+                  </a>
+                )}
               </div>
             )}
             
@@ -326,23 +372,7 @@ const Login = () => {
                   : 'bg-white text-gray-700 border-white/80 hover:shadow-xl hover:shadow-white/20'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
-              onClick={async () => {
-                setIsGoogleLoading(true);
-                setError('');
-                try {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    setError('Erro ao iniciar sessão com Google.');
-                    console.error('Google sign-in error:', error);
-                  }
-                } catch (err) {
-                  setError('Erro inesperado ao iniciar sessão com Google.');
-                } finally {
-                  setIsGoogleLoading(false);
-                }
-              }}
+              onClick={() => handleOAuthSignIn('google')}
             >
               {isGoogleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -367,23 +397,7 @@ const Login = () => {
                   : 'bg-black text-white border-black hover:bg-black/90 hover:shadow-xl hover:shadow-black/30'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
-              onClick={async () => {
-                setIsAppleLoading(true);
-                setError('');
-                try {
-                  const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    setError('Erro ao iniciar sessão com Apple.');
-                    console.error('Apple sign-in error:', error);
-                  }
-                } catch (err) {
-                  setError('Erro inesperado ao iniciar sessão com Apple.');
-                } finally {
-                  setIsAppleLoading(false);
-                }
-              }}
+              onClick={() => handleOAuthSignIn('apple')}
             >
               {isAppleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
