@@ -123,35 +123,52 @@ const Login = () => {
     }
   };
 
-  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+
+  const handleOAuthSignIn = (provider: 'google' | 'apple') => {
     const setProviderLoading = provider === 'google' ? setIsGoogleLoading : setIsAppleLoading;
     const providerLabel = provider === 'google' ? 'Google' : 'Apple';
 
-    setProviderLoading(true);
     setError('');
     setOauthFallbackUrl('');
 
-    try {
-      const { error } = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
-      });
-
-      if (error) {
-        const isPopupBlocked = error.message.toLowerCase().includes('popup') || error.message.toLowerCase().includes('preview');
-        if (isPopupBlocked) {
-          setOauthFallbackUrl(window.location.origin);
-          setError('O browser bloqueou a janela de login. Abre a app numa nova aba e tenta novamente.');
-        } else {
-          setError(`Erro ao iniciar sessão com ${providerLabel}.`);
-        }
-        console.error(`${providerLabel} sign-in error:`, error);
+    // Inside the Lovable preview iframe popups are blocked. Break out to the
+    // published app in a new top-level tab so OAuth can run without popups.
+    if (isInIframe) {
+      const target = 'https://neury.lovable.app';
+      const win = window.open(target, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        setOauthFallbackUrl(target);
+        setError('Toca em "Abrir app para entrar" — o preview bloqueia o login.');
       }
-    } catch (err) {
-      setError(`Erro inesperado ao iniciar sessão com ${providerLabel}.`);
-      console.error(`${providerLabel} sign-in unexpected error:`, err);
-    } finally {
-      setProviderLoading(false);
+      return;
     }
+
+    setProviderLoading(true);
+
+    // Fire-and-forget so the user-gesture stays attached to the popup call.
+    lovable.auth
+      .signInWithOAuth(provider, { redirect_uri: window.location.origin })
+      .then(({ error }) => {
+        if (error) {
+          const msg = error.message.toLowerCase();
+          const isPopupBlocked = msg.includes('popup') || msg.includes('preview');
+          if (isPopupBlocked) {
+            setOauthFallbackUrl(window.location.origin);
+            setError('O browser bloqueou a janela de login. Abre a app numa nova aba e tenta novamente.');
+          } else {
+            setError(`Erro ao iniciar sessão com ${providerLabel}.`);
+          }
+          console.error(`${providerLabel} sign-in error:`, error);
+        }
+      })
+      .catch((err) => {
+        setError(`Erro inesperado ao iniciar sessão com ${providerLabel}.`);
+        console.error(`${providerLabel} sign-in unexpected error:`, err);
+      })
+      .finally(() => {
+        setProviderLoading(false);
+      });
   };
 
   if (loading) {
