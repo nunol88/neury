@@ -201,6 +201,7 @@ Deno.serve(async (req) => {
 
     if (action === "reset_password") {
       const { user_id, new_password } = payload;
+      console.log("[reset_password] caller=", caller.id, "target=", user_id, "pwd_len=", new_password?.length);
 
       if (!user_id || typeof user_id !== "string") {
         return makeErrorResponse("user_id é obrigatório", 400);
@@ -219,7 +220,7 @@ Deno.serve(async (req) => {
       });
 
       if (updateError) {
-        console.error("Password reset failed:", updateError);
+        console.error("[reset_password] failed:", updateError);
         return makeErrorResponse(sanitizeErrorMessage(updateError), 400);
       }
 
