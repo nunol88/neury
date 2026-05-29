@@ -372,23 +372,7 @@ const Login = () => {
                   : 'bg-white text-gray-700 border-white/80 hover:shadow-xl hover:shadow-white/20'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
-              onClick={async () => {
-                setIsGoogleLoading(true);
-                setError('');
-                try {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    setError('Erro ao iniciar sessão com Google.');
-                    console.error('Google sign-in error:', error);
-                  }
-                } catch (err) {
-                  setError('Erro inesperado ao iniciar sessão com Google.');
-                } finally {
-                  setIsGoogleLoading(false);
-                }
-              }}
+              onClick={() => handleOAuthSignIn('google')}
             >
               {isGoogleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -413,23 +397,7 @@ const Login = () => {
                   : 'bg-black text-white border-black hover:bg-black/90 hover:shadow-xl hover:shadow-black/30'
               }`}
               disabled={isLoading || isGoogleLoading || isAppleLoading}
-              onClick={async () => {
-                setIsAppleLoading(true);
-                setError('');
-                try {
-                  const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    setError('Erro ao iniciar sessão com Apple.');
-                    console.error('Apple sign-in error:', error);
-                  }
-                } catch (err) {
-                  setError('Erro inesperado ao iniciar sessão com Apple.');
-                } finally {
-                  setIsAppleLoading(false);
-                }
-              }}
+              onClick={() => handleOAuthSignIn('apple')}
             >
               {isAppleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
