@@ -183,8 +183,21 @@ const GestaoUtilizadores: React.FC = () => {
         body: { action: 'reset_password', user_id: resetUser.id, new_password: resetPassword },
       });
 
-      if (res.error || res.data?.error) {
-        throw new Error(res.data?.error || res.error?.message || 'Erro ao redefinir password');
+      // supabase-js puts the response body in error.context for non-2xx
+      let serverError: string | null = null;
+      if (res.error) {
+        try {
+          const ctx: any = (res.error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            serverError = body?.error || null;
+          }
+        } catch {}
+      }
+      if (res.data?.error) serverError = res.data.error;
+
+      if (serverError || res.error) {
+        throw new Error(serverError || res.error?.message || 'Erro ao redefinir password');
       }
 
       toast.success(`Password de ${resetUser.name} atualizada com sucesso!`);
