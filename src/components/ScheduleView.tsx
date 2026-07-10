@@ -1129,6 +1129,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   };
 
   // Simulate the copy to detect overloaded days BEFORE actually inserting.
+  // For fixed/favorite clients, override the previous-month pattern with the
+  // client's own scheduling preferences (dias_preferidos / hora / duração).
+  // This way, even if last month had a one-off swap, the copy follows the
+  // client's canonical weekday(s) and timing.
+  const getPreferredOverride = (clientName: string): {
+    daysOfWeek: number[];
+    startTime?: string;
+    endTime?: string;
+  } | null => {
+    const c = clients.find(cl => cl.nome.toLowerCase() === clientName.toLowerCase());
+    if (!c || !c.favorito) return null;
+    if (!c.dias_preferidos || c.dias_preferidos.length === 0) return null;
+    const startTime = c.hora_preferida || c.periodo_preferido ? getPreferredStartTime(c) : undefined;
+    const duration = c.duracao_preferida_horas || 3;
+    const endTime = startTime ? addHoursToTime(startTime, duration) : undefined;
+    return { daysOfWeek: [...c.dias_preferidos].sort((a, b) => a - b), startTime, endTime };
+  };
+
   // Mirrors the placement logic of executeCopyFromPreviousMonth (weekly + biweekly + monthly + single).
   const simulateCopyFromPreviousMonth = (): { overloaded: OverloadedDay[]; previousMonth: string | null } => {
     const previousMonth = getPreviousMonth();
