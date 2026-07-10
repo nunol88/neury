@@ -1373,13 +1373,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           // Weekly: for fixed clients, use their preferred day(s); else use last month's day.
           const templateTask = clientTasks[0];
           const override = getPreferredOverride(templateTask.client);
+          const clientRec = clients.find(cl => cl.nome.toLowerCase() === templateTask.client.toLowerCase());
           const dows = override ? override.daysOfWeek : [pattern.dayOfWeek!];
           const matchingDays = currentMonthDays.filter(d => dows.includes(d.dateObject.getDay()));
 
           const startTime = override?.startTime || templateTask.startTime;
           const endTime = override?.endTime || templateTask.endTime;
+          const pricePerHour = override && clientRec?.preco_hora
+            ? clientRec.preco_hora
+            : templateTask.pricePerHour;
           const price = override
-            ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
+            ? (calculatePrice(startTime, endTime, pricePerHour) || templateTask.price)
             : templateTask.price;
 
           for (const targetDay of matchingDays) {
@@ -1390,7 +1394,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               startTime,
               endTime,
               address: templateTask.address,
-              pricePerHour: templateTask.pricePerHour,
+              pricePerHour,
               price,
               notes: templateTask.notes,
               completed: false,
@@ -1406,14 +1410,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           // last occurrence, so the sequence stays coherent across months.
           const templateTask = clientTasks[0];
           const override = getPreferredOverride(templateTask.client);
+          const clientRec = clients.find(cl => cl.nome.toLowerCase() === templateTask.client.toLowerCase());
           const dayOfWeek = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
           const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
 
           const startTime = override?.startTime || templateTask.startTime;
           const endTime = override?.endTime || templateTask.endTime;
+          const pricePerHour = override && clientRec?.preco_hora
+            ? clientRec.preco_hora
+            : templateTask.pricePerHour;
           const price = override
-            ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
+            ? (calculatePrice(startTime, endTime, pricePerHour) || templateTask.price)
             : templateTask.price;
+
 
           // Anchor: last occurrence in previous month on the preferred weekday.
           const prevOnDow = clientTasks
