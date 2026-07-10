@@ -17,6 +17,21 @@ const DescricaoSchema = z.object({
   notes: z.string().max(2000).optional().default('')
 }).strict();
 
+const normalizeMoneyValue = (value: unknown, fallback: string): string => {
+  const rawValue = typeof value === 'number'
+    ? String(value)
+    : typeof value === 'string'
+      ? value.trim().replace(',', '.')
+      : '';
+
+  if (!/^\d+(\.\d+)?$/.test(rawValue)) return fallback;
+
+  const amount = Number.parseFloat(rawValue);
+  if (!Number.isFinite(amount) || amount < 0) return fallback;
+
+  return Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+};
+
 export interface Task {
   id: string;
   date: string;
@@ -109,10 +124,8 @@ const mapRowToTask = (row: AgendamentoRow): Task => {
         // Extract only expected fields, ignore unknown ones
         const safeData = {
           address: typeof rawData.address === 'string' ? rawData.address.slice(0, 500) : '',
-          pricePerHour: typeof rawData.pricePerHour === 'string' && /^\d+(\.\d{1,2})?$/.test(rawData.pricePerHour) 
-            ? rawData.pricePerHour : '7',
-          price: typeof rawData.price === 'string' && /^\d+(\.\d{1,2})?$/.test(rawData.price) 
-            ? rawData.price : '0',
+          pricePerHour: normalizeMoneyValue(rawData.pricePerHour, '7'),
+          price: normalizeMoneyValue(rawData.price, '0'),
           notes: typeof rawData.notes === 'string' ? rawData.notes.slice(0, 2000) : ''
         };
         
@@ -169,8 +182,8 @@ const mapTaskToInsert = (task: Omit<Task, 'id'>): AgendamentoInsert => {
     data_fim: endDateTime.toISOString(),
     descricao: JSON.stringify({
       address: task.address,
-      pricePerHour: task.pricePerHour,
-      price: task.price,
+      pricePerHour: normalizeMoneyValue(task.pricePerHour, '7'),
+      price: normalizeMoneyValue(task.price, '0'),
       notes: task.notes
     }),
     status: task.completed ? 'concluido' : 'agendado'
