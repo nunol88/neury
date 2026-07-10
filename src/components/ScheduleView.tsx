@@ -1402,7 +1402,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             }
           }
         } else if (pattern.type === 'biweekly') {
-          // Bi-weekly: copy to alternating weeks (1st, 3rd OR 2nd, 4th)
+          // Bi-weekly: continue the 14-day cadence from the previous month's
+          // last occurrence, so the sequence stays coherent across months.
           const templateTask = clientTasks[0];
           const override = getPreferredOverride(templateTask.client);
           const dayOfWeek = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
@@ -1414,54 +1415,49 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
             ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
             : templateTask.price;
 
-          // Determine which weeks (odd: 1,3 or even: 2,4)
-          const startWeek = pattern.startWeekParity || 'odd';
-          const originalIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
-          let targetWeekIndices = [...originalIndices];
+          // Anchor: last occurrence in previous month on the preferred weekday.
+          const prevOnDow = clientTasks
+            .filter(t => new Date(t.date + 'T00:00:00').getDay() === dayOfWeek)
+            .sort((a, b) => a.date.localeCompare(b.date));
+          const anchorStr = prevOnDow.length > 0
+            ? prevOnDow[prevOnDow.length - 1].date
+            : clientTasks[clientTasks.length - 1].date;
 
-          // Conflict avoidance: if the chosen parity is overcrowded but the
-          // alternate parity is free, swap the whole chain so quinzenais
-          // partilhem dias alternados em vez de empilharem no mesmo dia.
-          const altIndices = startWeek === 'odd' ? [1, 3] : [0, 2, 4];
-          const loadOf = (idxs: number[]) => idxs.reduce((sum, i) => sum + (matchingDays[i] ? (dayLoad.get(matchingDays[i].dateString) || 0) : 0), 0);
-          const swapped = loadOf(originalIndices) > loadOf(altIndices) + 1;
-          if (swapped) {
-            targetWeekIndices = altIndices;
-            originalIndices.forEach((origIdx, k) => {
-              const newIdx = altIndices[k] ?? altIndices[altIndices.length - 1];
-              const fromDay = matchingDays[origIdx];
-              const toDay = matchingDays[newIdx];
-              if (fromDay && toDay && fromDay.dateString !== toDay.dateString) {
-                relocations.push({
-                  client: clientTasks[0].client,
-                  from: fromDay.dateString,
-                  to: toDay.dateString,
-                  reason: 'Quinzena trocada para evitar sobrecarga',
-                });
-              }
-            });
+          const monthDateStrings = new Set(matchingDays.map(d => d.dateString));
+          const targetDates: string[] = [];
+          const anchor = new Date(anchorStr + 'T00:00:00');
+          // Project forward +14, +28, ... until past the current month
+          for (let k = 1; k <= 4; k++) {
+            const next = new Date(anchor);
+            next.setDate(next.getDate() + 14 * k);
+            const y = next.getFullYear();
+            const m = String(next.getMonth() + 1).padStart(2, '0');
+            const d = String(next.getDate()).padStart(2, '0');
+            const ds = `${y}-${m}-${d}`;
+            if (monthDateStrings.has(ds)) targetDates.push(ds);
+          }
+          // Fallback: if projection landed outside (rare), pick first matching day
+          if (targetDates.length === 0 && matchingDays.length > 0) {
+            targetDates.push(matchingDays[0].dateString);
           }
 
-          for (let i = 0; i < matchingDays.length; i++) {
-            if (targetWeekIndices.includes(i)) {
-              const targetDay = matchingDays[i];
-              const result = await addTask({
-                date: targetDay.dateString,
-                client: templateTask.client,
-                phone: templateTask.phone,
-                startTime,
-                endTime,
-                address: templateTask.address,
-                pricePerHour: templateTask.pricePerHour,
-                price,
-                notes: templateTask.notes,
-                completed: false,
-                pago: false
-              });
-              if (result) {
-                newTaskIds.push(result.id);
-                incLoad(targetDay.dateString, templateTask.client);
-              }
+          for (const dateStr of targetDates) {
+            const result = await addTask({
+              date: dateStr,
+              client: templateTask.client,
+              phone: templateTask.phone,
+              startTime,
+              endTime,
+              address: templateTask.address,
+              pricePerHour: templateTask.pricePerHour,
+              price,
+              notes: templateTask.notes,
+              completed: false,
+              pago: false
+            });
+            if (result) {
+              newTaskIds.push(result.id);
+              incLoad(dateStr, templateTask.client);
             }
           }
         } else if (pattern.type === 'monthly') {
