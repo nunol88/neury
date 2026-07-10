@@ -1458,7 +1458,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
               startTime,
               endTime,
               address: templateTask.address,
-              pricePerHour: templateTask.pricePerHour,
+              pricePerHour,
+
               price,
               notes: templateTask.notes,
               completed: false,
