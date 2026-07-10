@@ -1370,21 +1370,29 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         const pattern = detectRecurrencePattern(clientTasks, prevMonthDays);
 
         if (pattern.type === 'weekly') {
-          // Weekly: copy to all weeks on the same day of week
-          const dayOfWeek = pattern.dayOfWeek!;
-          const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
-          
+          // Weekly: for fixed clients, use their preferred day(s); else use last month's day.
+          const templateTask = clientTasks[0];
+          const override = getPreferredOverride(templateTask.client);
+          const dows = override ? override.daysOfWeek : [pattern.dayOfWeek!];
+          const matchingDays = currentMonthDays.filter(d => dows.includes(d.dateObject.getDay()));
+
+          const startTime = override?.startTime || templateTask.startTime;
+          const endTime = override?.endTime || templateTask.endTime;
+          const hours = (parseTime(endTime) - parseTime(startTime)) / 60;
+          const price = override
+            ? calculatePrice(hours, templateTask.pricePerHour).toFixed(2)
+            : templateTask.price;
+
           for (const targetDay of matchingDays) {
-            const templateTask = clientTasks[0];
             const result = await addTask({
               date: targetDay.dateString,
               client: templateTask.client,
               phone: templateTask.phone,
-              startTime: templateTask.startTime,
-              endTime: templateTask.endTime,
+              startTime,
+              endTime,
               address: templateTask.address,
               pricePerHour: templateTask.pricePerHour,
-              price: templateTask.price,
+              price,
               notes: templateTask.notes,
               completed: false,
               pago: false
@@ -1396,9 +1404,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           }
         } else if (pattern.type === 'biweekly') {
           // Bi-weekly: copy to alternating weeks (1st, 3rd OR 2nd, 4th)
-          const dayOfWeek = pattern.dayOfWeek!;
+          const templateTask = clientTasks[0];
+          const override = getPreferredOverride(templateTask.client);
+          const dayOfWeek = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
           const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
-          
+
+          const startTime = override?.startTime || templateTask.startTime;
+          const endTime = override?.endTime || templateTask.endTime;
+          const hours = (parseTime(endTime) - parseTime(startTime)) / 60;
+          const price = override
+            ? calculatePrice(hours, templateTask.pricePerHour).toFixed(2)
+            : templateTask.price;
+
           // Determine which weeks (odd: 1,3 or even: 2,4)
           const startWeek = pattern.startWeekParity || 'odd';
           const originalIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
@@ -1412,7 +1429,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           const swapped = loadOf(originalIndices) > loadOf(altIndices) + 1;
           if (swapped) {
             targetWeekIndices = altIndices;
-            // Record relocations: each original index pairs with the closest alt index
             originalIndices.forEach((origIdx, k) => {
               const newIdx = altIndices[k] ?? altIndices[altIndices.length - 1];
               const fromDay = matchingDays[origIdx];
@@ -1431,16 +1447,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           for (let i = 0; i < matchingDays.length; i++) {
             if (targetWeekIndices.includes(i)) {
               const targetDay = matchingDays[i];
-              const templateTask = clientTasks[0];
               const result = await addTask({
                 date: targetDay.dateString,
                 client: templateTask.client,
                 phone: templateTask.phone,
-                startTime: templateTask.startTime,
-                endTime: templateTask.endTime,
+                startTime,
+                endTime,
                 address: templateTask.address,
                 pricePerHour: templateTask.pricePerHour,
-                price: templateTask.price,
+                price,
                 notes: templateTask.notes,
                 completed: false,
                 pago: false
