@@ -1759,8 +1759,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         slots = [firstWeekday.dateString];
       }
 
-      // Filter out dates that already have a fixed client scheduled (no same-day conflicts).
-      slots = slots.filter(d => !occupiedDates.has(d));
+      // Prevent double-booking the SAME client twice on the same day.
+      const clientKey = client.nome.toLowerCase();
+      const clientOccupied = occupiedByClient.get(clientKey) || new Set<string>();
+      slots = slots.filter(d => !clientOccupied.has(d));
 
       totalSlots += slots.length;
 
@@ -1780,7 +1782,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         });
         if (result) {
           newIds.push(result.id);
-          occupiedDates.add(date);
+          clientOccupied.add(date);
+          occupiedByClient.set(clientKey, clientOccupied);
         }
       }
     }
