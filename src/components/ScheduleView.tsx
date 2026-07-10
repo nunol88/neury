@@ -1187,10 +1187,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       const clientName = list[0].client;
 
       if (pattern.type === 'weekly') {
-        const dow = pattern.dayOfWeek!;
-        currentMonthDays.filter(d => d.dateObject.getDay() === dow).forEach(d => inc(d.dateString, clientName));
+        const override = getPreferredOverride(clientName);
+        const dows = override ? override.daysOfWeek : [pattern.dayOfWeek!];
+        currentMonthDays.filter(d => dows.includes(d.dateObject.getDay())).forEach(d => inc(d.dateString, clientName));
       } else if (pattern.type === 'biweekly') {
-        const dow = pattern.dayOfWeek!;
+        const override = getPreferredOverride(clientName);
+        const dow = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
         const matching = currentMonthDays.filter(d => d.dateObject.getDay() === dow);
         const startWeek = pattern.startWeekParity || 'odd';
         const original = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
