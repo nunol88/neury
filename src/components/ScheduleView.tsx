@@ -43,6 +43,7 @@ import CopyReportModal, { type Relocation, type OverloadedDay } from '@/componen
 import CopyConflictDialog from '@/components/schedule/CopyConflictDialog';
 import PendingCompletionBanner from '@/components/schedule/PendingCompletionBanner';
 import { usePendingCompletions } from '@/hooks/usePendingCompletions';
+import { getPreferredStartTime, addHoursToTime } from '@/utils/clientPreferences';
 
 import {
   generateMonthsConfig,
@@ -1128,6 +1129,24 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   };
 
   // Simulate the copy to detect overloaded days BEFORE actually inserting.
+  // For fixed/favorite clients, override the previous-month pattern with the
+  // client's own scheduling preferences (dias_preferidos / hora / duração).
+  // This way, even if last month had a one-off swap, the copy follows the
+  // client's canonical weekday(s) and timing.
+  const getPreferredOverride = (clientName: string): {
+    daysOfWeek: number[];
+    startTime?: string;
+    endTime?: string;
+  } | null => {
+    const c = clients.find(cl => cl.nome.toLowerCase() === clientName.toLowerCase());
+    if (!c || !c.favorito) return null;
+    if (!c.dias_preferidos || c.dias_preferidos.length === 0) return null;
+    const startTime = c.hora_preferida || c.periodo_preferido ? getPreferredStartTime(c) : undefined;
+    const duration = c.duracao_preferida_horas || 3;
+    const endTime = startTime ? addHoursToTime(startTime, duration) : undefined;
+    return { daysOfWeek: [...c.dias_preferidos].sort((a, b) => a - b), startTime, endTime };
+  };
+
   // Mirrors the placement logic of executeCopyFromPreviousMonth (weekly + biweekly + monthly + single).
   const simulateCopyFromPreviousMonth = (): { overloaded: OverloadedDay[]; previousMonth: string | null } => {
     const previousMonth = getPreviousMonth();
@@ -1168,10 +1187,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       const clientName = list[0].client;
 
       if (pattern.type === 'weekly') {
-        const dow = pattern.dayOfWeek!;
-        currentMonthDays.filter(d => d.dateObject.getDay() === dow).forEach(d => inc(d.dateString, clientName));
+        const override = getPreferredOverride(clientName);
+        const dows = override ? override.daysOfWeek : [pattern.dayOfWeek!];
+        currentMonthDays.filter(d => dows.includes(d.dateObject.getDay())).forEach(d => inc(d.dateString, clientName));
       } else if (pattern.type === 'biweekly') {
-        const dow = pattern.dayOfWeek!;
+        const override = getPreferredOverride(clientName);
+        const dow = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
         const matching = currentMonthDays.filter(d => d.dateObject.getDay() === dow);
         const startWeek = pattern.startWeekParity || 'odd';
         const original = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
@@ -1349,21 +1370,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         const pattern = detectRecurrencePattern(clientTasks, prevMonthDays);
 
         if (pattern.type === 'weekly') {
-          // Weekly: copy to all weeks on the same day of week
-          const dayOfWeek = pattern.dayOfWeek!;
-          const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
-          
+          // Weekly: for fixed clients, use their preferred day(s); else use last month's day.
+          const templateTask = clientTasks[0];
+          const override = getPreferredOverride(templateTask.client);
+          const dows = override ? override.daysOfWeek : [pattern.dayOfWeek!];
+          const matchingDays = currentMonthDays.filter(d => dows.includes(d.dateObject.getDay()));
+
+          const startTime = override?.startTime || templateTask.startTime;
+          const endTime = override?.endTime || templateTask.endTime;
+          const price = override
+            ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
+            : templateTask.price;
+
           for (const targetDay of matchingDays) {
-            const templateTask = clientTasks[0];
             const result = await addTask({
               date: targetDay.dateString,
               client: templateTask.client,
               phone: templateTask.phone,
-              startTime: templateTask.startTime,
-              endTime: templateTask.endTime,
+              startTime,
+              endTime,
               address: templateTask.address,
               pricePerHour: templateTask.pricePerHour,
-              price: templateTask.price,
+              price,
               notes: templateTask.notes,
               completed: false,
               pago: false
@@ -1375,9 +1403,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           }
         } else if (pattern.type === 'biweekly') {
           // Bi-weekly: copy to alternating weeks (1st, 3rd OR 2nd, 4th)
-          const dayOfWeek = pattern.dayOfWeek!;
+          const templateTask = clientTasks[0];
+          const override = getPreferredOverride(templateTask.client);
+          const dayOfWeek = override ? override.daysOfWeek[0] : pattern.dayOfWeek!;
           const matchingDays = currentMonthDays.filter(d => d.dateObject.getDay() === dayOfWeek);
-          
+
+          const startTime = override?.startTime || templateTask.startTime;
+          const endTime = override?.endTime || templateTask.endTime;
+          const price = override
+            ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
+            : templateTask.price;
+
           // Determine which weeks (odd: 1,3 or even: 2,4)
           const startWeek = pattern.startWeekParity || 'odd';
           const originalIndices = startWeek === 'odd' ? [0, 2, 4] : [1, 3];
@@ -1391,7 +1427,6 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           const swapped = loadOf(originalIndices) > loadOf(altIndices) + 1;
           if (swapped) {
             targetWeekIndices = altIndices;
-            // Record relocations: each original index pairs with the closest alt index
             originalIndices.forEach((origIdx, k) => {
               const newIdx = altIndices[k] ?? altIndices[altIndices.length - 1];
               const fromDay = matchingDays[origIdx];
@@ -1410,16 +1445,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           for (let i = 0; i < matchingDays.length; i++) {
             if (targetWeekIndices.includes(i)) {
               const targetDay = matchingDays[i];
-              const templateTask = clientTasks[0];
               const result = await addTask({
                 date: targetDay.dateString,
                 client: templateTask.client,
                 phone: templateTask.phone,
-                startTime: templateTask.startTime,
-                endTime: templateTask.endTime,
+                startTime,
+                endTime,
                 address: templateTask.address,
                 pricePerHour: templateTask.pricePerHour,
-                price: templateTask.price,
+                price,
                 notes: templateTask.notes,
                 completed: false,
                 pago: false
