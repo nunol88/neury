@@ -43,6 +43,7 @@ import CopyReportModal, { type Relocation, type OverloadedDay } from '@/componen
 import CopyConflictDialog from '@/components/schedule/CopyConflictDialog';
 import PendingCompletionBanner from '@/components/schedule/PendingCompletionBanner';
 import { usePendingCompletions } from '@/hooks/usePendingCompletions';
+import { getPreferredStartTime, addHoursToTime } from '@/utils/clientPreferences';
 
 import {
   generateMonthsConfig,
