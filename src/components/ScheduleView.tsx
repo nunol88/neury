@@ -1658,10 +1658,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       prevByClient.get(key)!.push(t);
     });
 
-    // Track occupied dates in the current month to avoid same-day conflicts between fixed clients.
-    // Seed with existing tasks already in the month (e.g. from the copy step).
+    // Track occupied (date, client) pairs to avoid double-booking the SAME client on the same day.
+    // Multiple different clients can share a day — that's normal and expected.
     const currentTasks = allTasks[activeMonth as keyof AllTasks] || [];
-    const occupiedDates = new Set<string>(currentTasks.map(t => t.date));
+    const occupiedByClient = new Map<string, Set<string>>();
+    currentTasks.forEach(t => {
+      const key = t.client.toLowerCase();
+      if (!occupiedByClient.has(key)) occupiedByClient.set(key, new Set());
+      occupiedByClient.get(key)!.add(t.date);
+    });
 
     // Helper: integer days between two YYYY-MM-DD dates
     const daysBetween = (a: string, b: string): number => {
