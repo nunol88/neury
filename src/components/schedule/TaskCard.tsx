@@ -141,14 +141,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
       )}
 
       {/* Header: Avatar + Name + Time */}
-      <div className="flex justify-between items-start mb-2 gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex justify-between items-start mb-2 gap-2 flex-wrap gap-y-1.5">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 basis-full sm:basis-auto">
           <ClientAvatar name={task.client} size="sm" />
-          <span className={`font-bold truncate ${task.completed ? 'text-success line-through decoration-1' : 'text-card-foreground'}`}>
+          <span className={`font-bold truncate ${task.completed ? 'text-success line-through decoration-1' : 'text-card-foreground'}`} title={task.client}>
             {task.client}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {isOverdue && !task.completed && (
             <span className="text-[10px] font-bold bg-destructive/15 text-destructive px-1.5 py-0.5 rounded-md border border-destructive/30 animate-pulse">
               Por marcar
