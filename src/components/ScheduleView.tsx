@@ -1378,9 +1378,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
           const startTime = override?.startTime || templateTask.startTime;
           const endTime = override?.endTime || templateTask.endTime;
-          const hours = (parseTime(endTime) - parseTime(startTime)) / 60;
           const price = override
-            ? calculatePrice(hours, templateTask.pricePerHour).toFixed(2)
+            ? (calculatePrice(startTime, endTime, templateTask.pricePerHour) || templateTask.price)
             : templateTask.price;
 
           for (const targetDay of matchingDays) {
