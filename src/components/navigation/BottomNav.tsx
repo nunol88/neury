@@ -13,6 +13,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ items, badgeFor }) => {
   return (
     <nav
       aria-label="Navegação principal"
+      data-floating-obstacle
       className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl print:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >

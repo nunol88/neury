@@ -71,6 +71,17 @@ const readStoredPosition = (): Position | null => {
   }
 };
 
+const OBSTACLE_GAP = 8;
+
+const intersects = (a: DOMRect | { left: number; top: number; right: number; bottom: number }, b: DOMRect) =>
+  a.left < b.right + OBSTACLE_GAP && a.right > b.left - OBSTACLE_GAP && a.top < b.bottom + OBSTACLE_GAP && a.bottom > b.top - OBSTACLE_GAP;
+
+/** Visible elements marked with data-floating-obstacle (Adicionar menu, bottom nav). */
+const getObstacleRects = (): DOMRect[] =>
+  Array.from(document.querySelectorAll<HTMLElement>('[data-floating-obstacle]'))
+    .map(el => el.getBoundingClientRect())
+    .filter(r => r.width > 0 && r.height > 0);
+
 const FloatingTotal: React.FC<FloatingTotalProps> = ({
   totalValue,
   completedValue,
@@ -108,6 +119,26 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
     };
   }, []);
 
+  /** Moves a position off any obstacle (first upwards, then sideways) while staying inside the viewport. */
+  const avoidObstacles = useCallback((candidate: Position): Position => {
+    const element = buttonRef.current;
+    if (!element) return candidate;
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
+    let pos = clampPosition(candidate);
+    for (let i = 0; i < 4; i += 1) {
+      const box = { left: pos.x, top: pos.y, right: pos.x + width, bottom: pos.y + height };
+      const hit = getObstacleRects().find(r => intersects(box, r));
+      if (!hit) return pos;
+      const above = clampPosition({ x: pos.x, y: hit.top - height - OBSTACLE_GAP });
+      const aboveBox = { left: above.x, top: above.y, right: above.x + width, bottom: above.y + height };
+      if (!intersects(aboveBox, hit)) { pos = above; continue; }
+      const right = clampPosition({ x: hit.right + OBSTACLE_GAP, y: pos.y });
+      pos = right;
+    }
+    return pos;
+  }, [clampPosition]);
+
   const defaultPosition = useCallback((): Position => {
     const element = buttonRef.current;
     const safe = getSafeInsets();
@@ -142,27 +173,28 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
     if (!isVisible || !buttonRef.current) return;
 
     const stored = readStoredPosition();
-    setPosition(clampPosition(stored ?? defaultPosition()));
-  }, [isVisible, clampPosition, defaultPosition]);
+    setPosition(avoidObstacles(stored ?? defaultPosition()));
+  }, [isVisible, avoidObstacles, defaultPosition]);
 
   useEffect(() => {
     if (!isVisible) return;
 
-    const keepInsideViewport = () => {
-      setPosition(current => {
-        const next = clampPosition(current ?? defaultPosition());
-        persistPosition(next);
-        return next;
-      });
+    // Recompute from the user's stored choice (not persisted) so resizes or menus opening never move it for good.
+    const keepUsable = () => {
+      if (pointerRef.current) return;
+      setPosition(avoidObstacles(readStoredPosition() ?? defaultPosition()));
     };
 
-    window.addEventListener('resize', keepInsideViewport);
-    window.addEventListener('orientationchange', keepInsideViewport);
+    window.addEventListener('resize', keepUsable);
+    window.addEventListener('orientationchange', keepUsable);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(keepUsable) : null;
+    document.querySelectorAll('[data-floating-obstacle]').forEach(el => observer?.observe(el));
     return () => {
-      window.removeEventListener('resize', keepInsideViewport);
-      window.removeEventListener('orientationchange', keepInsideViewport);
+      window.removeEventListener('resize', keepUsable);
+      window.removeEventListener('orientationchange', keepUsable);
+      observer?.disconnect();
     };
-  }, [isVisible, clampPosition, defaultPosition, persistPosition]);
+  }, [isVisible, avoidObstacles, defaultPosition]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -214,7 +246,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
 
     if (draggedRef.current) {
       setPosition(current => {
-        const next = clampPosition(current ?? defaultPosition());
+        const next = avoidObstacles(current ?? defaultPosition());
         persistPosition(next);
         return next;
       });
@@ -248,6 +280,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
         : {
             right: 'max(24px, env(safe-area-inset-right))',
             bottom: 'calc(var(--bottom-nav-offset, 0px) + max(24px, env(safe-area-inset-bottom)))',
+            visibility: 'hidden',
           }}
     >
       <div className="glass-strong rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3 border border-primary/20">
