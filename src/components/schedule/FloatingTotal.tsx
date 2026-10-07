@@ -20,6 +20,8 @@ interface SafeInsets {
 
 const POSITION_STORAGE_KEY = 'mayslimpo:floating-total-position';
 const VIEWPORT_MARGIN = 12;
+const INITIAL_OFFSET = 24;
+const VISUAL_OVERFLOW_ALLOWANCE = 8;
 const DRAG_THRESHOLD = 6;
 
 const getSafeInsets = (): SafeInsets => {
@@ -91,12 +93,13 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
     const element = buttonRef.current;
     if (!element) return candidate;
 
-    const { width, height } = element.getBoundingClientRect();
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
     const safe = getSafeInsets();
-    const minX = VIEWPORT_MARGIN + safe.left;
-    const minY = VIEWPORT_MARGIN + safe.top;
-    const maxX = Math.max(minX, window.innerWidth - width - VIEWPORT_MARGIN - safe.right);
-    const maxY = Math.max(minY, window.innerHeight - height - VIEWPORT_MARGIN - safe.bottom);
+    const minX = VIEWPORT_MARGIN + safe.left + VISUAL_OVERFLOW_ALLOWANCE;
+    const minY = VIEWPORT_MARGIN + safe.top + VISUAL_OVERFLOW_ALLOWANCE;
+    const maxX = Math.max(minX, window.innerWidth - width - VIEWPORT_MARGIN - safe.right - VISUAL_OVERFLOW_ALLOWANCE);
+    const maxY = Math.max(minY, window.innerHeight - height - VIEWPORT_MARGIN - safe.bottom - VISUAL_OVERFLOW_ALLOWANCE);
 
     return {
       x: Math.min(Math.max(candidate.x, minX), maxX),
@@ -107,11 +110,11 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
   const defaultPosition = useCallback((): Position => {
     const element = buttonRef.current;
     const safe = getSafeInsets();
-    const width = element?.getBoundingClientRect().width ?? 0;
-    const height = element?.getBoundingClientRect().height ?? 0;
+    const width = element?.offsetWidth ?? 0;
+    const height = element?.offsetHeight ?? 0;
     return clampPosition({
-      x: window.innerWidth - width - VIEWPORT_MARGIN - safe.right,
-      y: window.innerHeight - height - VIEWPORT_MARGIN - safe.bottom,
+      x: window.innerWidth - width - INITIAL_OFFSET - safe.right,
+      y: window.innerHeight - height - INITIAL_OFFSET - safe.bottom,
     });
   }, [clampPosition]);
 
@@ -242,8 +245,8 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
       style={position
         ? { left: position.x, top: position.y }
         : {
-            right: 'max(12px, env(safe-area-inset-right))',
-            bottom: 'max(12px, env(safe-area-inset-bottom))',
+            right: 'max(24px, env(safe-area-inset-right))',
+            bottom: 'max(24px, env(safe-area-inset-bottom))',
           }}
     >
       <div className="glass-strong rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3 border border-primary/20">
