@@ -210,6 +210,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
+                  defaultMonth={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
