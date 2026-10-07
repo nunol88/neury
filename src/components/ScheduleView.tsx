@@ -60,9 +60,12 @@ import {
 
 interface ScheduleViewProps {
   isAdmin: boolean;
+  /** Month key to open initially (validated against supported months) */
+  initialMonth?: string;
+  onMonthChange?: (monthKey: string) => void;
 }
 
-const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
+const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin, initialMonth, onMonthChange }) => {
   const { user, role, isActive, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -91,7 +94,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
     return monthKeys[0];
   };
   
-  const [activeMonth, setActiveMonth] = useState<string>(getCurrentMonthKey());
+  const [activeMonth, setActiveMonth] = useState<string>(() => (initialMonth && monthsConfig[initialMonth] ? initialMonth : getCurrentMonthKey()));
+  useEffect(() => { onMonthChange?.(activeMonth); }, [activeMonth, onMonthChange]);
+  const [extraDefaultTipo, setExtraDefaultTipo] = useState<'receita' | 'despesa'>('receita');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'single' | 'fixed' | 'biweekly'>('single');
@@ -2096,6 +2101,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
           return !!result;
         }}
         defaultDate={currentMonthDays[0]?.dateString}
+        defaultTipo={extraDefaultTipo}
       />
 
       {/* Hero Summary Bar */}
@@ -2707,7 +2713,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         currentMonthLabel={activeConfig?.label || ''}
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
-        onAddExtra={() => { setEditingExtra(null); setShowExtraModal(true); }}
+        onAddExtra={() => { setEditingExtra(null); setExtraDefaultTipo('receita'); setShowExtraModal(true); }}
+        onAddExpense={() => { setEditingExtra(null); setExtraDefaultTipo('despesa'); setShowExtraModal(true); }}
         onExportCalendar={() => {
           const tasks = allTasks[activeMonth as keyof AllTasks] || [];
           if (tasks.length === 0) {

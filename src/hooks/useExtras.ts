@@ -35,6 +35,7 @@ export function validateExtraInput(valor: number, data: string): { valor: number
 export const useExtras = () => {
   const [extras, setExtras] = useState<Extra[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchExtras = useCallback(async () => {
@@ -46,8 +47,10 @@ export const useExtras = () => {
 
       if (error) throw error;
       setExtras((data as unknown as Extra[]) || []);
+      setError(null);
     } catch (error: any) {
       console.error('Error fetching extras:', error.message);
+      setError(error.message || 'Erro ao carregar');
     } finally {
       setLoading(false);
     }
@@ -169,6 +172,8 @@ export const useExtras = () => {
   return { 
     extras, 
     loading, 
+    error,
+    refetch: fetchExtras,
     addExtra,
     updateExtra,
     deleteExtra, 

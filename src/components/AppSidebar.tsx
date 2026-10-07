@@ -38,28 +38,7 @@ import {
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
 import ClientAvatar from '@/components/ui/client-avatar';
 
-const adminPrimary = [
-  { title: 'Agendamentos', url: '/admin/agendamentos', icon: CalendarDays },
-  { title: 'Dashboard', url: '/admin/dashboard', icon: BarChart3 },
-  { title: 'Clientes', url: '/admin/clientes', icon: Users },
-  { title: 'Recados', url: '/admin/recados', icon: MessageSquare },
-  { title: 'Pagamentos', url: '/admin/pagamentos', icon: Euro },
-  { title: 'Gestão Fiscal', url: '/admin/recibos-verdes', icon: Receipt },
-];
-
-const adminMore = [
-  { title: 'Utilizadores', url: '/admin/utilizadores', icon: UserCog },
-  { title: 'Transportes', url: '/admin/transportes', icon: Bus },
-  { title: 'Definições', url: '/admin/definicoes', icon: Settings },
-  { title: 'Sobre', url: '/admin/sobre', icon: Info },
-];
-
-const neurySidebarItems = [
-  { title: 'Agendamentos', url: '/neury/agendamentos', icon: CalendarDays },
-  { title: 'Recados', url: '/neury/recados', icon: MessageSquare },
-  { title: 'Transportes', url: '/neury/transportes', icon: Bus },
-  { title: 'Sobre', url: '/neury/sobre', icon: Info },
-];
+import { ADMIN_MAIN, CONTAS_ITEMS, ADMIN_MAIS_ITEMS, WORKER_MAIN, APP_VERSION_LABEL } from '@/config/sidebarItems';
 
 export function AppSidebar() {
   const { user, role, signOut } = useAuth();
@@ -132,22 +111,27 @@ export function AppSidebar() {
         {isAdmin ? (
           <>
             <SidebarGroup>
-              <SidebarGroupLabel>Principal</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{adminPrimary.map(renderItem)}</SidebarMenu>
+                <SidebarMenu>{ADMIN_MAIN.slice(0, 2).map(renderItem)}</SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Contas</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>{CONTAS_ITEMS.map(renderItem)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
             <SidebarGroup>
               <SidebarGroupLabel>Mais</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{adminMore.map(renderItem)}</SidebarMenu>
+                <SidebarMenu>{ADMIN_MAIS_ITEMS.map(renderItem)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
           </>
         ) : (
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>{neurySidebarItems.map(renderItem)}</SidebarMenu>
+              <SidebarMenu>{WORKER_MAIN.map(renderItem)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -181,6 +165,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarSeparator />
+        <p className="px-3 pt-2 text-[10px] text-muted-foreground text-center">{APP_VERSION_LABEL}</p>
         <div className="flex flex-row gap-1 p-3 justify-center">
           <TooltipProvider delayDuration={200}>
             <Tooltip>

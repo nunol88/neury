@@ -19,6 +19,8 @@ import Transportes from "./pages/Transportes";
 import NotFound from "./pages/NotFound";
 import Definicoes from "./pages/Definicoes";
 import Recados from "./pages/Recados";
+import Mais from "./pages/Mais";
+import Movimentos from "./pages/Movimentos";
 import RouteSeo from "@/components/RouteSeo";
 
 const queryClient = new QueryClient();
@@ -169,6 +171,26 @@ const App = () => (
                 <ProtectedRoute allowedRoles={['neury']}>
                   <AppLayout>
                     <Recados />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/movimentos"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Movimentos />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/mais"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AppLayout>
+                    <Mais />
                   </AppLayout>
                 </ProtectedRoute>
               }

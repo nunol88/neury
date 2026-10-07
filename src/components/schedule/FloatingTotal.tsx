@@ -40,7 +40,8 @@ const getSafeInsets = (): SafeInsets => {
   const insets = {
     top: Number.parseFloat(styles.paddingTop) || 0,
     right: Number.parseFloat(styles.paddingRight) || 0,
-    bottom: Number.parseFloat(styles.paddingBottom) || 0,
+    // Includes the mobile bottom navigation height so the card never sits under it.
+    bottom: (Number.parseFloat(styles.paddingBottom) || 0) + (Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-nav-offset')) || 0),
     left: Number.parseFloat(styles.paddingLeft) || 0,
   };
   probe.remove();
@@ -246,7 +247,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
         ? { left: position.x, top: position.y }
         : {
             right: 'max(24px, env(safe-area-inset-right))',
-            bottom: 'max(24px, env(safe-area-inset-bottom))',
+            bottom: 'calc(var(--bottom-nav-offset, 0px) + max(24px, env(safe-area-inset-bottom)))',
           }}
     >
       <div className="glass-strong rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3 border border-primary/20">

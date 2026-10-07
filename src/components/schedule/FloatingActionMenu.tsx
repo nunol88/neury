@@ -24,6 +24,7 @@ interface FloatingActionMenuProps {
   onUndo: () => void;
   onDeleteMonth: () => void;
   onAddExtra?: () => void;
+  onAddExpense?: () => void;
   onExportCalendar?: () => void;
 }
 
@@ -48,6 +49,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   onUndo,
   onDeleteMonth,
   onAddExtra,
+  onAddExpense,
   onExportCalendar,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -67,7 +69,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   };
 
   return (
-    <div className={`fixed bottom-6 ${leftOffset} z-50 flex flex-col items-start gap-3 print:hidden transition-all duration-300`}>
+    <div className={`fixed bottom-[calc(var(--bottom-nav-offset,0px)+1.5rem)] ${leftOffset} z-50 flex flex-col items-start gap-3 print:hidden transition-all duration-300`}>
       {/* Backdrop when expanded */}
       {isExpanded && (
         <div 
@@ -131,7 +133,18 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
               <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
                 <Euro size={20} className="text-success" />
               </div>
-              <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Valor Extra</span>
+              <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Receita extra</span>
+            </button>
+          )}
+          {onAddExpense && (
+            <button
+              onClick={() => handleOptionClick(onAddExpense)}
+              className="group flex items-center gap-3 bg-card shadow-lg rounded-full pl-4 pr-5 py-3 transition-all hover:scale-105 hover:shadow-xl animate-fade-in"
+            >
+              <div className="w-10 h-10 rounded-full bg-destructive/15 flex items-center justify-center">
+                <Euro size={20} className="text-destructive" />
+              </div>
+              <span className="text-sm font-medium text-card-foreground whitespace-nowrap">Despesa</span>
             </button>
           )}
 
@@ -192,11 +205,12 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
       {/* Main FAB Button */}
       <button
         onClick={handleMainClick}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 bg-primary text-primary-foreground ${
-          isExpanded ? 'rotate-45' : ''
-        }`}
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? 'Fechar opções de adicionar' : 'Adicionar'}
+        className="h-14 px-5 rounded-full shadow-lg flex items-center justify-center gap-2 font-semibold transition-transform active:scale-95 bg-primary text-primary-foreground"
       >
-        {isExpanded ? <X size={24} /> : <Plus size={28} />}
+        {isExpanded ? <X size={22} /> : <Plus size={22} />}
+        <span>{isExpanded ? 'Fechar' : 'Adicionar'}</span>
       </button>
     </div>
   );
