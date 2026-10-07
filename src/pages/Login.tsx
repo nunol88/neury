@@ -132,10 +132,10 @@ const Login = () => {
     setError('');
     setOauthFallbackUrl('');
 
-    // Inside the Lovable preview iframe popups are blocked. Break out to the
-    // published app in a new top-level tab so OAuth can run without popups.
+    // Inside the Lovable preview iframe popups are blocked. Open this same
+    // preview origin in a top-level tab so OAuth can run without leaving it.
     if (isInIframe) {
-      const target = 'https://neury.lovable.app';
+      const target = `${window.location.origin}${window.location.pathname}${window.location.search}`;
       const win = window.open(target, '_blank', 'noopener,noreferrer');
       if (!win) {
         setOauthFallbackUrl(target);
