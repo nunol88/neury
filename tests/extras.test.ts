@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { validateExtraInput, extrasNet } from '../hooks/useExtras';
+import { validateExtraInput, extrasNet } from '../src/hooks/useExtras';
 
 describe('extras', () => {
   test('mes_key follows the date (setembro -> outubro)', () => {
