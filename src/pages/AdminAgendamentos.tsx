@@ -74,6 +74,11 @@ const AdminAgendamentos: React.FC = () => {
   const [editingExtra, setEditingExtra] = useState<Extra | null>(null);
   const [extraTipo, setExtraTipo] = useState<ExtraTipo>('receita');
 
+  // A highlighted deep link must never be hidden by previous local filters.
+  React.useEffect(() => {
+    if (highlightId) { setSearch(''); setStatus('todas'); }
+  }, [highlightId]);
+
   const flatTasks = useMemo(() => Object.values(allTasks).flat(), [allTasks]);
 
   const dayTasks = flatTasks.filter(t => t.date === date);

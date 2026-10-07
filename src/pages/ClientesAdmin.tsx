@@ -69,14 +69,26 @@ const ClientesAdmin = () => {
   // Deep link from global search: ?cliente=<id> expands and scrolls to that client.
   const [searchParams] = useSearchParams();
   const deepLinkClientId = searchParams.get('cliente');
+  const handledDeepLinkRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (!deepLinkClientId) return;
+    if (!deepLinkClientId || loading || handledDeepLinkRef.current === deepLinkClientId) return;
+    // Only act on a client this admin can actually see; unknown ids select nothing.
+    if (!clients.some(c => c.id === deepLinkClientId)) return;
+    handledDeepLinkRef.current = deepLinkClientId;
+    // Clear local filters that could hide the target.
+    setSearchTerm('');
+    setFilterChip('all');
     setExpandedClient(deepLinkClientId);
-    const t = window.setTimeout(() => {
-      document.getElementById(`cliente-${deepLinkClientId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [deepLinkClientId, clients.length]);
+    let tries = 0;
+    let frame = 0;
+    const scrollWhenReady = () => {
+      const el = document.getElementById(`cliente-${deepLinkClientId}`);
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      if (tries++ < 60) frame = window.requestAnimationFrame(scrollWhenReady);
+    };
+    frame = window.requestAnimationFrame(scrollWhenReady);
+    return () => window.cancelAnimationFrame(frame);
+  }, [deepLinkClientId, clients, loading]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedClientHistory, setSelectedClientHistory] = useState<{
     name: string;
