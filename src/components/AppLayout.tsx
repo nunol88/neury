@@ -109,7 +109,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </header>
 
           {showContasTabs && <ContasTabs />}
-          <main ref={mainRef} className="flex-1 overflow-auto pb-[calc(var(--bottom-nav-offset,0px)+env(safe-area-inset-bottom))]">
+          <main ref={mainRef} className="flex-1 overflow-x-clip pb-[calc(var(--bottom-nav-offset,0px)+env(safe-area-inset-bottom))]">
             {children}
           </main>
 

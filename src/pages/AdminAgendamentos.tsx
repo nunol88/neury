@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import ScheduleView from '@/components/ScheduleView';
 import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useAuth } from '@/hooks/useAuth';
-import { useExtras, Extra, ExtraTipo } from '@/hooks/useExtras';
+import { useExtras, Extra, ExtraTipo, extrasNet } from '@/hooks/useExtras';
 import AgendaFocusView, { StatusFilter } from '@/components/schedule/AgendaFocusView';
 import QuickNewTaskModal from '@/components/schedule/QuickNewTaskModal';
 import ExtraValueModal from '@/components/schedule/ExtraValueModal';
@@ -74,16 +74,21 @@ const AdminAgendamentos: React.FC = () => {
   const [editingExtra, setEditingExtra] = useState<Extra | null>(null);
   const [extraTipo, setExtraTipo] = useState<ExtraTipo>('receita');
 
+  // A highlighted deep link must never be hidden by previous local filters.
+  React.useEffect(() => {
+    if (highlightId) { setSearch(''); setStatus('todas'); }
+  }, [highlightId]);
+
   const flatTasks = useMemo(() => Object.values(allTasks).flat(), [allTasks]);
 
   const dayTasks = flatTasks.filter(t => t.date === date);
   const dayExtras = extras.filter(e => e.data === date);
-  const extrasNet = dayExtras.reduce((s, e) => s + (e.tipo === 'despesa' ? -1 : 1) * Number(e.valor), 0);
+  const dayExtrasNet = extrasNet(dayExtras);
   const summary = {
     total: dayTasks.length,
     pending: dayTasks.filter(t => !t.completed).length,
     done: dayTasks.filter(t => t.completed).length,
-    revenue: dayTasks.reduce((s, t) => s + (parseFloat(t.price) || 0), 0) + extrasNet,
+    revenue: dayTasks.reduce((s, t) => s + (parseFloat(t.price) || 0), 0) + dayExtrasNet,
   };
 
   const openNew = (d?: string) => { setEditing(null); setDefaultDate(d); setModalOpen(true); };
@@ -100,13 +105,14 @@ const AdminAgendamentos: React.FC = () => {
 
   if (view === 'mes') {
     return (
-      <>
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 py-2 flex items-center justify-between gap-2">
+      // Header (48px) + this switcher bar (52px): MonthTabs sticks right below via --agenda-sticky-top.
+      <div style={{ ['--agenda-sticky-top' as string]: '100px' }}>
+        <div className="sticky top-12 z-[35] h-[52px] bg-background/95 backdrop-blur border-b border-border px-4 flex items-center justify-between gap-2">
           {viewSwitcher}
           <p className="hidden sm:block text-xs text-muted-foreground">Use o botão <strong>Adicionar</strong> para limpezas, fixos, quinzenais, extras, copiar e exportar.</p>
         </div>
         <ScheduleView isAdmin={true} initialMonth={mes} onMonthChange={onMonthChange} />
-      </>
+      </div>
     );
   }
 
@@ -138,7 +144,7 @@ const AdminAgendamentos: React.FC = () => {
 
   return (
     <div className="pb-8">
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+      <div className="sticky top-12 z-30 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">

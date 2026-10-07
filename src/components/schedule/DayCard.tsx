@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
-import { Extra } from '@/hooks/useExtras';
+import { Extra, extrasNet } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
 import { AlertTriangle, CalendarPlus, Check, Copy, Euro, Pencil, StickyNote, Trash2, TrendingDown } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
@@ -128,7 +128,7 @@ const DayCard: React.FC<DayCardProps> = ({
     if (!isPastBlocked) onDrop(e, dayObj.dateString);
   };
 
-  const extrasTotal = extras.reduce((sum, e) => sum + (e.tipo === 'despesa' ? -1 : 1) * (Number(e.valor) || 0), 0);
+  const extrasTotal = extrasNet(extras);
   const dayTotal = tasks.reduce((sum, task) => sum + (parseFloat(task.price) || 0), 0) + extrasTotal;
   const completedTasks = tasks.filter(t => t.completed).length;
   const isFullyCompleted = tasks.length > 0 && completedTasks === tasks.length && extras.length === 0;

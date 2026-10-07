@@ -32,6 +32,10 @@ export function validateExtraInput(valor: number, data: string): { valor: number
 }
 
 
+/** Net value of extras: receitas positive, despesas negative. */
+export const extrasNet = (list: Pick<Extra, 'valor' | 'tipo'>[]): number =>
+  list.reduce((sum, e) => sum + (e.tipo === 'despesa' ? -1 : 1) * (Number(e.valor) || 0), 0);
+
 export const useExtras = () => {
   const [extras, setExtras] = useState<Extra[]>([]);
   const [loading, setLoading] = useState(true);

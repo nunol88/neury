@@ -93,7 +93,7 @@ const MonthTabs: React.FC<MonthTabsProps> = ({
       <div 
         ref={containerRef}
         className={`glass-strong shadow-lg pt-3 px-3 print:hidden overflow-x-auto border-b border-border/50 transition-all duration-300 ${
-          isSticky ? `fixed top-[52px] ${stickyLeftOffset} right-0 z-30` : ''
+          isSticky ? `fixed top-[var(--agenda-sticky-top,52px)] ${stickyLeftOffset} right-0 z-30` : ''
         }`}
       >
         <div ref={tabsRef} className="max-w-7xl mx-auto flex gap-2 items-end relative pb-1">

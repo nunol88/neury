@@ -13,7 +13,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ items, badgeFor }) => {
   return (
     <nav
       aria-label="Navegação principal"
-      className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl print:hidden"
+      data-floating-obstacle
+      className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl print:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
