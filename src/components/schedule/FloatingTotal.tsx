@@ -181,14 +181,18 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
 
     // Recompute from the user's stored choice (not persisted) so resizes or menus opening never move it for good.
     let frame = 0;
+    let settleTimer = 0;
+    const recompute = () => {
+      if (pointerRef.current) return;
+      const next = avoidObstacles(readStoredPosition() ?? defaultPosition());
+      setPosition(current => (current && current.x === next.x && current.y === next.y ? current : next));
+    };
     const keepUsable = () => {
       window.cancelAnimationFrame(frame);
-      // Wait for layout to settle (viewport and obstacle sizes) before measuring.
-      frame = window.requestAnimationFrame(() => {
-        if (pointerRef.current) return;
-        const next = avoidObstacles(readStoredPosition() ?? defaultPosition());
-        setPosition(current => (current && current.x === next.x && current.y === next.y ? current : next));
-      });
+      window.clearTimeout(settleTimer);
+      // Measure on the next frame and again once responsive layout (mobile/desktop) has re-rendered.
+      frame = window.requestAnimationFrame(recompute);
+      settleTimer = window.setTimeout(recompute, 300);
     };
 
     window.addEventListener('resize', keepUsable);
@@ -201,6 +205,7 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
       window.removeEventListener('orientationchange', keepUsable);
       window.removeEventListener('scroll', keepUsable);
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(settleTimer);
       observer?.disconnect();
     };
   }, [isVisible, avoidObstacles, defaultPosition]);
