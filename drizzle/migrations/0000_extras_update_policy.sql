@@ -1,0 +1,2 @@
+CREATE POLICY "Users can update own extras or admin" ON public.extras FOR UPDATE TO authenticated USING ((auth.uid() = user_id) OR public.has_role(auth.uid(), 'admin'::app_role)) WITH CHECK ((auth.uid() = user_id) OR public.has_role(auth.uid(), 'admin'::app_role));
+GRANT UPDATE ON public.extras TO authenticated;
