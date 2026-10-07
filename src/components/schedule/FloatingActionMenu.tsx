@@ -69,7 +69,7 @@ const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
   };
 
   return (
-    <div data-floating-obstacle className={`fixed bottom-[calc(var(--bottom-nav-offset,0px)+1.5rem)] ${leftOffset} z-50 flex flex-col items-start gap-3 print:hidden transition-all duration-300`}>
+    <div data-floating-obstacle className={`fixed bottom-[calc(var(--bottom-nav-offset,0px)+env(safe-area-inset-bottom,0px)+1.5rem)] ${leftOffset} z-50 flex flex-col items-start gap-3 print:hidden transition-all duration-300`}>
       {/* Backdrop when expanded */}
       {isExpanded && (
         <div 
