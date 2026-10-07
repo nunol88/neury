@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import ScheduleView from '@/components/ScheduleView';
 import { useAgendamentos, Task } from '@/hooks/useAgendamentos';
 import { useAuth } from '@/hooks/useAuth';
-import { useExtras, Extra, ExtraTipo } from '@/hooks/useExtras';
+import { useExtras, Extra, ExtraTipo, extrasNet } from '@/hooks/useExtras';
 import AgendaFocusView, { StatusFilter } from '@/components/schedule/AgendaFocusView';
 import QuickNewTaskModal from '@/components/schedule/QuickNewTaskModal';
 import ExtraValueModal from '@/components/schedule/ExtraValueModal';
@@ -83,12 +83,12 @@ const AdminAgendamentos: React.FC = () => {
 
   const dayTasks = flatTasks.filter(t => t.date === date);
   const dayExtras = extras.filter(e => e.data === date);
-  const extrasNet = dayExtras.reduce((s, e) => s + (e.tipo === 'despesa' ? -1 : 1) * Number(e.valor), 0);
+  const dayExtrasNet = extrasNet(dayExtras);
   const summary = {
     total: dayTasks.length,
     pending: dayTasks.filter(t => !t.completed).length,
     done: dayTasks.filter(t => t.completed).length,
-    revenue: dayTasks.reduce((s, t) => s + (parseFloat(t.price) || 0), 0) + extrasNet,
+    revenue: dayTasks.reduce((s, t) => s + (parseFloat(t.price) || 0), 0) + dayExtrasNet,
   };
 
   const openNew = (d?: string) => { setEditing(null); setDefaultDate(d); setModalOpen(true); };
