@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Task } from '@/hooks/useAgendamentos';
 import { Extra } from '@/hooks/useExtras';
 import TaskCard from './TaskCard';
-import { AlertTriangle, CalendarPlus, Check, Copy, Euro, StickyNote, Trash2, TrendingDown } from 'lucide-react';
+import { AlertTriangle, CalendarPlus, Check, Copy, Euro, Pencil, StickyNote, Trash2, TrendingDown } from 'lucide-react';
 import { getHoliday } from '@/utils/portugueseHolidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -33,6 +33,7 @@ interface DayCardProps {
   onCopyTask?: (task: Task) => void;
   onRepeatNextWeek?: (task: Task) => void;
   onDeleteExtra?: (id: string) => void;
+  onEditExtra?: (extra: Extra) => void;
   onCopyDay?: (targetDate: string, targetDayLabel: string) => void;
   isOverdue?: (task: Task) => boolean;
   animationDelay?: number;
@@ -57,6 +58,7 @@ const DayCard: React.FC<DayCardProps> = ({
   onCopyTask,
   onRepeatNextWeek,
   onDeleteExtra,
+  onEditExtra,
   onCopyDay,
   isOverdue,
   animationDelay = 0,
@@ -349,15 +351,30 @@ const DayCard: React.FC<DayCardProps> = ({
                         )}
                       </div>
                     </div>
-                    {onDeleteExtra && (
-                      <button
-                        onClick={() => onDeleteExtra(extra.id)}
-                        className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                        title="Remover"
-                      >
-                        <Trash2 size={13} className="text-destructive" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {onEditExtra && (
+                        <button
+                          type="button"
+                          onClick={() => onEditExtra(extra)}
+                          className="p-2 hover:bg-primary/10 rounded-full transition-colors"
+                          aria-label={`Editar registo de €${Number(extra.valor).toFixed(2)}`}
+                          title="Editar"
+                        >
+                          <Pencil size={14} className="text-primary" />
+                        </button>
+                      )}
+                      {onDeleteExtra && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteExtra(extra.id)}
+                          className="p-1.5 hover:bg-destructive/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remover"
+                          aria-label="Remover registo"
+                        >
+                          <Trash2 size={13} className="text-destructive" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

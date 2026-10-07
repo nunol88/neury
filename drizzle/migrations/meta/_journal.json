@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791393041172,
+      "tag": "0000_extras_update_policy",
+      "breakpoints": true
+    }
+  ]
+}

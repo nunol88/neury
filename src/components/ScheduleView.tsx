@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendamentos, Task, AllTasks } from '@/hooks/useAgendamentos';
 import { useClients, Client } from '@/hooks/useClients';
-import { useExtras } from '@/hooks/useExtras';
+import { useExtras, type Extra } from '@/hooks/useExtras';
 import { useActionHistory, ActionRecord } from '@/hooks/useActionHistory';
 import { 
   Plus, Trash2, Check, MapPin, Calendar, Save, Download, X, 
@@ -70,7 +70,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
   const { allTasks, loading, addTask, updateTask, deleteTask, restoreTask, toggleTaskStatus, togglePaymentStatus, registerArrival, registerDeparture } = useAgendamentos();
   const pendingCompletions = usePendingCompletions(allTasks);
   const { clients, addClient } = useClients();
-  const { extras, addExtra, deleteExtra, getExtrasForMonth, getExtrasForDate, getExtrasNetForMonth } = useExtras();
+  const { extras, addExtra, updateExtra, deleteExtra, getExtrasForMonth, getExtrasForDate, getExtrasNetForMonth } = useExtras();
   const { addAction, getLastAction, removeLastAction, canUndo, undoing, setUndoing } = useActionHistory();
   
   // Static month configuration matching useAgendamentos
@@ -142,6 +142,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
 
   // State for extra value modal
   const [showExtraModal, setShowExtraModal] = useState(false);
+  const [editingExtra, setEditingExtra] = useState<Extra | null>(null);
 
   // State for copy day modal
   const [showCopyDayModal, setShowCopyDayModal] = useState(false);
@@ -2083,15 +2084,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
       {/* Extra Value Modal */}
       <ExtraValueModal
         isOpen={showExtraModal}
-        onClose={() => setShowExtraModal(false)}
+        onClose={() => { setShowExtraModal(false); setEditingExtra(null); }}
+        editingExtra={editingExtra}
         onSubmit={async (data) => {
-          const result = await addExtra({
-            valor: data.valor,
-            data: data.data,
-            observacoes: data.observacoes,
-            mes_key: activeMonth,
-            tipo: data.tipo,
-          });
+          if (editingExtra) {
+            const result = await updateExtra(editingExtra.id, data);
+            return !!result;
+          }
+          // mes_key is derived from data.data inside addExtra
+          const result = await addExtra(data);
           return !!result;
         }}
         defaultDate={currentMonthDays[0]?.dateString}
@@ -2164,6 +2165,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
                onCopyTask={isAdmin ? handleCopyTask : undefined}
                onRepeatNextWeek={isAdmin ? handleRepeatNextWeek : undefined}
                onDeleteExtra={deleteExtra}
+               onEditExtra={(extra) => { setEditingExtra(extra); setShowExtraModal(true); }}
                isOverdue={pendingCompletions.isOverdue}
                onCopyDay={isAdmin ? (targetDate: string, targetDayLabel: string) => {
                  setCopyDayTarget({ date: targetDate, label: targetDayLabel });
@@ -2705,7 +2707,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ isAdmin }) => {
         currentMonthLabel={activeConfig?.label || ''}
         hasTasksInMonth={(allTasks[activeMonth as keyof AllTasks] || []).length > 0}
         onDeleteMonth={handleDeleteMonth}
-        onAddExtra={() => setShowExtraModal(true)}
+        onAddExtra={() => { setEditingExtra(null); setShowExtraModal(true); }}
         onExportCalendar={() => {
           const tasks = allTasks[activeMonth as keyof AllTasks] || [];
           if (tasks.length === 0) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Euro, StickyNote, Calendar, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -7,13 +7,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import type { ExtraTipo } from '@/hooks/useExtras';
+import type { Extra, ExtraTipo } from '@/hooks/useExtras';
 
 interface ExtraValueModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { valor: number; data: string; observacoes: string; tipo: ExtraTipo }) => Promise<boolean>;
   defaultDate?: string;
+  /** When provided, the modal works in edit mode, pre-filled from this extra. */
+  editingExtra?: Extra | null;
 }
 
 const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
@@ -21,17 +23,38 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
   onClose,
   onSubmit,
   defaultDate,
+  editingExtra,
 }) => {
   const [tipo, setTipo] = useState<ExtraTipo>('receita');
   const [valor, setValor] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    defaultDate ? new Date(defaultDate + 'T00:00:00') : new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [observacoes, setObservacoes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const savingRef = useRef(false);
+
+  // Always (re)initialize from the current source when opening — never reuse stale state.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (editingExtra) {
+      setTipo(editingExtra.tipo === 'despesa' ? 'despesa' : 'receita');
+      setValor(String(Number(editingExtra.valor)));
+      setSelectedDate(new Date(editingExtra.data + 'T00:00:00'));
+      setObservacoes(editingExtra.observacoes || '');
+    } else {
+      setTipo('receita');
+      setValor('');
+      setSelectedDate(defaultDate ? new Date(defaultDate + 'T00:00:00') : new Date());
+      setObservacoes('');
+    }
+    setError(null);
+    setSaving(false);
+    savingRef.current = false;
+  }, [isOpen, editingExtra, defaultDate]);
 
   if (!isOpen) return null;
 
+  const isEdit = !!editingExtra;
   const isDespesa = tipo === 'despesa';
   const accentClass = isDespesa ? 'text-destructive' : 'text-success';
   const accentBg = isDespesa ? 'bg-destructive/20' : 'bg-success/20';
@@ -42,25 +65,38 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valor || !selectedDate) return;
-
-    setSaving(true);
-    const dateString = format(selectedDate, 'yyyy-MM-dd');
-    const success = await onSubmit({
-      valor: parseFloat(valor),
-      data: dateString,
-      observacoes,
-      tipo,
-    });
-
-    if (success) {
-      setValor('');
-      setObservacoes('');
-      setSelectedDate(new Date());
-      setTipo('receita');
-      onClose();
+    if (savingRef.current) return;
+    const num = parseFloat(valor.replace(',', '.'));
+    if (!Number.isFinite(num) || num <= 0) {
+      setError('Indique um valor positivo válido.');
+      return;
     }
-    setSaving(false);
+    if (!selectedDate || isNaN(selectedDate.getTime())) {
+      setError('Selecione uma data válida.');
+      return;
+    }
+
+    savingRef.current = true;
+    setSaving(true);
+    setError(null);
+    try {
+      const success = await onSubmit({
+        valor: num,
+        data: format(selectedDate, 'yyyy-MM-dd'),
+        observacoes,
+        tipo,
+      });
+      if (success) {
+        onClose();
+      } else {
+        setError('Não foi possível guardar. Os dados foram mantidos — tente novamente.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Erro ao guardar.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   return (
@@ -76,14 +112,14 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
             </div>
             <div>
               <h2 className="font-bold text-card-foreground text-lg">
-                {isDespesa ? 'Despesa' : 'Valor Extra'}
+                {isEdit ? 'Editar registo' : isDespesa ? 'Despesa' : 'Valor Extra'}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {isDespesa ? 'Registar despesa do dia (produtos, transportes...)' : 'Adicionar rendimento extra ao mês'}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
+          <button type="button" onClick={onClose} aria-label="Fechar" className="p-2 hover:bg-muted rounded-full transition-colors">
             <X size={18} className="text-muted-foreground" />
           </button>
         </div>
@@ -196,6 +232,10 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
             />
           </div>
 
+          {error && (
+            <p role="alert" className="text-sm text-destructive font-medium">{error}</p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
@@ -206,7 +246,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
             )}
           >
             {saving ? <Loader2 size={18} className="animate-spin" /> : <Euro size={18} />}
-            {isDespesa ? 'Registar Despesa' : 'Adicionar Valor Extra'}
+            {isEdit ? 'Guardar alterações' : isDespesa ? 'Registar Despesa' : 'Adicionar Valor Extra'}
           </button>
         </form>
       </div>
