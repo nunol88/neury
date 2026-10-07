@@ -92,7 +92,7 @@ const AdminAgendamentos: React.FC = () => {
 
   const viewSwitcher = (
     <div role="tablist" aria-label="Vista da agenda" className="flex items-center gap-1 bg-secondary rounded-lg p-1">
-      <ViewButton current={view} value="hoje" onClick={() => setView('hoje')} icon={<CalendarDays size={15} />} label="Dia" />
+      <ViewButton current={view} value="hoje" onClick={() => setView('hoje')} icon={<CalendarDays size={15} />} label="Hoje" />
       <ViewButton current={view} value="semana" onClick={() => setView('semana')} icon={<CalendarRange size={15} />} label="Semana" />
       <ViewButton current={view} value="mes" onClick={() => setView('mes')} icon={<Grid3x3 size={15} />} label="Mês" />
     </div>
