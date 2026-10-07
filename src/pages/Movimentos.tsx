@@ -37,9 +37,17 @@ const Movimentos: React.FC = () => {
   const q = params.get('q') || '';
   const highlightId = params.get('id') || undefined;
 
+  // User-driven filter changes (search, month, type) abandon any previous
+  // highlight: keep ?id/?editar out of the new query so the highlight effect
+  // doesn't keep re-applying it. Direct deep links set params directly and
+  // are unaffected.
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(params);
     if (value === null || value === '') next.delete(key); else next.set(key, value);
+    if (key === 'q' || key === 'mes' || key === 'tipo') {
+      next.delete('id');
+      next.delete('editar');
+    }
     setParams(next, { replace: true });
   };
 
