@@ -91,7 +91,8 @@ const Login = () => {
 
     try {
       // Convert username to email format for Supabase auth
-      const email = `${username.toLowerCase().trim()}@local.app`;
+      const cleanUser = username.toLowerCase().trim();
+      const email = cleanUser.includes('@') ? cleanUser : `${cleanUser}@local.app`;
       const { error } = await signIn(email, password);
       
       if (error) {
