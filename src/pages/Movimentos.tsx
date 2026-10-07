@@ -49,23 +49,41 @@ const Movimentos: React.FC = () => {
   const [toDelete, setToDelete] = useState<Extra | null>(null);
 
   // Deep link: ?novo=receita|despesa opens the form; ?id=..&editar=1 opens edit.
+  // Both react to param changes while already mounted (same-route navigation
+  // from GlobalSearch only changes the query string) and consume the param
+  // once, without loops.
+  const novo = params.get('novo');
   useEffect(() => {
-    const novo = params.get('novo');
-    if (novo === 'receita' || novo === 'despesa') {
-      setEditing(null); setDefaultTipo(novo); setModalOpen(true);
-      setParam('novo', null);
-    }
+    if (novo !== 'receita' && novo !== 'despesa') return;
+    setEditing(null); setDefaultTipo(novo); setModalOpen(true);
+    const next = new URLSearchParams(params);
+    next.delete('novo');
+    setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [novo]);
+
+  const editar = params.get('editar');
   useEffect(() => {
     if (!highlightId || loading) return;
     const target = extras.find(e => e.id === highlightId);
-    if (target && params.get('editar') === '1') {
-      setEditing(target); setModalOpen(true); setParam('editar', null);
-    }
-    document.getElementById(`mov-${highlightId}`)?.scrollIntoView({ block: 'center' });
+    if (!target) return; // invalid/unknown id: no selection, no scroll
+    const wantEdit = editar === '1';
+    // Make sure month/type/search filters don't hide the target.
+    const next = new URLSearchParams(params);
+    let changed = false;
+    if (mes !== 'todos' && target.mes_key !== mes) { next.set('mes', 'todos'); changed = true; }
+    if (filtro !== 'todos' && target.tipo !== filtro) { next.delete('tipo'); changed = true; }
+    if (q) { next.delete('q'); changed = true; }
+    if (wantEdit) { next.delete('editar'); changed = true; }
+    if (changed) setParams(next, { replace: true });
+    if (wantEdit) { setEditing(target); setModalOpen(true); }
+    // Wait for the list to render before scrolling to the row.
+    const t = window.setTimeout(() => {
+      document.getElementById(`mov-${highlightId}`)?.scrollIntoView({ block: 'center' });
+    }, 50);
+    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [highlightId, loading]);
+  }, [highlightId, loading, editar, extras, mes, filtro, q]);
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
