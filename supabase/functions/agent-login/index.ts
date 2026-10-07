@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const redirectTo = url.searchParams.get("redirect") ?? "https://neury.lovable.app/admin/agendamentos";
+    const redirectTo = url.searchParams.get("redirect") ?? "https://mayswork.lovable.app/admin/agendamentos";
 
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "magiclink",
