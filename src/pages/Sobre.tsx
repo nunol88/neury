@@ -31,6 +31,20 @@ interface VersionEntry {
 
 const changelog: VersionEntry[] = [
   {
+    version: '4.0.0',
+    date: '2026-10-07',
+    title: 'Agenda Digital V4',
+    summary: 'A aplicação foi reorganizada para tornar as tarefas do dia a dia mais rápidas e fáceis de encontrar, tanto no telemóvel como no computador. A Agenda, os Clientes, as Contas e as restantes ferramentas têm agora uma navegação simples e consistente.',
+    changes: [
+      { text: 'Nova navegação principal com Agenda, Clientes, Contas e Mais, incluindo barra inferior no telemóvel', type: 'improvement' },
+      { text: 'Agenda com vistas Hoje, Semana e Mês, ações rápidas e contexto preservado ao navegar', type: 'improvement' },
+      { text: 'Receitas e despesas visíveis por dia e reunidas na nova página Movimentos', type: 'new' },
+      { text: 'Pesquisa global melhorada para encontrar clientes, serviços, movimentos e páginas', type: 'improvement' },
+      { text: 'Links diretos abrem e destacam o cliente, serviço ou movimento certo sem ficarem presos a filtros anteriores', type: 'fix' },
+      { text: 'Cartão de totais arrastável e ajustado à navegação e às margens de segurança do iPhone', type: 'improvement' },
+    ],
+  },
+  {
     version: '3.0.0',
     date: '2026-05-23',
     title: '✨ v3 — Refresh visual global',
@@ -481,12 +495,14 @@ const typeConfig: Record<ChangeType, { label: string; icon: React.ElementType; v
 };
 
 const features = [
-  { icon: Calendar, label: 'Agenda', description: 'Agendamentos diários organizados por mês' },
-  { icon: Users, label: 'Clientes', description: 'Base de dados com histórico completo' },
-  { icon: CreditCard, label: 'Pagamentos', description: 'Controlo do que foi pago e pendente' },
-  { icon: BarChart3, label: 'Dashboard', description: 'Números e gráficos do negócio' },
-  { icon: FileText, label: 'Recibos Verdes', description: 'Gestão fiscal e cálculo automático' },
-  { icon: Shield, label: 'Utilizadores', description: 'Gestão de acessos e permissões' },
+  { icon: Calendar, label: 'Agenda', description: 'Hoje, semana e mês num só lugar' },
+  { icon: Users, label: 'Clientes', description: 'Contactos, preferências e histórico' },
+  { icon: CreditCard, label: 'Receber', description: 'Pagamentos recebidos e pendentes' },
+  { icon: Layers, label: 'Movimentos', description: 'Receitas e despesas organizadas' },
+  { icon: BarChart3, label: 'Resumo', description: 'Resultados e evolução do negócio' },
+  { icon: FileText, label: 'Fiscal', description: 'Recibos verdes e contribuições' },
+  { icon: Shield, label: 'Utilizadores', description: 'Acessos e permissões da equipa' },
+  { icon: Info, label: 'Mais', description: 'Recados, transportes e definições' },
 ];
 
 const Sobre = () => {

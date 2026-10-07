@@ -236,7 +236,7 @@ const Login = () => {
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-[0.18em] text-white/60 animate-fade-in">
                   <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                  Mayslimpo · v3
+                  Mayslimpo · V{APP_VERSION.split('.')[0]}
                 </div>
                 <h1 className="font-display text-3xl font-bold tracking-tight text-white animate-fade-in animation-delay-100">
                   Agenda Mayara Godoi
