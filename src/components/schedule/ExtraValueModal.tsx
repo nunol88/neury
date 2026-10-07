@@ -14,6 +14,8 @@ interface ExtraValueModalProps {
   onClose: () => void;
   onSubmit: (data: { valor: number; data: string; observacoes: string; tipo: ExtraTipo }) => Promise<boolean>;
   defaultDate?: string;
+  /** Tipo preselected when creating a new record */
+  defaultTipo?: ExtraTipo;
   /** When provided, the modal works in edit mode, pre-filled from this extra. */
   editingExtra?: Extra | null;
 }
@@ -23,6 +25,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
   onClose,
   onSubmit,
   defaultDate,
+  defaultTipo = 'receita',
   editingExtra,
 }) => {
   const [tipo, setTipo] = useState<ExtraTipo>('receita');
@@ -42,7 +45,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
       setSelectedDate(new Date(editingExtra.data + 'T00:00:00'));
       setObservacoes(editingExtra.observacoes || '');
     } else {
-      setTipo('receita');
+      setTipo(defaultTipo);
       setValor('');
       setSelectedDate(defaultDate ? new Date(defaultDate + 'T00:00:00') : new Date());
       setObservacoes('');
@@ -50,7 +53,7 @@ const ExtraValueModal: React.FC<ExtraValueModalProps> = ({
     setError(null);
     setSaving(false);
     savingRef.current = false;
-  }, [isOpen, editingExtra, defaultDate]);
+  }, [isOpen, editingExtra, defaultDate, defaultTipo]);
 
   if (!isOpen) return null;
 

@@ -9,6 +9,9 @@ import GlobalSearch from '@/components/GlobalSearch';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import logoMayslimpo from '@/assets/logo-mayslimpo.jpg';
+import BottomNav from '@/components/navigation/BottomNav';
+import ContasTabs from '@/components/navigation/ContasTabs';
+import { ADMIN_MAIN, CONTAS_ITEMS, WORKER_MAIN } from '@/config/navigation';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -29,8 +32,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [location.pathname]);
 
   const triggerSearch = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+    window.dispatchEvent(new CustomEvent('open-global-search'));
   };
+  const showContasTabs = isAdmin && CONTAS_ITEMS.some(i => i.url === location.pathname);
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
@@ -85,7 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   aria-label="Pesquisar"
                 >
                   <Search size={16} />
-                  <span className="hidden sm:inline text-xs">Pesquisar</span>
+                  <span className="text-xs">Pesquisar</span>
                   <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-border text-[10px] font-mono text-muted-foreground bg-muted">⌘K</kbd>
                 </Button>
               )}
@@ -104,9 +108,15 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
           </header>
 
-          <main ref={mainRef} className="flex-1 overflow-auto">
+          {showContasTabs && <ContasTabs />}
+          <main ref={mainRef} className="flex-1 overflow-auto pb-[calc(var(--bottom-nav-offset,0px)+env(safe-area-inset-bottom))]">
             {children}
           </main>
+
+          <BottomNav
+            items={isAdmin ? ADMIN_MAIN : WORKER_MAIN}
+            badgeFor={(item) => (isAdmin && item.title === 'Contas' ? overdueCount : 0)}
+          />
 
           {isAdmin && <GlobalSearch isAdmin={isAdmin} />}
         </SidebarInset>

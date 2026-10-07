@@ -571,3 +571,8 @@
 .animate-login-card-entry {
   animation: loginCardEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* V4: mobile bottom navigation height (keep in sync with BottomNav h-16) */
+@media (max-width: 767px) {
+  :root { --bottom-nav-offset: 64px; }
+}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useClients, Client } from '@/hooks/useClients';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
@@ -66,6 +66,17 @@ const ClientesAdmin = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  // Deep link from global search: ?cliente=<id> expands and scrolls to that client.
+  const [searchParams] = useSearchParams();
+  const deepLinkClientId = searchParams.get('cliente');
+  React.useEffect(() => {
+    if (!deepLinkClientId) return;
+    setExpandedClient(deepLinkClientId);
+    const t = window.setTimeout(() => {
+      document.getElementById(`cliente-${deepLinkClientId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [deepLinkClientId, clients.length]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedClientHistory, setSelectedClientHistory] = useState<{
     name: string;
@@ -1310,6 +1321,7 @@ const ClientesAdmin = () => {
               return (
                 <div
                   key={client.id}
+                  id={`cliente-${client.id}`}
                   className={`bg-card rounded-xl shadow-sm border transition overflow-hidden ${
                     isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:shadow-md'
                   }`}
