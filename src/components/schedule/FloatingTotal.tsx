@@ -180,18 +180,27 @@ const FloatingTotal: React.FC<FloatingTotalProps> = ({
     if (!isVisible) return;
 
     // Recompute from the user's stored choice (not persisted) so resizes or menus opening never move it for good.
+    let frame = 0;
     const keepUsable = () => {
-      if (pointerRef.current) return;
-      setPosition(avoidObstacles(readStoredPosition() ?? defaultPosition()));
+      window.cancelAnimationFrame(frame);
+      // Wait for layout to settle (viewport and obstacle sizes) before measuring.
+      frame = window.requestAnimationFrame(() => {
+        if (pointerRef.current) return;
+        const next = avoidObstacles(readStoredPosition() ?? defaultPosition());
+        setPosition(current => (current && current.x === next.x && current.y === next.y ? current : next));
+      });
     };
 
     window.addEventListener('resize', keepUsable);
     window.addEventListener('orientationchange', keepUsable);
+    window.addEventListener('scroll', keepUsable, { passive: true });
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(keepUsable) : null;
     document.querySelectorAll('[data-floating-obstacle]').forEach(el => observer?.observe(el));
     return () => {
       window.removeEventListener('resize', keepUsable);
       window.removeEventListener('orientationchange', keepUsable);
+      window.removeEventListener('scroll', keepUsable);
+      window.cancelAnimationFrame(frame);
       observer?.disconnect();
     };
   }, [isVisible, avoidObstacles, defaultPosition]);
