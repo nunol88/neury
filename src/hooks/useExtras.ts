@@ -169,7 +169,8 @@ export const useExtras = () => {
   return { 
     extras, 
     loading, 
-    addExtra, 
+    addExtra,
+    updateExtra,
     deleteExtra, 
     getExtrasForMonth, 
     getExtrasForDate,
